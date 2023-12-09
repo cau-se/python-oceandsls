@@ -18,6 +18,7 @@ import argparse
 import logging
 import os
 import subprocess
+from os.path import isfile
 
 from .server import tdd_server
 
@@ -49,7 +50,7 @@ def add_arguments(parser):
         help="Bind to this port"
     )
     parser.add_argument(
-        "-f", "--fxtran", dest="fxtran", type=fxtran_executable, default="fxtran",
+        "-fx", "--fxtran", dest="fxtran", type=fxtran_executable, default="fxtran",
         help="Path to fxtran"
     )
 
@@ -58,6 +59,23 @@ def add_arguments(parser):
         help="Metric to sort SuT recommendations, e.g. Testability Factor"
     )
 
+    parser.add_argument(
+            "-f", "--file", dest="file", type=readable_file,
+            help="TDD-File input file for pFUnit generator"
+    )
+
+def readable_file(file: str):
+    """
+    Check for readable file.
+
+    :param path: path to file
+    :return: valid readable file path
+    """
+
+    if isfile(file) and os.access( file, os.R_OK ):
+        return file
+    else:
+        raise argparse.ArgumentTypeError( f"File {file} doesn't exist or isn't readable.")
 
 def fxtran_executable(path: str):
     """
@@ -83,6 +101,10 @@ def main():
     parser = argparse.ArgumentParser()
     add_arguments(parser)
     args = parser.parse_args()
+
+    if args.file:
+        # Add fxtran path
+        tdd_server.input_file = args.file
 
     if args.fxtran:
         # Add fxtran path
