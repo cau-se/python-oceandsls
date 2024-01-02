@@ -19,7 +19,11 @@ import logging
 import os
 import subprocess
 from os.path import isfile
+from pathlib import Path
 
+from lsprotocol.types import DidSaveTextDocumentParams
+
+import server
 from .server import tdd_server
 
 # TODO Set up logging /usr/lib/python3.10/asyncio/log.py
@@ -72,10 +76,12 @@ def readable_file(file: str):
     :return: valid readable file path
     """
 
-    if isfile(file) and os.access( file, os.R_OK ):
-        return file
+    ospath = os.path.join(os.getcwd(), file)
+
+    if isfile(ospath) and os.access( ospath, os.R_OK ):
+        return ospath
     else:
-        raise argparse.ArgumentTypeError( f"File {file} doesn't exist or isn't readable.")
+        raise argparse.ArgumentTypeError( f"File {ospath} doesn't exist or isn't readable.")
 
 def fxtran_executable(path: str):
     """
@@ -102,10 +108,6 @@ def main():
     add_arguments(parser)
     args = parser.parse_args()
 
-    if args.file:
-        # Add fxtran path
-        tdd_server.input_file = args.file
-
     if args.fxtran:
         # Add fxtran path
         tdd_server.fxtran_path = args.fxtran
@@ -114,15 +116,24 @@ def main():
         # Add sort metric
         tdd_server.sort_metric = args.metric
 
-    if args.tcp:
-        # Start server via tcp
-        tdd_server.start_tcp(args.host, args.port)
-    elif args.ws:
-        # Start server via WebSocket
-        tdd_server.start_ws(args.host, args.port)
+    if args.file:
+        # Start cli code gen with given path
+        ospath = os.path.join(os.getcwd(), args.file)
+        uri = Path(ospath).as_uri()
+        params: DidSaveTextDocumentParams
+        params.text_document.uri= uri
+        server.did_save(tdd_server, params)
     else:
-        # Start server via IO
-        tdd_server.start_io()
+
+        if args.tcp:
+            # Start server via tcp
+            tdd_server.start_tcp(args.host, args.port)
+        elif args.ws:
+            # Start server via WebSocket
+            tdd_server.start_ws(args.host, args.port)
+        else:
+            # Start server via IO
+            tdd_server.start_io()
 
 
 if __name__ == "__main__":
