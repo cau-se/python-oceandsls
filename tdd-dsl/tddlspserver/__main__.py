@@ -19,12 +19,8 @@ import logging
 import os
 import subprocess
 from os.path import isfile
-from pathlib import Path
 
-from lsprotocol.types import DidSaveTextDocumentParams
-
-import server
-from .server import tdd_server
+from .server import did_save, tdd_server
 
 # TODO Set up logging /usr/lib/python3.10/asyncio/log.py
 #  /usr/lib/python3.10/asyncio/selector_events.py
@@ -118,11 +114,8 @@ def main():
 
     if args.file:
         # Start cli code gen with given path
-        ospath = os.path.join(os.getcwd(), args.file)
-        uri = Path(ospath).as_uri()
-        params: DidSaveTextDocumentParams
-        params.text_document.uri= uri
-        server.did_save(tdd_server, params)
+        tdd_server.input_path = os.path.join(os.getcwd(), args.file)
+        did_save(tdd_server, None)
     else:
 
         if args.tcp:

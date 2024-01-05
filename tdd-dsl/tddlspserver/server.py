@@ -22,7 +22,7 @@ import os.path
 from typing import List, Optional, Tuple
 
 # antlr4
-from antlr4 import CommonTokenStream, InputStream, Token
+from antlr4 import CommonTokenStream, FileStream, InputStream, Token
 from antlr4.IntervalSet import IntervalSet
 
 # pygls
@@ -68,6 +68,9 @@ class TDDLSPServer(LanguageServer):
 
     # Debug flag
     debug = False
+
+    # Input file path
+    input_path : str
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -295,12 +298,26 @@ def did_close(server: TDDLSPServer, params: DidCloseTextDocumentParams):
 def did_save(server: TDDLSPServer, params: DidSaveTextDocumentParams):
     """Text document did save notification."""
 
-    # Get Path
-    text_doc: Document = tdd_server.workspace.get_text_document(params.text_document.uri)
-    file_path: str = os.path.abspath(text_doc.path)
-    rel_file_path: str = os.path.relpath(file_path, os.getcwd())
+    # Set input stream of characters for lexer
+    input_stream: InputStream
+    file_path: str
 
-    server.parseTree = parse_document(params)
+    # Client or cli call
+    if params:
+        # Get input from lsp client
+        text_doc: Document = tdd_server.workspace.get_text_document(params.text_document.uri)
+        file_path = os.path.abspath(text_doc.path)
+        source: str = text_doc.source
+        input_stream = InputStream(source)
+    else:
+        # Get input from cli
+        input_stream = FileStream(tdd_server.input_path)
+        file_path = tdd_server.input_path
+
+    # Get relative input path for file generation
+    rel_file_path: str = os.path.relpath(file_path, os.getcwd())
+    # launch parser
+    server.parseTree = parse_document(input_stream)
 
     # Get symboltable for f90 generator
     symbol_table_visitor: SymbolTableVisitor = SymbolTableVisitor("variables", os.getcwd(), tdd_server.fxtran_path)
@@ -332,17 +349,18 @@ def did_save(server: TDDLSPServer, params: DidSaveTextDocumentParams):
 async def did_open(server: TDDLSPServer, params: DidOpenTextDocumentParams):
     """Text document did open notification."""
     server.show_message("Text Document Did Open")
-    server.parseTree = parse_document(params)
 
-    _validate(params)
-
-
-def parse_document(params) -> TestSuiteParser.Test_suiteContext:
     # Set input stream of characters for lexer
     text_doc: Document = tdd_server.workspace.get_text_document(params.text_document.uri)
     source: str = text_doc.source
     input_stream: InputStream = InputStream(source)
 
+    server.parseTree = parse_document(input_stream)
+
+    _validate(params)
+
+
+def parse_document(input_stream: InputStream) -> TestSuiteParser.Test_suiteContext:
     # Reset the lexer/parser
     tdd_server.error_listener.reset()
     tdd_server.lexer.inputStream = input_stream
