@@ -18,11 +18,10 @@
 import logging
 import re
 import uuid
-import os.path
 from typing import List, Optional, Union
 
 # antlr4
-from antlr4 import CommonTokenStream, InputStream, Token
+from antlr4 import CommonTokenStream, FileStream, InputStream, Token
 from antlr4.IntervalSet import IntervalSet
 
 
@@ -50,9 +49,6 @@ from .cst.diagnostic_listener import DiagnosticListener
 from .gen.python.Configuration.ConfigurationLexer import ConfigurationLexer
 from .gen.python.Configuration.ConfigurationParser import ConfigurationParser
 
-
-from pygls.capabilities import get_capability
-
 COUNT_DOWN_START_IN_SECONDS = 10
 COUNT_DOWN_SLEEP_IN_SECONDS = 1
 
@@ -62,6 +58,9 @@ class confLSPServer( LanguageServer ):
     CMD_UNREGISTER_COMPLETIONS = 'unregisterCompletions'
 
     CONFIGURATION_SECTION = 'ODslCONFServer'
+
+    # Input file path
+    input_path : str
 
     def __init__(self, *args):
         super().__init__( *args )
@@ -351,24 +350,32 @@ def did_close(server: confLSPServer, params: DidCloseTextDocumentParams):
 
 
 @conf_server.feature( TEXT_DOCUMENT_DID_SAVE )
-def did_save(server: confLSPServer, params: DidSaveTextDocumentParams):
+def did_save( server: confLSPServer, params: DidSaveTextDocumentParams ):
     """Text document did save notification."""
 
-    # set input stream of characters for lexer
-    text_doc: Document = conf_server.workspace.get_document( params.text_document.uri )
-    source: str = text_doc.source
-    input_stream: InputStream = InputStream( source )
+    # Set input stream of characters for lexer
+    input_stream: InputStream
 
-    # reset the lexer/parser
-    conf_server.error_listener.reset()
+    # Client or cli call
+    if params:
+        # Get input from lsp client
+        text_doc: Document = conf_server.workspace.get_text_document( params.text_document.uri )
+        source: str = text_doc.source
+        input_stream = InputStream( source )
+    else:
+        # Get input from cli
+        input_stream = FileStream( conf_server.input_path )
+
+    # Reset the lexer/parser
+    conf_server.error_listener.reset( )
     conf_server.lexer.inputStream = input_stream
     conf_server.tokenStream = CommonTokenStream( conf_server.lexer )
     conf_server.parser.setInputStream( conf_server.tokenStream )
 
     Top_levelContext = ConfigurationParser.ConfigurationModelContext
-    parseTree: Top_levelContext = conf_server.parser.configurationModel()
+    parseTree: Top_levelContext = conf_server.parser.configurationModel( )
 
-    # TODO
+    # TODO Generator
 
     server.show_message( 'Text Document Did Save' )
 

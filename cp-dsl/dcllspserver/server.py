@@ -18,11 +18,10 @@
 import logging
 import re
 import uuid
-import os.path
 from typing import List, Optional, Union
 
 # antlr4
-from antlr4 import CommonTokenStream, InputStream, Token
+from antlr4 import CommonTokenStream, FileStream, InputStream, Token
 from antlr4.IntervalSet import IntervalSet
 
 
@@ -51,8 +50,6 @@ from .gen.python.Declaration.DeclarationLexer import DeclarationLexer
 from .gen.python.Declaration.DeclarationParser import DeclarationParser
 
 
-from pygls.capabilities import get_capability
-
 COUNT_DOWN_START_IN_SECONDS = 10
 COUNT_DOWN_SLEEP_IN_SECONDS = 1
 
@@ -62,6 +59,9 @@ class dclLSPServer( LanguageServer ):
     CMD_UNREGISTER_COMPLETIONS = 'unregisterCompletions'
 
     CONFIGURATION_SECTION = 'ODslDCLServer'
+
+    # Input file path
+    input_path : str
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -388,24 +388,32 @@ def did_close(server: dclLSPServer, params: DidCloseTextDocumentParams):
 
 
 @dcl_server.feature( TEXT_DOCUMENT_DID_SAVE )
-def did_save(server: dclLSPServer, params: DidSaveTextDocumentParams):
+def did_save( server: dclLSPServer, params: DidSaveTextDocumentParams ):
     """Text document did save notification."""
 
-    # set input stream of characters for lexer
-    text_doc: Document = dcl_server.workspace.get_document( params.text_document.uri )
-    source: str = text_doc.source
-    input_stream: InputStream = InputStream( source )
+    # Set input stream of characters for lexer
+    input_stream: InputStream
+
+    # Client or cli call
+    if params:
+        # Get input from lsp client
+        text_doc: Document = dcl_server.workspace.get_text_document( params.text_document.uri )
+        source: str = text_doc.source
+        input_stream = InputStream( source )
+    else:
+        # Get input from cli
+        input_stream = FileStream( server.input_path )
 
     # reset the lexer/parser
-    dcl_server.error_listener.reset()
+    dcl_server.error_listener.reset( )
     dcl_server.lexer.inputStream = input_stream
     dcl_server.tokenStream = CommonTokenStream( dcl_server.lexer )
     dcl_server.parser.setInputStream( dcl_server.tokenStream )
 
     Top_levelContext = DeclarationParser.DeclarationModelContext
-    parseTree: Top_levelContext = dcl_server.parser.declarationModel()
+    parseTree: Top_levelContext = dcl_server.parser.declarationModel( )
 
-    # TODO
+    # TODO Generator
 
     server.show_message( 'Text Document Did Save' )
 

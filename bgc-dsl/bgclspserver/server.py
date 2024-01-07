@@ -18,11 +18,10 @@
 import logging
 import re
 import uuid
-import os.path
 from typing import List, Optional, Tuple
 
 # antlr4
-from antlr4 import CommonTokenStream, InputStream, Token
+from antlr4 import CommonTokenStream, FileStream, InputStream, Token
 from antlr4.IntervalSet import IntervalSet
 
 # pygls
@@ -55,6 +54,9 @@ class bgcLSPServer( LanguageServer ):
     CMD_UNREGISTER_COMPLETIONS = 'unregisterCompletions'
 
     CONFIGURATION_SECTION = 'ODslBGCServer'
+
+    # Input file path
+    input_path : str
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -225,12 +227,20 @@ def did_close(server: bgcLSPServer, params: DidCloseTextDocumentParams):
 def did_save(server: bgcLSPServer, params: DidSaveTextDocumentParams):
     """Text document did save notification."""
 
-    # set input stream of characters for lexer
-    text_doc: Document = bgc_server.workspace.get_document( params.text_document.uri )
-    source: str = text_doc.source
-    input_stream: InputStream = InputStream( source )
+    # Set input stream of characters for lexer
+    input_stream: InputStream
 
-    # reset the lexer/parser
+    # Client or cli call
+    if params:
+        # Get input from lsp client
+        text_doc: Document = bgc_server.workspace.get_text_document( params.text_document.uri )
+        source: str = text_doc.source
+        input_stream = InputStream( source )
+    else:
+        # Get input from cli
+        input_stream = FileStream( bgc_server.input_path )
+
+    # Reset the lexer/parser
     bgc_server.error_listener.reset()
     bgc_server.lexer.inputStream = input_stream
     bgc_server.tokenStream = CommonTokenStream( bgc_server.lexer )
@@ -239,7 +249,7 @@ def did_save(server: bgcLSPServer, params: DidSaveTextDocumentParams):
     Top_levelContext = BgcDslParser.BgcModelContext
     parse_tree: Top_levelContext = bgc_server.parser.bgcModel()
 
-    # TODO
+    # TODO Generator
 
     server.show_message( 'Text Document Did Save' )
 
