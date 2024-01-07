@@ -1,4 +1,3 @@
-
 from .templates import getEClassifier, eClassifiers
 from .templates import name, nsURI, nsPrefix, eClass
 from .templates import TemplateModel, Template, FileTemplate, TextTemplate, RichString, TemplateConditional, TemplateLoop, TemplateElse, TemplateElseConditional, TemplateEnd, TemplateReference, Conditional, Switch, Case, ExpressionCase, TypeCase, DefaultCase, Loop, BooleanOperator, CompareOperator, FunctionReference, EFunction, ArrayAccess, LoopReference, LoopIndexValue, LoopCounter, RichStringLiteral, RichStringLiteralStart, RichStringLiteralInbetween, RichStringLiteralEnd, TemplateParameter, BooleanExpression, NotExpression, CompareExpression, NamedElementReference
@@ -10,10 +9,10 @@ from declaration import DeclarationModel
 
 from . import templates
 
-__all__ = ['TemplateModel', 'Template', 'FileTemplate', 'TextTemplate', 'RichString', 'TemplateConditional', 'TemplateLoop', 'TemplateElse', 'TemplateElseConditional', 'TemplateEnd', 'TemplateReference', 'Conditional', 'Switch', 'Case', 'ExpressionCase', 'TypeCase', 'DefaultCase', 'Loop', 'BooleanOperator',
-           'CompareOperator', 'FunctionReference', 'EFunction', 'ArrayAccess', 'LoopReference', 'LoopIndexValue', 'LoopCounter', 'RichStringLiteral', 'RichStringLiteralStart', 'RichStringLiteralInbetween', 'RichStringLiteralEnd', 'TemplateParameter', 'BooleanExpression', 'NotExpression', 'CompareExpression', 'NamedElementReference']
+__all__ = [ 'TemplateModel', 'Template', 'FileTemplate', 'TextTemplate', 'RichString', 'TemplateConditional', 'TemplateLoop', 'TemplateElse', 'TemplateElseConditional', 'TemplateEnd', 'TemplateReference', 'Conditional', 'Switch', 'Case', 'ExpressionCase', 'TypeCase', 'DefaultCase', 'Loop', 'BooleanOperator',
+            'CompareOperator', 'FunctionReference', 'EFunction', 'ArrayAccess', 'LoopReference', 'LoopIndexValue', 'LoopCounter', 'RichStringLiteral', 'RichStringLiteralStart', 'RichStringLiteralInbetween', 'RichStringLiteralEnd', 'TemplateParameter', 'BooleanExpression', 'NotExpression', 'CompareExpression', 'NamedElementReference' ]
 
-eSubpackages = []
+eSubpackages = [ ]
 eSuperPackage = None
 templates.eSubpackages = eSubpackages
 templates.eSuperPackage = eSuperPackage
@@ -50,14 +49,14 @@ NotExpression.expression.eType = Expression
 CompareExpression.left.eType = Expression
 CompareExpression.right.eType = Expression
 
-otherClassifiers = [BooleanOperator, CompareOperator, EFunction]
+otherClassifiers = [ BooleanOperator, CompareOperator, EFunction ]
 
 for classif in otherClassifiers:
-    eClassifiers[classif.name] = classif
+    eClassifiers[ classif.name ] = classif
     classif.ePackage = eClass
 
-for classif in eClassifiers.values():
-    eClass.eClassifiers.append(classif.eClass)
+for classif in eClassifiers.values( ):
+    eClass.eClassifiers.append( classif.eClass )
 
 for subpack in eSubpackages:
-    eClass.eSubpackages.append(subpack.eClass)
+    eClass.eSubpackages.append( subpack.eClass )

@@ -3,13 +3,13 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-exclude = ["input","client","node_modules"]
+exclude = ["input", "client", "node_modules"]
 
 [project]
 name = "CPDSL-Language-Server"
 version = "0.40.0"
 authors = [
-    { name="TODO", email="TODO" },
+    { name = "TODO", email = "TODO" },
 ]
 description = "A program for a language server based on the configuration and declaration ocean-dsl."
 readme = "README.md"
@@ -26,7 +26,7 @@ classifiers = [
     "Topic :: Software Development",
 ]
 
-license = {text = "Apache License (2.0)"}
+license = { text = "Apache License (2.0)" }
 
 [project.urls]
 "oceandsl · GitLab" = "https://git.se.informatik.uni-kiel.de/oceandsl"

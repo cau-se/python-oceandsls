@@ -49,14 +49,15 @@ from .gen.python.BgcDsl.BgcDslLexer import BgcDslLexer
 from .gen.python.BgcDsl.BgcDslParser import BgcDslParser
 from .gen.python.BgcDsl.BgcDslVisitor import BgcDslVisitor
 
-class bgcLSPServer( LanguageServer ):
+
+class bgcLSPServer(LanguageServer):
     CMD_REGISTER_COMPLETIONS = 'registerCompletions'
     CMD_UNREGISTER_COMPLETIONS = 'unregisterCompletions'
 
     CONFIGURATION_SECTION = 'ODslBGCServer'
 
     # Input file path
-    input_path : str
+    input_path: str
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -80,11 +81,13 @@ class bgcLSPServer( LanguageServer ):
         self.parser.removeErrorListeners()
         self.parser.addErrorListener(self.error_listener)
 
-        self.parser._errHandler=BGCErrorStrategy()
+        self.parser._errHandler = BGCErrorStrategy()
 
-bgc_server = bgcLSPServer( 'pygls-odsl-bgc-prototype', 'v0.4' )
 
-logger = logging.getLogger( __name__ )
+bgc_server = bgcLSPServer('pygls-odsl-bgc-prototype', 'v0.4')
+
+logger = logging.getLogger(__name__)
+
 
 def _validate(params):
 
@@ -137,7 +140,7 @@ def lookup_symbol(uri, name):
     logger.info("uri: %s\n", uri, "name: %s\n", name)
 
 
-@bgc_server.feature( TEXT_DOCUMENT_COMPLETION, CompletionOptions( trigger_characters=[','] ) )
+@bgc_server.feature(TEXT_DOCUMENT_COMPLETION, CompletionOptions(trigger_characters=[',']))
 def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     """Returns completion items."""
 
@@ -186,44 +189,49 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     core.preferredRules = {BgcDslParser, BgcDslParser}
 
     # get completion candidates
-    candidates: CandidatesCollection = core.collectCandidates( token_index.index )
+    candidates: CandidatesCollection = core.collectCandidates(token_index.index)
 
     # TODO add interesting rules
-    if any( rule in candidates.rules for rule in [None] ):
+    if any(rule in candidates.rules for rule in [None]):
 
-        symbolTableVisitor: SymbolTableVisitor = SymbolTableVisitor( 'completions' )
+        symbolTableVisitor: SymbolTableVisitor = SymbolTableVisitor('completions')
 
-        symbolTable = symbolTableVisitor.visit( parse_tree )
+        symbolTable = symbolTableVisitor.visit(parse_tree)
 
-        variables = suggest_symbols( symbolTable, token_index )
+        variables = suggest_symbols(symbolTable, token_index)
 
         for variable in variables:
-            completion_list.items.append( CompletionItem( label=variable ) )
+            completion_list.items.append(CompletionItem(label=variable))
 
     # get labels of completion candidates to return
     labels_list: List[str] = []
     for key, valueList in candidates.tokens.items():
-        completion_list.items.append( CompletionItem(
-            label=IntervalSet.elementName( IntervalSet, bgc_server.parser.literalNames,
-                                           bgc_server.parser.symbolicNames, key ) ) )
+        completion_list.items.append(
+            CompletionItem(
+                label=IntervalSet.elementName(
+                    IntervalSet, bgc_server.parser.literalNames,
+                    bgc_server.parser.symbolicNames, key
+                )
+            )
+        )
 
     # return completion candidates labels
     return completion_list
 
 
-@bgc_server.feature( TEXT_DOCUMENT_DID_CHANGE )
+@bgc_server.feature(TEXT_DOCUMENT_DID_CHANGE)
 def did_change(ls, params: DidChangeTextDocumentParams):
     """Text document did change notification."""
-    _validate( ls, params )
+    _validate(ls, params)
 
 
-@bgc_server.feature( TEXT_DOCUMENT_DID_CLOSE )
+@bgc_server.feature(TEXT_DOCUMENT_DID_CLOSE)
 def did_close(server: bgcLSPServer, params: DidCloseTextDocumentParams):
     """Text document did close notification."""
-    server.show_message( 'Text Document Did Close' )
+    server.show_message('Text Document Did Close')
 
 
-@bgc_server.feature( TEXT_DOCUMENT_DID_SAVE )
+@bgc_server.feature(TEXT_DOCUMENT_DID_SAVE)
 def did_save(server: bgcLSPServer, params: DidSaveTextDocumentParams):
     """Text document did save notification."""
 
@@ -233,81 +241,89 @@ def did_save(server: bgcLSPServer, params: DidSaveTextDocumentParams):
     # Client or cli call
     if params:
         # Get input from lsp client
-        text_doc: Document = bgc_server.workspace.get_text_document( params.text_document.uri )
+        text_doc: Document = bgc_server.workspace.get_text_document(params.text_document.uri)
         source: str = text_doc.source
-        input_stream = InputStream( source )
+        input_stream = InputStream(source)
     else:
         # Get input from cli
-        input_stream = FileStream( bgc_server.input_path )
+        input_stream = FileStream(bgc_server.input_path)
 
     # Reset the lexer/parser
     bgc_server.error_listener.reset()
     bgc_server.lexer.inputStream = input_stream
-    bgc_server.tokenStream = CommonTokenStream( bgc_server.lexer )
-    bgc_server.parser.setInputStream( bgc_server.tokenStream )
+    bgc_server.tokenStream = CommonTokenStream(bgc_server.lexer)
+    bgc_server.parser.setInputStream(bgc_server.tokenStream)
 
     Top_levelContext = BgcDslParser.BgcModelContext
     parse_tree: Top_levelContext = bgc_server.parser.bgcModel()
 
     # TODO Generator
 
-    server.show_message( 'Text Document Did Save' )
+    server.show_message('Text Document Did Save')
 
 
-@bgc_server.feature( TEXT_DOCUMENT_DID_OPEN )
+@bgc_server.feature(TEXT_DOCUMENT_DID_OPEN)
 async def did_open(ls, params: DidOpenTextDocumentParams):
     """Text document did open notification."""
-    ls.show_message( 'Text Document Did Open' )
-    _validate( ls, params )
+    ls.show_message('Text Document Did Open')
+    _validate(ls, params)
 
 
-@bgc_server.feature( TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL,
-                     SemanticTokensLegend( token_types=["operator"], token_modifiers=[] ) )
+@bgc_server.feature(
+    TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL,
+    SemanticTokensLegend(token_types=["operator"], token_modifiers=[])
+)
 def semantic_tokens(ls: bgcLSPServer, params: SemanticTokensParams):
     """See https://microsoft.github.io/language-server-protocol/specification#textDocument_semanticTokens
     for details on how semantic tokens are encoded."""
 
-    TOKENS = re.compile( '".*"(?=:)' )
+    TOKENS = re.compile('".*"(?=:)')
 
     uri = params.text_document.uri
-    doc = ls.workspace.get_document( uri )
+    doc = ls.workspace.get_document(uri)
 
     last_line = 0
     last_start = 0
 
     data = []
 
-    for lineno, line in enumerate( doc.lines ):
+    for lineno, line in enumerate(doc.lines):
         last_start = 0
 
-        for match in TOKENS.finditer( line ):
+        for match in TOKENS.finditer(line):
             start, end = match.span()
             data += [(lineno - last_line), (start - last_start), (end - start), 0, 0]
 
             last_line = lineno
             last_start = start
 
-    return SemanticTokens( data=data )
+    return SemanticTokens(data=data)
 
-@bgc_server.command( bgcLSPServer.CMD_REGISTER_COMPLETIONS )
+
+@bgc_server.command(bgcLSPServer.CMD_REGISTER_COMPLETIONS)
 async def register_completions(ls: bgcLSPServer, *args):
     """Register completions method on the client."""
-    params = RegistrationParams( registrations=[Registration( id=str( uuid.uuid4() ), method=TEXT_DOCUMENT_COMPLETION,
-                                                              register_options={"triggerCharacters": "[':']"} )] )
-    response = await ls.register_capability_async( params )
+    params = RegistrationParams(
+        registrations=[Registration(
+            id=str(uuid.uuid4()), method=TEXT_DOCUMENT_COMPLETION,
+            register_options={"triggerCharacters": "[':']"}
+        )]
+    )
+    response = await ls.register_capability_async(params)
     if response is None:
-        ls.show_message( 'Successfully registered completions method' )
+        ls.show_message('Successfully registered completions method')
     else:
-        ls.show_message( 'Error happened during completions registration.', MessageType.Error )
+        ls.show_message('Error happened during completions registration.', MessageType.Error)
 
 
-@bgc_server.command( bgcLSPServer.CMD_UNREGISTER_COMPLETIONS )
+@bgc_server.command(bgcLSPServer.CMD_UNREGISTER_COMPLETIONS)
 async def unregister_completions(ls: bgcLSPServer, *args):
     """Unregister completions method on the client."""
     params = UnregistrationParams(
-        unregisterations=[Unregistration( id=str( uuid.uuid4() ), method=TEXT_DOCUMENT_COMPLETION )] )
-    response = await ls.unregister_capability_async( params )
+        unregisterations=[Unregistration(id=str(uuid.uuid4()), method=TEXT_DOCUMENT_COMPLETION)]
+    )
+    response = await ls.unregister_capability_async(params)
     if response is None:
-        ls.show_message( 'Successfully unregistered completions method' )
+        ls.show_message('Successfully unregistered completions method')
     else:
-        ls.show_message( 'Error happened during completions unregistration.', MessageType.Error )
+        ls.show_message('Error happened during completions unregistration.', MessageType.Error)

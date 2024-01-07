@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "odsllib"
 version = "0.38"
 authors = [
-    { name="sgu", email="sgu@informatik.uni-kiel.de" },
+    { name = "sgu", email = "sgu@informatik.uni-kiel.de" },
 ]
 description = "A port of antlr4-c3 (https://github.com/mike-lischke/antlr4-c3) for the OceanDSL project."
 readme = "README.md"
@@ -20,7 +20,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries",
 ]
 
-license = {text = "Apache License (2.0)"}
+license = { text = "Apache License (2.0)" }
 
 [project.urls]
 "oceandsl · GitLab" = "https://git.se.informatik.uni-kiel.de/oceandsl"

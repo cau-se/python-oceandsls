@@ -1,4 +1,3 @@
-
 from .interim import getEClassifier, eClassifiers
 from .interim import name, nsURI, nsPrefix, eClass
 from .interim import InterimModel, ParameterGroup, Parameter, ParameterEntry, ValueContainer, ArrayValue, IndexToValueContainerMap, ScalarValue, Feature
@@ -10,10 +9,10 @@ from expression import Expression
 
 from . import interim
 
-__all__ = ['InterimModel', 'ParameterGroup', 'Parameter', 'ParameterEntry',
-           'ValueContainer', 'ArrayValue', 'IndexToValueContainerMap', 'ScalarValue', 'Feature']
+__all__ = [ 'InterimModel', 'ParameterGroup', 'Parameter', 'ParameterEntry',
+            'ValueContainer', 'ArrayValue', 'IndexToValueContainerMap', 'ScalarValue', 'Feature' ]
 
-eSubpackages = []
+eSubpackages = [ ]
 eSuperPackage = None
 interim.eSubpackages = eSubpackages
 interim.eSuperPackage = eSuperPackage
@@ -36,14 +35,14 @@ Feature.parameterGroups.eType = ParameterGroup
 Feature.features.eType = Feature
 Feature.declaration.eType = FeatureDeclaration
 
-otherClassifiers = []
+otherClassifiers = [ ]
 
 for classif in otherClassifiers:
-    eClassifiers[classif.name] = classif
+    eClassifiers[ classif.name ] = classif
     classif.ePackage = eClass
 
-for classif in eClassifiers.values():
-    eClass.eClassifiers.append(classif.eClass)
+for classif in eClassifiers.values( ):
+    eClass.eClassifiers.append( classif.eClass )
 
 for subpack in eSubpackages:
-    eClass.eSubpackages.append(subpack.eClass)
+    eClass.eSubpackages.append( subpack.eClass )

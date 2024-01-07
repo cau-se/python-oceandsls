@@ -3,30 +3,31 @@ from functools import partial
 import pyecore.ecore as Ecore
 from pyecore.ecore import *
 
-
 name = 'interim'
 nsURI = 'https://oceandsl.org/interim'
 nsPrefix = 'interim'
 
-eClass = EPackage(name=name, nsURI=nsURI, nsPrefix=nsPrefix)
+eClass = EPackage( name = name, nsURI = nsURI, nsPrefix = nsPrefix )
 
 eClassifiers = {}
-getEClassifier = partial(Ecore.getEClassifier, searchspace=eClassifiers)
+getEClassifier = partial( Ecore.getEClassifier, searchspace = eClassifiers )
 
 
-class InterimModel(EObject, metaclass=MetaEClass):
+class InterimModel( EObject, metaclass = MetaEClass ):
 
-    name = EAttribute(eType=EString, unique=True, derived=False, changeable=True)
-    declaration = EReference(ordered=True, unique=True, containment=False, derived=False)
-    parameterGroups = EReference(ordered=True, unique=True,
-                                 containment=True, derived=False, upper=-1)
-    features = EReference(ordered=True, unique=True, containment=True, derived=False, upper=-1)
+    name = EAttribute( eType = EString, unique = True, derived = False, changeable = True )
+    declaration = EReference( ordered = True, unique = True, containment = False, derived = False )
+    parameterGroups = EReference(
+        ordered = True, unique = True,
+        containment = True, derived = False, upper = -1
+        )
+    features = EReference( ordered = True, unique = True, containment = True, derived = False, upper = -1 )
 
-    def __init__(self, *, declaration=None, name=None, parameterGroups=None, features=None):
+    def __init__( self, *, declaration = None, name = None, parameterGroups = None, features = None ):
         # if kwargs:
         #    raise AttributeError('unexpected arguments: {}'.format(kwargs))
 
-        super().__init__()
+        super( ).__init__( )
 
         if name is not None:
             self.name = name
@@ -35,23 +36,23 @@ class InterimModel(EObject, metaclass=MetaEClass):
             self.declaration = declaration
 
         if parameterGroups:
-            self.parameterGroups.extend(parameterGroups)
+            self.parameterGroups.extend( parameterGroups )
 
         if features:
-            self.features.extend(features)
+            self.features.extend( features )
 
 
-class ParameterGroup(EObject, metaclass=MetaEClass):
+class ParameterGroup( EObject, metaclass = MetaEClass ):
 
-    name = EAttribute(eType=EString, unique=True, derived=False, changeable=True)
-    declaration = EReference(ordered=True, unique=True, containment=False, derived=False)
-    parameters = EReference(ordered=True, unique=True, containment=True, derived=False, upper=-1)
+    name = EAttribute( eType = EString, unique = True, derived = False, changeable = True )
+    declaration = EReference( ordered = True, unique = True, containment = False, derived = False )
+    parameters = EReference( ordered = True, unique = True, containment = True, derived = False, upper = -1 )
 
-    def __init__(self, *, name=None, declaration=None, parameters=None):
+    def __init__( self, *, name = None, declaration = None, parameters = None ):
         # if kwargs:
         #    raise AttributeError('unexpected arguments: {}'.format(kwargs))
 
-        super().__init__()
+        super( ).__init__( )
 
         if name is not None:
             self.name = name
@@ -60,22 +61,22 @@ class ParameterGroup(EObject, metaclass=MetaEClass):
             self.declaration = declaration
 
         if parameters:
-            self.parameters.extend(parameters)
+            self.parameters.extend( parameters )
 
 
-class Parameter(EObject, metaclass=MetaEClass):
+class Parameter( EObject, metaclass = MetaEClass ):
 
-    name = EAttribute(eType=EString, unique=True, derived=False, changeable=True)
-    declaration = EReference(ordered=True, unique=True, containment=False, derived=False)
-    specifiedType = EReference(ordered=True, unique=True, containment=True, derived=False)
-    computedValue = EReference(ordered=True, unique=True, containment=True, derived=False)
-    dataEntries = EReference(ordered=True, unique=True, containment=True, derived=False, upper=-1)
+    name = EAttribute( eType = EString, unique = True, derived = False, changeable = True )
+    declaration = EReference( ordered = True, unique = True, containment = False, derived = False )
+    specifiedType = EReference( ordered = True, unique = True, containment = True, derived = False )
+    computedValue = EReference( ordered = True, unique = True, containment = True, derived = False )
+    dataEntries = EReference( ordered = True, unique = True, containment = True, derived = False, upper = -1 )
 
-    def __init__(self, *, name=None, declaration=None, specifiedType=None, computedValue=None, dataEntries=None):
+    def __init__( self, *, name = None, declaration = None, specifiedType = None, computedValue = None, dataEntries = None ):
         # if kwargs:
         #    raise AttributeError('unexpected arguments: {}'.format(kwargs))
 
-        super().__init__()
+        super( ).__init__( )
 
         if name is not None:
             self.name = name
@@ -90,46 +91,46 @@ class Parameter(EObject, metaclass=MetaEClass):
             self.computedValue = computedValue
 
         if dataEntries:
-            self.dataEntries.extend(dataEntries)
+            self.dataEntries.extend( dataEntries )
 
 
-class ParameterEntry(EObject, metaclass=MetaEClass):
+class ParameterEntry( EObject, metaclass = MetaEClass ):
 
-    expression = EReference(ordered=True, unique=True, containment=False, derived=False)
-    selectors = EReference(ordered=True, unique=True, containment=False, derived=False, upper=-1)
+    expression = EReference( ordered = True, unique = True, containment = False, derived = False )
+    selectors = EReference( ordered = True, unique = True, containment = False, derived = False, upper = -1 )
 
-    def __init__(self, *, expression=None, selectors=None):
+    def __init__( self, *, expression = None, selectors = None ):
         # if kwargs:
         #    raise AttributeError('unexpected arguments: {}'.format(kwargs))
 
-        super().__init__()
+        super( ).__init__( )
 
         if expression is not None:
             self.expression = expression
 
         if selectors:
-            self.selectors.extend(selectors)
+            self.selectors.extend( selectors )
 
 
-class ValueContainer(EObject, metaclass=MetaEClass):
+class ValueContainer( EObject, metaclass = MetaEClass ):
 
-    def __init__(self):
+    def __init__( self ):
         # if kwargs:
         #    raise AttributeError('unexpected arguments: {}'.format(kwargs))
 
-        super().__init__()
+        super( ).__init__( )
 
 
-class IndexToValueContainerMap(EObject, metaclass=MetaEClass):
+class IndexToValueContainerMap( EObject, metaclass = MetaEClass ):
 
-    key = EAttribute(eType=ELongObject, unique=True, derived=False, changeable=True)
-    value = EReference(ordered=True, unique=True, containment=True, derived=False)
+    key = EAttribute( eType = ELongObject, unique = True, derived = False, changeable = True )
+    value = EReference( ordered = True, unique = True, containment = True, derived = False )
 
-    def __init__(self, *, value=None, key=None):
+    def __init__( self, *, value = None, key = None ):
         # if kwargs:
         #    raise AttributeError('unexpected arguments: {}'.format(kwargs))
 
-        super().__init__()
+        super( ).__init__( )
 
         if key is not None:
             self.key = key
@@ -138,20 +139,22 @@ class IndexToValueContainerMap(EObject, metaclass=MetaEClass):
             self.value = value
 
 
-class Feature(EObject, metaclass=MetaEClass):
+class Feature( EObject, metaclass = MetaEClass ):
 
-    name = EAttribute(eType=EString, unique=True, derived=False, changeable=True)
-    active = EAttribute(eType=EBoolean, unique=True, derived=False, changeable=True)
-    parameterGroups = EReference(ordered=True, unique=True,
-                                 containment=True, derived=False, upper=-1)
-    features = EReference(ordered=True, unique=True, containment=True, derived=False, upper=-1)
-    declaration = EReference(ordered=True, unique=True, containment=False, derived=False)
+    name = EAttribute( eType = EString, unique = True, derived = False, changeable = True )
+    active = EAttribute( eType = EBoolean, unique = True, derived = False, changeable = True )
+    parameterGroups = EReference(
+        ordered = True, unique = True,
+        containment = True, derived = False, upper = -1
+        )
+    features = EReference( ordered = True, unique = True, containment = True, derived = False, upper = -1 )
+    declaration = EReference( ordered = True, unique = True, containment = False, derived = False )
 
-    def __init__(self, *, name=None, parameterGroups=None, features=None, declaration=None, active=None):
+    def __init__( self, *, name = None, parameterGroups = None, features = None, declaration = None, active = None ):
         # if kwargs:
         #    raise AttributeError('unexpected arguments: {}'.format(kwargs))
 
-        super().__init__()
+        super( ).__init__( )
 
         if name is not None:
             self.name = name
@@ -160,24 +163,24 @@ class Feature(EObject, metaclass=MetaEClass):
             self.active = active
 
         if parameterGroups:
-            self.parameterGroups.extend(parameterGroups)
+            self.parameterGroups.extend( parameterGroups )
 
         if features:
-            self.features.extend(features)
+            self.features.extend( features )
 
         if declaration is not None:
             self.declaration = declaration
 
 
-class ArrayValue(ValueContainer):
+class ArrayValue( ValueContainer ):
 
-    upperBound = EAttribute(eType=ELong, unique=True, derived=False, changeable=True)
-    lowerBound = EAttribute(eType=ELong, unique=True, derived=False, changeable=True)
-    values = EReference(ordered=True, unique=True, containment=True, derived=False, upper=-1)
+    upperBound = EAttribute( eType = ELong, unique = True, derived = False, changeable = True )
+    lowerBound = EAttribute( eType = ELong, unique = True, derived = False, changeable = True )
+    values = EReference( ordered = True, unique = True, containment = True, derived = False, upper = -1 )
 
-    def __init__(self, *, values=None, upperBound=None, lowerBound=None, **kwargs):
+    def __init__( self, *, values = None, upperBound = None, lowerBound = None, **kwargs ):
 
-        super().__init__(**kwargs)
+        super( ).__init__( **kwargs )
 
         if upperBound is not None:
             self.upperBound = upperBound
@@ -186,16 +189,16 @@ class ArrayValue(ValueContainer):
             self.lowerBound = lowerBound
 
         if values:
-            self.values.extend(values)
+            self.values.extend( values )
 
 
-class ScalarValue(ValueContainer):
+class ScalarValue( ValueContainer ):
 
-    value = EReference(ordered=True, unique=True, containment=True, derived=False)
+    value = EReference( ordered = True, unique = True, containment = True, derived = False )
 
-    def __init__(self, *, value=None, **kwargs):
+    def __init__( self, *, value = None, **kwargs ):
 
-        super().__init__(**kwargs)
+        super( ).__init__( **kwargs )
 
         if value is not None:
             self.value = value

@@ -1,4 +1,3 @@
-
 from .declaration import getEClassifier, eClassifiers
 from .declaration import name, nsURI, nsPrefix, eClass
 from .declaration import DeclarationModel, ParameterGroupDeclaration, FeatureDeclaration, FeatureGroupDeclaration, EKind, ParameterDeclaration
@@ -9,10 +8,10 @@ from units import Unit
 
 from . import declaration
 
-__all__ = ['DeclarationModel', 'ParameterGroupDeclaration', 'FeatureDeclaration',
-           'FeatureGroupDeclaration', 'EKind', 'ParameterDeclaration']
+__all__ = [ 'DeclarationModel', 'ParameterGroupDeclaration', 'FeatureDeclaration',
+            'FeatureGroupDeclaration', 'EKind', 'ParameterDeclaration' ]
 
-eSubpackages = []
+eSubpackages = [ ]
 eSuperPackage = None
 declaration.eSubpackages = eSubpackages
 declaration.eSuperPackage = eSuperPackage
@@ -30,14 +29,14 @@ ParameterDeclaration.type.eType = TypeAssignment
 ParameterDeclaration.unit.eType = Unit
 ParameterDeclaration.defaultValue.eType = Expression
 
-otherClassifiers = [EKind]
+otherClassifiers = [ EKind ]
 
 for classif in otherClassifiers:
-    eClassifiers[classif.name] = classif
+    eClassifiers[ classif.name ] = classif
     classif.ePackage = eClass
 
-for classif in eClassifiers.values():
-    eClass.eClassifiers.append(classif.eClass)
+for classif in eClassifiers.values( ):
+    eClass.eClassifiers.append( classif.eClass )
 
 for subpack in eSubpackages:
-    eClass.eSubpackages.append(subpack.eClass)
+    eClass.eSubpackages.append( subpack.eClass )

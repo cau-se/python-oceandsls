@@ -1,12 +1,18 @@
 {
-    "compilerOptions": {
-        "module": "commonjs",
-        "target": "es2019",
-        "lib": ["ES2019"],
-        "rootDir": "client/src",
-        "outDir": "typescript-build/client/out",
-        "sourceMap": true
-    },
-    "include": ["client/src"],
-    "exclude": ["node_modules"]
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es2019",
+    "lib": [
+      "ES2019"
+    ],
+    "rootDir": "client/src",
+    "outDir": "typescript-build/client/out",
+    "sourceMap": true
+  },
+  "include": [
+    "client/src"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

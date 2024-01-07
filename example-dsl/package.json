@@ -13,27 +13,36 @@
     "Other"
   ],
   "activationEvents": [
-    "onLanguage:oceandsl", "onLanguage:oceandsl_tdd", "onLanguage:oceandsl_bgc"
+    "onLanguage:oceandsl",
+    "onLanguage:oceandsl_tdd",
+    "onLanguage:oceandsl_bgc"
   ],
-
   "contributes": {
     "languages": [
       {
-         "id": "oceandsl",
-         "extensions": [ ".odsl" ]
+        "id": "oceandsl",
+        "extensions": [
+          ".odsl"
+        ]
       },
       {
         "id": "oceandsl_cp",
-        "extensions": [ ".odsl" ]
+        "extensions": [
+          ".odsl"
+        ]
       },
       {
         "id": "oceandsl_tdd",
-        "extensions": [ ".tdd" ]
-     },
-     {
-       "id": "oceandsl_bgc",
-       "extensions": [ ".bgc" ]
-    }
+        "extensions": [
+          ".tdd"
+        ]
+      },
+      {
+        "id": "oceandsl_bgc",
+        "extensions": [
+          ".bgc"
+        ]
+      }
     ],
     "commands": [
       {
@@ -58,7 +67,9 @@
       },
       {
         "activationEvents": [
-          "onLanguage:oceandsl", "onLanguage:oceandsl_tdd", "onLanguage:oceandsl_bgc"
+          "onLanguage:oceandsl",
+          "onLanguage:oceandsl_tdd",
+          "onLanguage:oceandsl_bgc"
         ],
         "command": "showConfigurationCallback",
         "title": "Show Example Configuration [Callback]"

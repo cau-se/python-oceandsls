@@ -1,4 +1,3 @@
-
 from .configuration import getEClassifier, eClassifiers
 from .configuration import name, nsURI, nsPrefix, eClass
 from .configuration import ConfigurationModel, Include, FeatureActivation, FeatureConfiguration, Selector, ElementSelector, RangeSelector, ParameterGroup, ParameterAssignment, Unit
@@ -8,10 +7,10 @@ from expression import Expression
 
 from . import configuration
 
-__all__ = ['ConfigurationModel', 'Include', 'FeatureActivation', 'FeatureConfiguration',
-           'Selector', 'ElementSelector', 'RangeSelector', 'ParameterGroup', 'ParameterAssignment', 'Unit']
+__all__ = [ 'ConfigurationModel', 'Include', 'FeatureActivation', 'FeatureConfiguration',
+            'Selector', 'ElementSelector', 'RangeSelector', 'ParameterGroup', 'ParameterAssignment', 'Unit' ]
 
-eSubpackages = []
+eSubpackages = [ ]
 eSuperPackage = None
 configuration.eSubpackages = eSubpackages
 configuration.eSuperPackage = eSuperPackage
@@ -33,14 +32,14 @@ ParameterAssignment.selectors.eType = Selector
 ParameterAssignment.value.eType = Expression
 ParameterAssignment.unit.eType = Unit
 
-otherClassifiers = []
+otherClassifiers = [ ]
 
 for classif in otherClassifiers:
-    eClassifiers[classif.name] = classif
+    eClassifiers[ classif.name ] = classif
     classif.ePackage = eClass
 
-for classif in eClassifiers.values():
-    eClass.eClassifiers.append(classif.eClass)
+for classif in eClassifiers.values( ):
+    eClass.eClassifiers.append( classif.eClass )
 
 for subpack in eSubpackages:
-    eClass.eSubpackages.append(subpack.eClass)
+    eClass.eSubpackages.append( subpack.eClass )

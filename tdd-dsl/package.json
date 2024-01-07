@@ -15,13 +15,14 @@
   "activationEvents": [
     "onLanguage:oceandsl_tdd"
   ],
-
   "contributes": {
     "languages": [
       {
         "id": "oceandsl_tdd",
-        "extensions": [ ".tdd" ]
-     }
+        "extensions": [
+          ".tdd"
+        ]
+      }
     ],
     "commands": [
       {

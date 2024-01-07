@@ -45,35 +45,35 @@ from gen.python.exampleDsl.exampleDslParser import exampleDslParser
 
 class TestVerboseListener:
     # parser/listener set up
-    @pytest.fixture(scope="function")
-    def setup(self, request) -> None:
+    @pytest.fixture( scope = "function" )
+    def setup( self, request ) -> None:
         # set listener
-        self.errorListener = VerboseListener()
+        self.errorListener = VerboseListener( )
         # create input stream of characters for lexer
-        inputStream = InputStream(request.param)
+        inputStream = InputStream( request.param )
 
         # create lexer and parser objects and token stream pipe between them
-        self.lexer = exampleDslLexer(inputStream)
-        self.lexer.removeErrorListeners()
-        self.lexer.addErrorListener(self.errorListener)
+        self.lexer = exampleDslLexer( inputStream )
+        self.lexer.removeErrorListeners( )
+        self.lexer.addErrorListener( self.errorListener )
 
-        tokenStream = CommonTokenStream(self.lexer)
+        tokenStream = CommonTokenStream( self.lexer )
 
-        self.parser = exampleDslParser(tokenStream)
-        self.parser.removeErrorListeners()
-        self.parser.addErrorListener(self.errorListener)
+        self.parser = exampleDslParser( tokenStream )
+        self.parser.removeErrorListeners( )
+        self.parser.addErrorListener( self.errorListener )
 
-    @pytest.mark.parametrize("setup", ["c = a + b()\n"], indirect=["setup"])
-    def test_valid_input(self, setup):
+    @pytest.mark.parametrize( "setup", [ "c = a + b()\n" ], indirect = [ "setup" ] )
+    def test_valid_input( self, setup ):
         # launch parser by invoking rule 'prog'
-        ast = self.parser.prog()
+        ast = self.parser.prog( )
 
         # check for no symbols in errorListener
-        assert len(self.errorListener.symbol) == 0
+        assert len( self.errorListener.symbol ) == 0
 
-    @pytest.mark.parametrize("setup", ["c = + b()\n"], indirect=["setup"])
-    def test_invalid_input(self, setup):
-        ast = self.parser.prog()
+    @pytest.mark.parametrize( "setup", [ "c = + b()\n" ], indirect = [ "setup" ] )
+    def test_invalid_input( self, setup ):
+        ast = self.parser.prog( )
 
         # check for '+' symbol in errorListener
         assert self.errorListener.symbol == '+'

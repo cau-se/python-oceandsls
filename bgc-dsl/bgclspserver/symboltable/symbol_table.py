@@ -152,6 +152,7 @@ class UnitPrefix:
     Ronto = 23
     Quecto = 24
 
+
 @dataclass
 class Unit:
     """
@@ -292,9 +293,8 @@ def get_fundamental_type(type: str = "") -> Type | FundamentalType:
                 return getattr(FundamentalType, key)
 
             return Type(name=type.lower(), base_types=None, kind=None)
-        else :
+        else:
             return None
-
 
 
 class Symbol:
@@ -720,7 +720,7 @@ class ScopedSymbol(Symbol):
 
         return result
 
-    def get_symbols_of_type_and_name_sync( self, t: type, name: str = None, local_only=True, callers: List[T] = [] ) -> List[T ]:
+    def get_symbols_of_type_and_name_sync(self, t: type, name: str = None, local_only=True, callers: List[T] = []) -> List[T]:
         """
         Synchronously returns symbols of the type and optionally the name, if given.
 
@@ -742,7 +742,7 @@ class ScopedSymbol(Symbol):
 
         return result
 
-    async def get_symbols_of_type_and_name(self, t: type, name: str = None, local_only: bool = True, callers: List[T] = [] ) -> List[T]:
+    async def get_symbols_of_type_and_name(self, t: type, name: str = None, local_only: bool = True, callers: List[T] = []) -> List[T]:
         """
         Asynchronously returns symbols of the type and optionally the name, if given.
 
@@ -765,7 +765,7 @@ class ScopedSymbol(Symbol):
 
         return result
 
-    def get_symbols_of_type_sync(self, t: type, local_only: bool = True, callers: List[T] = [] ) -> List[T]:
+    def get_symbols_of_type_sync(self, t: type, local_only: bool = True, callers: List[T] = []) -> List[T]:
         """
         :param callers: List of visited scopes, that should not be visited again
         :param local_only: If true only child symbols are returned, otherwise also symbols from the parent of this symbol
@@ -786,7 +786,7 @@ class ScopedSymbol(Symbol):
 
         return result
 
-    async def get_symbols_of_type(self, t: type, local_only: bool = True, callers: List[T] = [] ) -> List[T]:
+    async def get_symbols_of_type(self, t: type, local_only: bool = True, callers: List[T] = []) -> List[T]:
         """
         :param callers: List of visited scopes, that should not be visited again
         :param local_only: If true only child symbols are returned, otherwise also symbols from the parent of this symbol
@@ -881,7 +881,7 @@ class ScopedSymbol(Symbol):
 
         return result
 
-    async def resolve(self, name: str, local_only: bool = False, callers: List[T] = [] ) -> Optional[Symbol]:
+    async def resolve(self, name: str, local_only: bool = False, callers: List[T] = []) -> Optional[Symbol]:
         """
         :param callers: List of visited scopes, that should not be visited again
         :param name: The name of the symbol to resolve.
@@ -923,7 +923,7 @@ class ScopedSymbol(Symbol):
 
         return None
 
-    def get_typed_symbols(self, local_only: bool = True, callers: List[T] = [] ) -> List[TypedSymbol]:
+    def get_typed_symbols(self, local_only: bool = True, callers: List[T] = []) -> List[TypedSymbol]:
         """
         :param local_only: If true only child symbols are returned, otherwise also symbols from the parent of this symbol
         (recursively).
@@ -944,7 +944,7 @@ class ScopedSymbol(Symbol):
 
         return result
 
-    def get_typed_symbol_names(self, local_only: bool = True, callers: List[T] = [] ) -> List[str]:
+    def get_typed_symbol_names(self, local_only: bool = True, callers: List[T] = []) -> List[str]:
         """
         The names of all accessible symbols with a type.
 
@@ -985,7 +985,7 @@ class ScopedSymbol(Symbol):
                 return None
 
             child: Optional[Symbol] = next(
-                    filter(lambda candidate: candidate.name == elements[index], result.children()), None
+                filter(lambda candidate: candidate.name == elements[index], result.children()), None
             )
             if child is None:
                 return None
@@ -1048,6 +1048,7 @@ class ScopedSymbol(Symbol):
             return sibling
 
         return self.parent().next_of(self)
+
 
 class VariableSymbol(UnitSymbol):
 
@@ -1166,7 +1167,7 @@ class SymbolTable(ScopedSymbol):
             # TODO alternative
             # dependencyResults = await asyncio.gather(*[x.get_all_symbols(t, local_only) for x in self.dependencies])
             dependencyResults = await asyncio.gather(
-                    *(map((lambda x: x.get_all_symbols(t, local_only, callers + [self])), self.dependencies))
+                *(map((lambda x: x.get_all_symbols(t, local_only, callers + [self])), self.dependencies))
             )
 
             for value in dependencyResults:

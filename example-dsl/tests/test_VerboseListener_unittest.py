@@ -28,6 +28,7 @@ from cst.verbose_listener import VerboseListener
 from gen.python.exampleDsl.exampleDslLexer import exampleDslLexer
 from gen.python.exampleDsl.exampleDslParser import exampleDslParser
 
+
 # fail relative import beyond top-level package
 # try:
 #     from ..exampleLSPServer.cst.VerboseListener import VerboseListener
@@ -42,38 +43,38 @@ from gen.python.exampleDsl.exampleDslParser import exampleDslParser
 #     raise SkipTest( "Skipping all tests in test_feature.py" )
 
 
-class TestVerboseListener(TestCase):
+class TestVerboseListener( TestCase ):
 
-    def setup(self, msg: str = "") -> exampleDslParser:
+    def setup( self, msg: str = "" ) -> exampleDslParser:
         # set listener
-        self.errorListener = VerboseListener()
+        self.errorListener = VerboseListener( )
         # create input stream of characters for lexer
-        inputStream = InputStream(msg)
+        inputStream = InputStream( msg )
 
         # create lexer and parser objects and token stream pipe between them
-        lexer = exampleDslLexer(inputStream)
-        lexer.removeErrorListeners()
-        lexer.addErrorListener(self.errorListener)
+        lexer = exampleDslLexer( inputStream )
+        lexer.removeErrorListeners( )
+        lexer.addErrorListener( self.errorListener )
 
-        tokenStream = CommonTokenStream(lexer)
+        tokenStream = CommonTokenStream( lexer )
 
-        parser = exampleDslParser(tokenStream)
-        parser.removeErrorListeners()
-        parser.addErrorListener(self.errorListener)
+        parser = exampleDslParser( tokenStream )
+        parser.removeErrorListeners( )
+        parser.addErrorListener( self.errorListener )
 
         return parser
 
-    def test_valid_input(self):
+    def test_valid_input( self ):
         # launch parser by invoking rule 'prog'
-        parser = self.setup("c = a + b()\n")
-        ast = parser.prog()
+        parser = self.setup( "c = a + b()\n" )
+        ast = parser.prog( )
 
         # check for no symbols in errorListener
-        self.assertEqual(len(self.errorListener.symbol), 0)
+        self.assertEqual( len( self.errorListener.symbol ), 0 )
 
-    def test_invalid_input(self):
-        parser = self.setup("c = + b()\n")
-        ast = parser.prog()
+    def test_invalid_input( self ):
+        parser = self.setup( "c = + b()\n" )
+        ast = parser.prog( )
 
         # check for '+' symbol in errorListener
-        self.assertEqual(self.errorListener.symbol, '+')
+        self.assertEqual( self.errorListener.symbol, '+' )

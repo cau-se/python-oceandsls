@@ -24,7 +24,6 @@ from typing import List, Optional, Union
 from antlr4 import CommonTokenStream, FileStream, InputStream, Token
 from antlr4.IntervalSet import IntervalSet
 
-
 # antlr4-c3
 from .cst.code_completion_core import CodeCompletionCore, CandidatesCollection
 
@@ -53,42 +52,44 @@ COUNT_DOWN_START_IN_SECONDS = 10
 COUNT_DOWN_SLEEP_IN_SECONDS = 1
 
 
-class confLSPServer( LanguageServer ):
+class confLSPServer(LanguageServer):
     CMD_REGISTER_COMPLETIONS = 'registerCompletions'
     CMD_UNREGISTER_COMPLETIONS = 'unregisterCompletions'
 
     CONFIGURATION_SECTION = 'ODslCONFServer'
 
     # Input file path
-    input_path : str
+    input_path: str
 
     def __init__(self, *args):
-        super().__init__( *args )
+        super().__init__(*args)
         # set ErrorListener
         self.error_listener: DiagnosticListener = DiagnosticListener()
         # set empty input stream
-        input_stream: InputStream = InputStream( str() )
+        input_stream: InputStream = InputStream(str())
 
         # set lexer
-        self.lexer: ConfigurationLexer = ConfigurationLexer( input_stream )
+        self.lexer: ConfigurationLexer = ConfigurationLexer(input_stream)
         # set ErrorListener for diagnostics
         self.lexer.removeErrorListeners()
-        self.lexer.addErrorListener( self.error_listener )
+        self.lexer.addErrorListener(self.error_listener)
 
         # set token stream pipe between lexer and parser
-        self.tokenStream: CommonTokenStream = CommonTokenStream( self.lexer )
+        self.tokenStream: CommonTokenStream = CommonTokenStream(self.lexer)
 
         # set parser
-        self.parser: ConfigurationParser = ConfigurationParser( self.tokenStream )
+        self.parser: ConfigurationParser = ConfigurationParser(self.tokenStream)
         # set ErrorListener for diagnostics
         self.parser.removeErrorListeners()
-        self.parser.addErrorListener( self.error_listener )
+        self.parser.addErrorListener(self.error_listener)
 
-        self.parser._errHandler=CONFErrorStrategy()
+        self.parser._errHandler = CONFErrorStrategy()
 
-conf_server = confLSPServer( 'pygls-odsl-conf-prototype', 'v0.4' )
 
-logger = logging.getLogger( __name__ )
+conf_server = confLSPServer('pygls-odsl-conf-prototype', 'v0.4')
+
+logger = logging.getLogger(__name__)
+
 
 def _validate(params):
 
@@ -141,22 +142,20 @@ def lookup_symbol(uri, name):
     logger.info("uri: %s\n", uri, "name: %s\n", name)
 
 
-
-@conf_server.feature( TEXT_DOCUMENT_COMPLETION, CompletionOptions( trigger_characters=[','] ) )
+@conf_server.feature(TEXT_DOCUMENT_COMPLETION, CompletionOptions(trigger_characters=[',']))
 def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     """Returns completion items."""
 
     # set input stream of characters for lexer
-    text_doc: Document = conf_server.workspace.get_document( params.text_document.uri )
+    text_doc: Document = conf_server.workspace.get_document(params.text_document.uri)
     source: str = text_doc.source
-    input_stream: InputStream = InputStream( source )
+    input_stream: InputStream = InputStream(source)
 
     # reset the lexer/parser
     conf_server.error_listener.reset()
     conf_server.lexer.inputStream = input_stream
-    conf_server.tokenStream = CommonTokenStream( conf_server.lexer )
-    conf_server.parser.setInputStream( conf_server.tokenStream )
-
+    conf_server.tokenStream = CommonTokenStream(conf_server.lexer)
+    conf_server.parser.setInputStream(conf_server.tokenStream)
 
     # Launches parser by invoking top-level rule
     top_level_context = ConfigurationParser.ConfigurationModelContext
@@ -186,13 +185,13 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
         return completion_list
 
     # Launch c3 core with parser
-    core: CodeCompletionCore = CodeCompletionCore( conf_server.parser )
+    core: CodeCompletionCore = CodeCompletionCore(conf_server.parser)
 
     core.ignoredTokens = {Token.EPSILON}
     core.preferredRules = {ConfigurationParser, ConfigurationParser}
 
     # get completion candidates
-    candidates: CandidatesCollection = core.collectCandidates( token_index.index )
+    candidates: CandidatesCollection = core.collectCandidates(token_index.index)
 
     calcVariables = False
 
@@ -207,36 +206,41 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
         return (literalNames, symbolic_names)
 
     def addToCompletionList(literalNames):
-        #get labels of completion candidates to return
+        # get labels of completion candidates to return
         symbolic_names, literal_names = calcLitAndSymbNames(literalNames)
         for key, _ in candidates.tokens.items():
-            completion_list.items.append(CompletionItem(
-                label=IntervalSet.elementName(IntervalSet, literal_names,
-                                           symbolic_names, key)))
+            completion_list.items.append(
+                CompletionItem(
+                    label=IntervalSet.elementName(
+                        IntervalSet, literal_names,
+                        symbolic_names, key
+                    )
+                )
+            )
 
-    
-    #TODO: Add Rules
+    # TODO: Add Rules
     addToCompletionList(ConfigurationParser.literalNames)
     addToCompletionList(ConfigurationParser.symbolicNames)
-    
+
     # Variables finding
-    if any( rule in candidates.rules for rule in [ ConfigurationParser.configurationModel ] ):
+    if any(rule in candidates.rules for rule in [ConfigurationParser.configurationModel]):
 
-        symbolTableVisitor: SymbolTableVisitor = SymbolTableVisitor( 'completions' )
+        symbolTableVisitor: SymbolTableVisitor = SymbolTableVisitor('completions')
 
-        symbolTable = symbolTableVisitor.visit( parse_tree)
+        symbolTable = symbolTableVisitor.visit(parse_tree)
 
-        variables = suggest_symbols( symbolTable, token_index )
+        variables = suggest_symbols(symbolTable, token_index)
 
         for variable in variables:
-            completion_list.items.append( CompletionItem( label=variable, kind = CompletionItemKind.Variable ) )
+            completion_list.items.append(CompletionItem(label=variable, kind=CompletionItemKind.Variable))
 
     # return completion candidates labels
     return completion_list
 
-def get_lsp_symbol_type(nameOfType : str):
+
+def get_lsp_symbol_type(nameOfType: str):
     # predefine some module and function keywords
-    #TODO: Edit for ConfigurationDSL
+    # TODO: Edit for ConfigurationDSL
     module = ['include', 'configuration', 'group']
     function = ['feature', 'multiple', 'def', 'activate']
     # Define a regex pattern for literalNames of the parser
@@ -263,7 +267,8 @@ def get_lsp_symbol_type(nameOfType : str):
         return CompletionItemKind.Value
     return CompletionItemKind.Variable
 
-def get_position_and_item_val(inp : str):
+
+def get_position_and_item_val(inp: str):
     from itertools import groupby
 
     ret_val = []
@@ -278,58 +283,64 @@ def get_position_and_item_val(inp : str):
 
 @conf_server.feature(TEXT_DOCUMENT_DOCUMENT_SYMBOL)
 def document_symbol(
-    server: confLSPServer, params: DocumentSymbolParams
+        server: confLSPServer, params: DocumentSymbolParams
 ) -> Optional[Union[List[DocumentSymbol], List[SymbolInformation]]]:
     # get the document
     uri = params.text_document.uri
-    doc = server.workspace.get_document( uri )
+    doc = server.workspace.get_document(uri)
 
     data = []
 
-    #For capturing strings
+    # For capturing strings
     string_entity = False
     string_ident = ""
-    start_string = (0,0) # tuple for (lineno, linepos)
+    start_string = (0, 0)  # tuple for (lineno, linepos)
 
-    for lineno, line in enumerate( doc.lines ):
+    for lineno, line in enumerate(doc.lines):
         for start, end, word in get_position_and_item_val(line):
             if str(word).startswith(("'", '"')):
                 string_entity = True
                 string_ident = word[0]
                 if str(word).endswith(("'", '"')) and word[-1] == string_ident:
                     pos_range = Range(
-                    start = Position(line=lineno, character=start),
-                    end = Position(line=lineno, character=end) 
+                        start=Position(line=lineno, character=start),
+                        end=Position(line=lineno, character=end)
                     )
                     string_entity = False
-                    data.append(SymbolInformation(
-                        name = "STRING",
-                        kind = CompletionItemKind.Text,
-                        location = Location(uri=uri, range=pos_range)
-                    ))
+                    data.append(
+                        SymbolInformation(
+                            name="STRING",
+                            kind=CompletionItemKind.Text,
+                            location=Location(uri=uri, range=pos_range)
+                        )
+                    )
                 start_string = (lineno, start)
             elif string_entity and str(word).endswith(("'", '"')) and word[-1] == string_ident:
                 pos_range = Range(
-                start = Position(line=start_string[0], character=start_string[1]),
-                end = Position(line=lineno, character=end) 
+                    start=Position(line=start_string[0], character=start_string[1]),
+                    end=Position(line=lineno, character=end)
                 )
                 string_entity = False
-                data.append(SymbolInformation(
-                    name = "STRING",
-                    kind = CompletionItemKind.Text,
-                    location = Location(uri=uri, range=pos_range)
-                ))
+                data.append(
+                    SymbolInformation(
+                        name="STRING",
+                        kind=CompletionItemKind.Text,
+                        location=Location(uri=uri, range=pos_range)
+                    )
+                )
             elif not string_entity:
                 pos_range = Range(
-                    start = Position(line=lineno, character=start),
-                    end = Position(line=lineno, character=end) 
+                    start=Position(line=lineno, character=start),
+                    end=Position(line=lineno, character=end)
                 )
                 # for now its only covering keywords, no variables
-                data.append(SymbolInformation(
-                    name = word,
-                    kind = get_lsp_symbol_type(word),
-                    location = Location(uri=uri, range=pos_range)
-                ))
+                data.append(
+                    SymbolInformation(
+                        name=word,
+                        kind=get_lsp_symbol_type(word),
+                        location=Location(uri=uri, range=pos_range)
+                    )
+                )
                 print("added SymbolItem:")
                 print(str(word) + " " + str(get_lsp_symbol_type(word)))
             else:
@@ -337,20 +348,20 @@ def document_symbol(
     return data if data else None
 
 
-@conf_server.feature( TEXT_DOCUMENT_DID_CHANGE )
+@conf_server.feature(TEXT_DOCUMENT_DID_CHANGE)
 def did_change(ls, params: DidChangeTextDocumentParams):
     """Text document did change notification."""
-    _validate( ls, params )
+    _validate(ls, params)
 
 
-@conf_server.feature( TEXT_DOCUMENT_DID_CLOSE )
+@conf_server.feature(TEXT_DOCUMENT_DID_CLOSE)
 def did_close(server: confLSPServer, params: DidCloseTextDocumentParams):
     """Text document did close notification."""
-    server.show_message( 'Text Document Did Close' )
+    server.show_message('Text Document Did Close')
 
 
-@conf_server.feature( TEXT_DOCUMENT_DID_SAVE )
-def did_save( server: confLSPServer, params: DidSaveTextDocumentParams ):
+@conf_server.feature(TEXT_DOCUMENT_DID_SAVE)
+def did_save(server: confLSPServer, params: DidSaveTextDocumentParams):
     """Text document did save notification."""
 
     # Set input stream of characters for lexer
@@ -359,81 +370,89 @@ def did_save( server: confLSPServer, params: DidSaveTextDocumentParams ):
     # Client or cli call
     if params:
         # Get input from lsp client
-        text_doc: Document = conf_server.workspace.get_text_document( params.text_document.uri )
+        text_doc: Document = conf_server.workspace.get_text_document(params.text_document.uri)
         source: str = text_doc.source
-        input_stream = InputStream( source )
+        input_stream = InputStream(source)
     else:
         # Get input from cli
-        input_stream = FileStream( conf_server.input_path )
+        input_stream = FileStream(conf_server.input_path)
 
     # Reset the lexer/parser
-    conf_server.error_listener.reset( )
+    conf_server.error_listener.reset()
     conf_server.lexer.inputStream = input_stream
-    conf_server.tokenStream = CommonTokenStream( conf_server.lexer )
-    conf_server.parser.setInputStream( conf_server.tokenStream )
+    conf_server.tokenStream = CommonTokenStream(conf_server.lexer)
+    conf_server.parser.setInputStream(conf_server.tokenStream)
 
     Top_levelContext = ConfigurationParser.ConfigurationModelContext
-    parseTree: Top_levelContext = conf_server.parser.configurationModel( )
+    parseTree: Top_levelContext = conf_server.parser.configurationModel()
 
     # TODO Generator
 
-    server.show_message( 'Text Document Did Save' )
+    server.show_message('Text Document Did Save')
 
 
-@conf_server.feature( TEXT_DOCUMENT_DID_OPEN )
+@conf_server.feature(TEXT_DOCUMENT_DID_OPEN)
 async def did_open(ls, params: DidOpenTextDocumentParams):
     """Text document did open notification."""
-    ls.show_message( 'Text Document Did Open' )
-    _validate( ls, params )
+    ls.show_message('Text Document Did Open')
+    _validate(ls, params)
 
 
-@conf_server.feature( TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL,
-                     SemanticTokensLegend( token_types=["operator"], token_modifiers=[] ) )
+@conf_server.feature(
+    TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL,
+    SemanticTokensLegend(token_types=["operator"], token_modifiers=[])
+)
 def semantic_tokens(ls: confLSPServer, params: SemanticTokensParams):
     """See https://microsoft.github.io/language-server-protocol/specification#textDocument_semanticTokens
     for details on how semantic tokens are encoded."""
 
-    TOKENS = re.compile( '".*"(?=:)' )
+    TOKENS = re.compile('".*"(?=:)')
 
     uri = params.text_document.uri
-    doc = ls.workspace.get_document( uri )
+    doc = ls.workspace.get_document(uri)
 
     last_line = 0
     last_start = 0
 
     data = []
 
-    for lineno, line in enumerate( doc.lines ):
+    for lineno, line in enumerate(doc.lines):
         last_start = 0
 
-        for match in TOKENS.finditer( line ):
+        for match in TOKENS.finditer(line):
             start, end = match.span()
             data += [(lineno - last_line), (start - last_start), (end - start), 0, 0]
 
             last_line = lineno
             last_start = start
 
-    return SemanticTokens( data=data )
+    return SemanticTokens(data=data)
 
-@conf_server.command( confLSPServer.CMD_REGISTER_COMPLETIONS )
+
+@conf_server.command(confLSPServer.CMD_REGISTER_COMPLETIONS)
 async def register_completions(ls: confLSPServer, *args):
     """Register completions method on the client."""
-    params = RegistrationParams( registrations=[Registration( id=str( uuid.uuid4() ), method=TEXT_DOCUMENT_COMPLETION,
-                                                              register_options={"triggerCharacters": "[':']"} )] )
-    response = await ls.register_capability_async( params )
+    params = RegistrationParams(
+        registrations=[Registration(
+            id=str(uuid.uuid4()), method=TEXT_DOCUMENT_COMPLETION,
+            register_options={"triggerCharacters": "[':']"}
+        )]
+    )
+    response = await ls.register_capability_async(params)
     if response is None:
-        ls.show_message( 'Successfully registered completions method' )
+        ls.show_message('Successfully registered completions method')
     else:
-        ls.show_message( 'Error happened during completions registration.', MessageType.Error )
+        ls.show_message('Error happened during completions registration.', MessageType.Error)
 
 
-@conf_server.command( confLSPServer.CMD_UNREGISTER_COMPLETIONS )
+@conf_server.command(confLSPServer.CMD_UNREGISTER_COMPLETIONS)
 async def unregister_completions(ls: confLSPServer, *args):
     """Unregister completions method on the client."""
     params = UnregistrationParams(
-        unregisterations=[Unregistration( id=str( uuid.uuid4() ), method=TEXT_DOCUMENT_COMPLETION )] )
-    response = await ls.unregister_capability_async( params )
+        unregisterations=[Unregistration(id=str(uuid.uuid4()), method=TEXT_DOCUMENT_COMPLETION)]
+    )
+    response = await ls.unregister_capability_async(params)
     if response is None:
-        ls.show_message( 'Successfully unregistered completions method' )
+        ls.show_message('Successfully unregistered completions method')
     else:
-        ls.show_message( 'Error happened during completions unregistration.', MessageType.Error )
+        ls.show_message('Error happened during completions unregistration.', MessageType.Error)

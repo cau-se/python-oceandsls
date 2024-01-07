@@ -23,64 +23,65 @@ from .server import example_server
 
 # TODO debug
 from pprint import pprint
+
 if "." in __name__:
-    pprint(f'.{__name__}')
+    pprint( f'.{__name__}' )
 else:
-    pprint(__name__)
+    pprint( __name__ )
 
-logging.basicConfig(filename="exampleDSL_pygls.log", level=logging.DEBUG, filemode="w")
+logging.basicConfig( filename = "exampleDSL_pygls.log", level = logging.DEBUG, filemode = "w" )
 
 
-def add_arguments(parser):
+def add_arguments( parser ):
     parser.description = "dsl server example"
 
     parser.add_argument(
-        "--tcp", action="store_true",
-        help="Use TCP server"
+            "--tcp", action = "store_true",
+            help = "Use TCP server"
     )
     parser.add_argument(
-        "--ws", action="store_true",
-        help="Use WebSocket server"
+            "--ws", action = "store_true",
+            help = "Use WebSocket server"
     )
     parser.add_argument(
-        "--host", default="127.0.0.1",
-        help="Bind to this address"
+            "--host", default = "127.0.0.1",
+            help = "Bind to this address"
     )
     parser.add_argument(
-        "--port", type=int, default=2087,
-        help="Bind to this port"
+            "--port", type = int, default = 2087,
+            help = "Bind to this port"
     )
     parser.add_argument(
-            "-f", "--file", dest="file", type=file_path, default="some_file",
-            help="Path to file"
+            "-f", "--file", dest = "file", type = file_path, default = "some_file",
+            help = "Path to file"
     )
 
 
-def file_path(path: str):
+def file_path( path: str ):
     """
     Check for valid file path.
 
     :param path: readable file path
     :return: valid path
     """
-    if os.path.isfile(path):
+    if os.path.isfile( path ):
         return path
     else:
-        raise argparse.ArgumentTypeError(f"readable path:'{path}' is not a valid path")
+        raise argparse.ArgumentTypeError( f"readable path:'{path}' is not a valid path" )
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    add_arguments(parser)
-    args = parser.parse_args()
+def main( ):
+    parser = argparse.ArgumentParser( )
+    add_arguments( parser )
+    args = parser.parse_args( )
 
     if args.tcp:
-        example_server.start_tcp(args.host, args.port)
+        example_server.start_tcp( args.host, args.port )
     elif args.ws:
-        example_server.start_ws(args.host, args.port)
+        example_server.start_ws( args.host, args.port )
     else:
-        example_server.start_io()
+        example_server.start_io( )
 
 
 if __name__ == '__main__':
-    main()
+    main( )

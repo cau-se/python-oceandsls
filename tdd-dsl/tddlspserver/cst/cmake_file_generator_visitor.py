@@ -105,12 +105,12 @@ class CMakeFileGeneratorVisitor(TestSuiteVisitor):
         # # Set CMake file path to project folder
         abs_path: str = os.path.join(self.work_path, "CMakeLists.txt")
 
-
         driver_path: str = os.path.join(self.work_path, "build_with_cmake_and_run.x")
         if not os.path.isfile(driver_path):
             # Write driver if it doesn't exist
             driver_template = self.template_env.get_template("driver.txt")
-            with open(driver_path, mode="w", encoding="utf-8") as f: f.write(driver_template.render())
+            with open(driver_path, mode="w", encoding="utf-8") as f:
+                f.write(driver_template.render())
 
         # Check if file exists and need to be merged
         if os.path.exists(abs_path) and not overwrite:

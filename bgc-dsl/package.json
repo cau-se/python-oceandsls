@@ -15,13 +15,14 @@
   "activationEvents": [
     "onLanguage:oceandsl_bgc"
   ],
-
   "contributes": {
     "languages": [
-     {
-       "id": "oceandsl_bgc",
-       "extensions": [ ".bgc" ]
-    }
+      {
+        "id": "oceandsl_bgc",
+        "extensions": [
+          ".bgc"
+        ]
+      }
     ],
     "commands": [
       {

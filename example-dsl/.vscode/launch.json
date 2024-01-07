@@ -1,54 +1,65 @@
 // A launch configuration that compiles the extension and then opens it inside a new window
 {
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "Launch Client",
-            "type": "extensionHost",
-            "request": "launch",
-            "runtimeExecutable": "${execPath}",
-            "args": ["--extensionDevelopmentPath=${workspaceRoot}"],
-            "outFiles": ["${workspaceRoot}/typescript-build/client/out/**/*.js"],
-            "preLaunchTask": {
-                "type": "npm",
-                "script": "compile"
-            },
-            "env": {
-                "VSCODE_DEBUG_MODE": "true"
-            }
-        },
-        {
-            "name": "Launch Server",
-            "type": "python",
-            "request": "launch",
-            "module": "exampleLSPServer",
-            "args": ["--tcp"],
-            "justMyCode": false,
-            "python": "${command:python.interpreterPath}",
-            "cwd": "${workspaceFolder}",
-            "env": {
-                "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/../antlrLib/"
-            }
-        },
-        {
-            "name": "Launch Server [WebSockets] + print workspaceFolder",
-            "type": "python",
-            "request": "launch",
-            "module": "exampleLSPServer",
-            "args": ["--ws"],
-            "justMyCode": false,
-            "python": "${command:python.interpreterPath}",
-            "cwd": "${workspaceFolder}",
-            "preLaunchTask": "print workspaceFolder",
-            "env": {
-                "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/../antlrLib/"
-            }
-        }
-    ],
-    "compounds": [
-        {
-            "name": "Server + Client",
-            "configurations": ["Launch Server", "Launch Client"]
-        }
-    ]
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Client",
+      "type": "extensionHost",
+      "request": "launch",
+      "runtimeExecutable": "${execPath}",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceRoot}"
+      ],
+      "outFiles": [
+        "${workspaceRoot}/typescript-build/client/out/**/*.js"
+      ],
+      "preLaunchTask": {
+        "type": "npm",
+        "script": "compile"
+      },
+      "env": {
+        "VSCODE_DEBUG_MODE": "true"
+      }
+    },
+    {
+      "name": "Launch Server",
+      "type": "python",
+      "request": "launch",
+      "module": "exampleLSPServer",
+      "args": [
+        "--tcp"
+      ],
+      "justMyCode": false,
+      "python": "${command:python.interpreterPath}",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/../antlrLib/"
+      }
+    },
+    {
+      "name": "Launch Server [WebSockets] + print workspaceFolder",
+      "type": "python",
+      "request": "launch",
+      "module": "exampleLSPServer",
+      "args": [
+        "--ws"
+      ],
+      "justMyCode": false,
+      "python": "${command:python.interpreterPath}",
+      "cwd": "${workspaceFolder}",
+      "preLaunchTask": "print workspaceFolder",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/../antlrLib/"
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Server + Client",
+      "configurations": [
+        "Launch Server",
+        "Launch Client"
+      ]
+    }
+  ]
 }

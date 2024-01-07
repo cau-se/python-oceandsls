@@ -356,7 +356,7 @@ class Scope:
     ###############################
 
     def set_weighted_metrics(self):
-        self.__weighted_metrics["CC"] = (self.cyclomatic_complexity, self.high_coefficient) # incl conditionals
+        self.__weighted_metrics["CC"] = (self.cyclomatic_complexity, self.high_coefficient)  # incl conditionals
         self.__weighted_metrics["LOC"] = (self.loc, self.mid_coefficient)
         self.__weighted_metrics["DEPTH"] = (self.depth_of_nesting, self.high_coefficient)
         self.__weighted_metrics["NP"] = (self.n_arguments, self.mid_coefficient)
@@ -451,7 +451,7 @@ class Scope:
                 metric: tuple = self.weighted_metrics[factor]
                 numeratorWSM += metric[0] * metric[1]
             denominatorFactors = ["CC", "LOC", "NB", "NL", "NV", "NC"]
-            denominatorWSM:float = 0
+            denominatorWSM: float = 0
             for factor in denominatorFactors:
                 metric: tuple = self.weighted_metrics[factor]
                 denominatorWSM += metric[0] * metric[1]
@@ -690,7 +690,7 @@ def calculate_metrics(xml_path: str = None, src: str = None, sort_metric=None) -
     root = tree.getroot()
 
     # Filters
-    conditional_elements: Set = {"condition-E", "test-E", "do-V" }
+    conditional_elements: Set = {"condition-E", "test-E", "do-V"}
     loop_elements: Set = {"do-stmt"}
     branch_elements: Set = {"if-then-stmt", "else-stmt"}
     branch_end_elements: Set = {"end-if-stmt"}
@@ -781,11 +781,11 @@ def calculate_metrics(xml_path: str = None, src: str = None, sort_metric=None) -
             if element.tag.endswith(tuple(conditional_elements)):
 
                 # Check if operand elements exist
-                operand_elements : List[ET.Element] = element.findall(path=f"{search_global}{operand_element_tag}", namespaces=ns)
+                operand_elements: List[ET.Element] = element.findall(path=f"{search_global}{operand_element_tag}", namespaces=ns)
                 if operand_elements:
                     # Add only leaf operand elements
                     for operand_element in operand_elements:
-                        sub_operand_elements : List[ET.Element] = operand_element.findall(path=f"{search_global}{operand_element_tag}", namespaces=ns)
+                        sub_operand_elements: List[ET.Element] = operand_element.findall(path=f"{search_global}{operand_element_tag}", namespaces=ns)
                         if not sub_operand_elements:
                             current_scope.conditionals.append(operand_element)
                 else:

@@ -23,6 +23,7 @@ from ..bgclspserver.cst.symbol_table_visitor import SymbolTableVisitor
 from SymbolTable_copy import ScopedSymbol, SymbolTable, P, T, VariableSymbol, Symbol, RoutineSymbol, SymbolTableOptions
 import unittest
 
+
 # tests SymbolTableVisitor
 def prepare():
     # write_tdd()
@@ -31,7 +32,7 @@ def prepare():
     # input_stream = FileStream(path)
     lexer = BgcDslLexer(input_stream)
     stream = CommonTokenStream(lexer)
-    parser = BgcDslParser(stream)     # returns object of class "Parser"
+    parser = BgcDslParser(stream)  # returns object of class "Parser"
 
     tree = parser.bgcModel()  # tree ist ein ctx-objekt
     my_SymbolTableVisitor = SymbolTableVisitor('SymbolTableVisitor_1')  # parse tree an SymbolTableVisitor übergeben
@@ -39,12 +40,12 @@ def prepare():
     return symbolTable
 
 
-class TestSTVisitor(unittest.TestCase):    # wenn ich eine klasse verwende, dann muss ihr name mit "Test" beginnen.
+class TestSTVisitor(unittest.TestCase):  # wenn ich eine klasse verwende, dann muss ihr name mit "Test" beginnen.
 
     # tests whether this variable is in the ST
     def test_substance_1(self):
         symbolTable = prepare()
-        symbol = symbolTable.resolveSync('N')   # returnt das symbol-object, das Name N hat.
+        symbol = symbolTable.resolveSync('N')  # returnt das symbol-object, das Name N hat.
         self.assertIsNotNone(symbol)  # resolveSync returns a VariableSymbol object
         unit = ''.join(list(map(lambda x: x.getText(), symbol.value.unit().elements)))
         self.assertEqual(unit, 'mmol')
@@ -68,14 +69,14 @@ class TestSTVisitor(unittest.TestCase):    # wenn ich eine klasse verwende, dann
 
     def test_compartment(self):
         symbolTable = prepare()
-        symbol = symbolTable.resolveSync('Nif')   # compartment
+        symbol = symbolTable.resolveSync('Nif')  # compartment
         # checks whether the compartment exists
         self.assertIsNotNone(symbol)
         # checks compartment contents
         states = list(map(lambda x: x.getText(), symbol.value.states))
         self.assertEqual(len(states), 4)
         self.assertEqual(states[0], 'Chl=0')
-        parameters = symbol.value.constants   # parameters are in grammar as "constants"
+        parameters = symbol.value.constants  # parameters are in grammar as "constants"
         self.assertEqual(len(parameters), 2)
         self.assertEqual(parameters[0].name.text, 'Q_u2_N_C')
         self.assertEqual(parameters[0].type_.getText(), 'float')
@@ -101,7 +102,6 @@ class TestSTVisitor(unittest.TestCase):    # wenn ich eine klasse verwende, dann
         self.assertIsNotNone(symbol)
         self.assertEqual(list(map(lambda x: x.text, symbol.value.substances)), ['N', 'C'])
         self.assertEqual(symbol.value.substanceExpressions[0].getText(), 'N=Nif.assim_DIP*Nif.N')
-
 
     # def test_amount(self):   # namen von test-funktionen müssen mit "test_" beginnen, oder auf "_test" enden.
     #     symbolTable = prepare()

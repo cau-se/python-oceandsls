@@ -95,7 +95,7 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
         return self._symbol_table
 
     # Visit a parse tree produced by TestSuiteParser#test_suite.
-    def visitTest_suite(self, ctx:TestSuiteParser.Test_suiteContext):
+    def visitTest_suite(self, ctx: TestSuiteParser.Test_suiteContext):
         self.visitChildren(ctx)
         return self.files
 
@@ -130,7 +130,7 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
             #         break
 
             # If operations does not exist or was added before, add to newly generated ops
-            #if not routine_symbols or add_ops:
+            # if not routine_symbols or add_ops:
             if not routine_symbols:
                 ops_names.append(key)
                 ops_impl.append(value_list[3])

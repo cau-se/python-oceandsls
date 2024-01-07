@@ -16,7 +16,7 @@ from antlr4 import InputStream, CommonTokenStream
 import argparse
 import os
 
-#relative imports
+# relative imports
 from .conflspserver.gen.python.Configuration.ConfigurationLexer import ConfigurationLexer
 from .conflspserver.gen.python.Configuration.ConfigurationParser import ConfigurationParser
 from .conflspserver.cst.symbol_table_visitor import SymbolTableVisitor
@@ -25,9 +25,9 @@ from .conflspserver.filewriter.code_generator import UvicCodeGenerator, mitGcmCo
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        prog = "CP-DSL Compiler",
-        description = "A compiler for the CP-DSL",
-        epilog = "CP-DomainSpecificLanguage Compiler"
+        prog="CP-DSL Compiler",
+        description="A compiler for the CP-DSL",
+        epilog="CP-DomainSpecificLanguage Compiler"
     )
     parser.add_argument(
         "-f", "--File", dest="path", help="path to the main configuration file"
@@ -70,9 +70,9 @@ if __name__ == '__main__':
             except AttributeError as e:
                 print("ERROR: Could not parse Declaration-File correctly")
                 print(e)
-            #try:
+            # try:
             table = ConfigurationCalculator(tableCalc.calculate(), tableVisitor.configurationList).calculate()
-            #except AttributeError as e:
+            # except AttributeError as e:
             #     print("ERROR: Could not parse Configuration-File")
             #     print(e)
             if args.uvic:

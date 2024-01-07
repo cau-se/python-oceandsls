@@ -1,4 +1,3 @@
-
 from .types import getEClassifier, eClassifiers
 from .types import name, nsURI, nsPrefix, eClass
 from .types import Type, NamedElement, NamedType, RecordType, Attribute, PrimitiveType, RangeType, EnumerationType, InlineEnumerationType, Enumeral, TypeReference, TypeAssignment, ArrayType, Dimension, SizeDimension, RangeDimension, TypeModel, Value, EnumeralValue, ObjectValue, RangeValue
@@ -7,10 +6,10 @@ from pyecore.ecore import EObject
 
 from . import types
 
-__all__ = ['Type', 'NamedElement', 'NamedType', 'RecordType', 'Attribute', 'PrimitiveType', 'RangeType', 'EnumerationType', 'InlineEnumerationType', 'Enumeral',
-           'TypeReference', 'TypeAssignment', 'ArrayType', 'Dimension', 'SizeDimension', 'RangeDimension', 'TypeModel', 'Value', 'EnumeralValue', 'ObjectValue', 'RangeValue']
+__all__ = [ 'Type', 'NamedElement', 'NamedType', 'RecordType', 'Attribute', 'PrimitiveType', 'RangeType', 'EnumerationType', 'InlineEnumerationType', 'Enumeral',
+            'TypeReference', 'TypeAssignment', 'ArrayType', 'Dimension', 'SizeDimension', 'RangeDimension', 'TypeModel', 'Value', 'EnumeralValue', 'ObjectValue', 'RangeValue' ]
 
-eSubpackages = []
+eSubpackages = [ ]
 eSuperPackage = None
 types.eSubpackages = eSubpackages
 types.eSuperPackage = eSuperPackage
@@ -30,14 +29,14 @@ ObjectValue.value.eType = EObject
 RangeValue.value.eType = Value
 RangeValue.type.eType = RangeType
 
-otherClassifiers = []
+otherClassifiers = [ ]
 
 for classif in otherClassifiers:
-    eClassifiers[classif.name] = classif
+    eClassifiers[ classif.name ] = classif
     classif.ePackage = eClass
 
-for classif in eClassifiers.values():
-    eClass.eClassifiers.append(classif.eClass)
+for classif in eClassifiers.values( ):
+    eClass.eClassifiers.append( classif.eClass )
 
 for subpack in eSubpackages:
-    eClass.eSubpackages.append(subpack.eClass)
+    eClass.eSubpackages.append( subpack.eClass )

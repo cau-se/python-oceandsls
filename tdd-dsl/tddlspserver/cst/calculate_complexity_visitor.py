@@ -50,7 +50,7 @@ class CalculateComplexityVisitor(TestSuiteVisitor, Generic[T]):
         return self._test_work_path
 
     # Visit a parse tree produced by TestSuiteParser#test_suite.
-    def visitTest_suite(self, ctx:TestSuiteParser.Test_suiteContext):
+    def visitTest_suite(self, ctx: TestSuiteParser.Test_suiteContext):
         self.visitChildren(ctx)
         return self._symbol_table
 

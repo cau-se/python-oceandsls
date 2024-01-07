@@ -34,40 +34,44 @@ from antlr4.error.Errors import RecognitionException
 from lsprotocol.types import (Diagnostic, Range, Position)
 
 # debug
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig( level = logging.DEBUG )
 
 
-class DiagnosticListener(ErrorListener):
-    def __init__(self):
-        self.diagnostics: List[Diagnostic] = []
-        super().__init__()
+class DiagnosticListener( ErrorListener ):
+    def __init__( self ):
+        self.diagnostics: List[ Diagnostic ] = [ ]
+        super( ).__init__( )
 
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger( __name__ )
     # Enables printing ATN state info to terminal.
     show_debug_output: bool = False
 
     # reset the listener's state
-    def reset(self):
-        self.diagnostics = []
+    def reset( self ):
+        self.diagnostics = [ ]
 
-    def syntaxError(self, recognizer: Recognizer, offendingSymbol: Token, line: int, column: int, msg: str,
-                    e: RecognitionException = None):
+    def syntaxError(
+            self, recognizer: Recognizer, offendingSymbol: Token, line: int, column: int, msg: str,
+            e: RecognitionException = None
+            ):
         self.diagnostics.append(
-            Diagnostic(
-                range=Range(
-                    start=Position(
-                        line=line - 1,
-                        character=column - 1),
-                    end=Position(
-                        line=line - 1,
-                        character=column)
-                ),
-                message=msg
-            )
+                Diagnostic(
+                        range = Range(
+                                start = Position(
+                                        line = line - 1,
+                                        character = column - 1
+                                ),
+                                end = Position(
+                                        line = line - 1,
+                                        character = column
+                                )
+                        ),
+                        message = msg
+                )
         )
 
-        if self.show_debug_output and self.logger.isEnabledFor(logging.DEBUG):
-            self.logger.debug('ERROR: when parsing line %d column %d: %s\n' % (line, column, msg))
+        if self.show_debug_output and self.logger.isEnabledFor( logging.DEBUG ):
+            self.logger.debug( 'ERROR: when parsing line %d column %d: %s\n' % (line, column, msg) )
         # dev alternatives
         # print('ERROR: when parsing line %d column %d: %s\n' % (line, column, msg), file=sys.stderr)
         # raise Exception("ERROR: when parsing line %d column %d: %s\n" % (line, column, msg))

@@ -3,13 +3,13 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-exclude = ["input","client","node_modules"]
+exclude = ["input", "client", "node_modules"]
 
 [project]
 name = "TDD-Language"
 version = "0.80.0"
 authors = [
-    { name="sgu", email="sgu@informatik.uni-kiel.de" },
+    { name = "sgu", email = "sgu@informatik.uni-kiel.de" },
 ]
 description = "A program for a language server based on the test driven development ocean-dsl."
 readme = "README.md"
@@ -26,7 +26,7 @@ classifiers = [
     "Topic :: Software Development :: Testing",
 ]
 
-license = {text = "Apache License (2.0)"}
+license = { text = "Apache License (2.0)" }
 
 [project.urls]
 "oceandsl · GitLab" = "https://git.se.informatik.uni-kiel.de/oceandsl"

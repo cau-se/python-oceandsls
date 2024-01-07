@@ -24,11 +24,12 @@ from ..bgclspserver.cst.symbol_table_visitor import SymbolTableVisitor
 from ..bgclspserver.symbolTable.symbol_table import ScopedSymbol, SymbolTable, P, T, VariableSymbol, Symbol, RoutineSymbol, SymbolTableOptions
 import unittest
 
+
 def main():
     input_stream = FileStream('input/example1.bgc')
     lexer = BgcDslLexer(input_stream)
     stream = CommonTokenStream(lexer)
-    parser = BgcDslParser(stream)     # returns object of class "Parser"
+    parser = BgcDslParser(stream)  # returns object of class "Parser"
     tree = parser.bgcModel()  # tree ist ein ctx-objekt; bgcModel is the first rule
 
     symbolTable = SymbolTableVisitor('SymbolTableVisitor_1').visit(tree)
@@ -42,7 +43,6 @@ def main():
     #     #     unit = unit[1:]
     #     # print(unit, e.value.type_.getText())
 
-
     self = unittest.TestCase()
 
     symbol = symbolTable.resolveSync('aggregation from Phy to Det')
@@ -55,6 +55,7 @@ def main():
     self.assertEqual(symbol.value.substanceExpressions[0].getText(), 'N=Nif.assim_DIP*Nif.N')
 
     print('all good')
+
 
 if __name__ == '__main__':
     main()

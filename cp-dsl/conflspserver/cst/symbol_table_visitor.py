@@ -23,7 +23,6 @@ from typing import TypeVar, Generic, Dict, Optional, Callable, Any
 from antlr4.tree.Tree import ParseTree
 from antlr4 import InputStream, CommonTokenStream
 
-
 from ..gen.python.Configuration.ConfigurationParser import ConfigurationParser
 from ..gen.python.Declaration.DeclarationParser import DeclarationParser
 from ..gen.python.Declaration.DeclarationLexer import DeclarationLexer
@@ -38,10 +37,10 @@ from ..gen.python.Configuration.ConfigurationParser import ConfigurationParser
 import os
 
 
-class SymbolTableVisitor( ConfigurationVisitor, Generic[T] ):
+class SymbolTableVisitor(ConfigurationVisitor, Generic[T]):
     _symbolTable: SymbolTable
 
-    def __init__(self, name: str = '', cwd : str = "."):
+    def __init__(self, name: str = '', cwd: str = "."):
         super().__init__()
         # creates a new symboltable with no duplicate symbols
         self._symbolTable = SymbolTable(name, SymbolTableOptions(False))
@@ -64,8 +63,8 @@ class SymbolTableVisitor( ConfigurationVisitor, Generic[T] ):
         # add all symbols to symboltable
         self._symbolTable = table
         return super().visitConfigurationModel(ctx)
-    
-    def visitDeclarationTable(self, declarationName : str):
+
+    def visitDeclarationTable(self, declarationName: str):
         declVisitor = DeclSymbolTableVisitor(declarationName + "_ConfDeclVisit")
         with open(os.path.join(self.cwd, declarationName + ".decl")) as dcl_file:
             data = dcl_file.read()
@@ -78,15 +77,15 @@ class SymbolTableVisitor( ConfigurationVisitor, Generic[T] ):
 
     def visitParameterAssignment(self, ctx: ConfigurationParser.ParameterAssignmentContext):
         # define the given Parameter
-        varName = ctx.declaration.getText() # set and get the variable name here
+        varName = ctx.declaration.getText()  # set and get the variable name here
         prefix = self.visit(ctx.unit) if ctx.unit != None else UnitPrefix.NoP
-        #isArray = True if len(ctx.selectors) > 0 else False
+        # isArray = True if len(ctx.selectors) > 0 else False
         symbol = self._scope.getAllNestedSymbolsSync(varName)[0]
         if prefix != UnitPrefix.NoP:
             symbol.unit.prefix = prefix
         symbol.configuration.append(ctx)
         self.configurationList.append((symbol, len(symbol.configuration) - 1))
-        
+
     def visitParameterGroup(self, ctx: ConfigurationParser.ParameterGroupContext):
         self.withScope(GroupSymbol, ctx, ctx.declaration.text, lambda: self.visitChildren(ctx))
 
@@ -94,20 +93,20 @@ class SymbolTableVisitor( ConfigurationVisitor, Generic[T] ):
         vector = []
         vector.append(self.visitChildren(ctx))
         return vector
-    
+
     def visitElementSelector(self, ctx: ConfigurationParser.ElementSelectorContext):
         return int(ctx.element.text)
-    
+
     def visitRangeSelector(self, ctx: ConfigurationParser.RangeSelectorContext):
         return (int(ctx.lowerBound.text), int(ctx.upperBound.text))
 
-    def visitUnitSpecification(self, ctx : ConfigurationParser.UnitSpecificationContext):
+    def visitUnitSpecification(self, ctx: ConfigurationParser.UnitSpecificationContext):
         return self.stringToPrefix(ctx.unit.text)
 
     def visitFeatureConfiguration(self, ctx: ConfigurationParser.FeatureConfigurationContext):
         self.withScope(FeatureSymbol, ctx, ctx.declaration.text, lambda: self.visitChildren(ctx))
 
-    def visitFeatureActivation(self, ctx : ConfigurationParser.FeatureActivationContext):
+    def visitFeatureActivation(self, ctx: ConfigurationParser.FeatureActivationContext):
         for feature in self._scope.getNestedSymbolsOfTypeSync(FeatureSymbol):
             if feature.name == ctx.declaration.text:
                 try:
@@ -116,10 +115,10 @@ class SymbolTableVisitor( ConfigurationVisitor, Generic[T] ):
                 except AttributeError:
                     print("WARNING: There was a None in Feature Configuration of " + str(feature.name))
                     pass
-                
+
     def visitInclude(self, ctx: ConfigurationParser.IncludeContext):
         info = ctx.importedNamespace.text.split(".")
-        #visit configuration table
+        # visit configuration table
         confVisitor = SymbolTableVisitor(info[0] + "_ConfVisit")
         with open(os.path.join(self.cwd, info[0] + ".oconf")) as conf_file:
             data = conf_file.read()
@@ -130,18 +129,18 @@ class SymbolTableVisitor( ConfigurationVisitor, Generic[T] ):
             confVisitor.visit(dcl_parsed)
             table = confVisitor._symbolTable
         scope = None
-        #go through all symbols
-        for i in range(1,len(info)):
+        # go through all symbols
+        for i in range(1, len(info)):
             scope = table.getAllNestedSymbolsSync(info[i])[0]
         self._symbolTable.addSymbol(scope)
 
-    def stringToPrefix(self, input : str):
-            for prefix in UnitPrefix:
-                if vars(prefix)["_name_"].lower() == input.lower():
-                    return prefix
-            return UnitPrefix.NoP
-    
-    def withScope(self, type : T, tree: ParseTree, name: str, action: Callable) -> T:
+    def stringToPrefix(self, input: str):
+        for prefix in UnitPrefix:
+            if vars(prefix)["_name_"].lower() == input.lower():
+                return prefix
+        return UnitPrefix.NoP
+
+    def withScope(self, type: T, tree: ParseTree, name: str, action: Callable) -> T:
         scope = self._symbolTable.getAllNestedSymbolsSync(name)
         if len(scope) < 1:
             print("Symbol with name " + str(name) + " could not be found")

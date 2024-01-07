@@ -64,13 +64,13 @@ class TDDLSPServer(LanguageServer):
     top_level_context = TestSuiteParser.Test_suiteContext
     parseTree: top_level_context
     # Recommendation metric
-    sort_metric : str
+    sort_metric: str
 
     # Debug flag
     debug = False
 
     # Input file path
-    input_path : str
+    input_path: str
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -94,7 +94,7 @@ class TDDLSPServer(LanguageServer):
         self.parser.removeErrorListeners()
         self.parser.addErrorListener(self.error_listener)
 
-        self.parser._errHandler=TDDErrorStrategy()
+        self.parser._errHandler = TDDErrorStrategy()
 
         # Attributes of generated files
         self.files: dict[str, Tuple[float, str, str]] = {}
@@ -325,13 +325,15 @@ def did_save(server: TDDLSPServer, params: DidSaveTextDocumentParams):
 
     # Generate pf files
     pf_file_generator_visitor: PFFileGeneratorVisitor = PFFileGeneratorVisitor(
-        work_path=os.getcwd(), files=tdd_server.files, symbol_table=symbol_table, rel_file_path=rel_file_path)
+        work_path=os.getcwd(), files=tdd_server.files, symbol_table=symbol_table, rel_file_path=rel_file_path
+    )
     # write pf files and save generated files
     tdd_server.files = pf_file_generator_visitor.visit(server.parseTree)
 
     # Generate F90 files
     f90_file_generator_visitor: F90FileGeneratorVisitor = F90FileGeneratorVisitor(
-        work_path=os.getcwd(), files=tdd_server.files, symbol_table=symbol_table, rel_file_path=rel_file_path)
+        work_path=os.getcwd(), files=tdd_server.files, symbol_table=symbol_table, rel_file_path=rel_file_path
+    )
     # update fortran file and save generated files
     tdd_server.files = f90_file_generator_visitor.visit(server.parseTree)
 
@@ -406,7 +408,8 @@ def recommend_SUT(server: TDDLSPServer, *args):
     """Calculates the complexity of the SuTs in the path and returns test recommendations."""
 
     calculate_complexity_visitor: CalculateComplexityVisitor = CalculateComplexityVisitor(
-        name="paths", test_work_path=os.getcwd(), fxtran_path=tdd_server.fxtran_path, sort_metric=tdd_server.sort_metric)
+        name="paths", test_work_path=os.getcwd(), fxtran_path=tdd_server.fxtran_path, sort_metric=tdd_server.sort_metric
+    )
     symbol_table = calculate_complexity_visitor.visit(server.parseTree)
 
     metric_list: List[str] = suggest_symbols(symbol_table, position=None, symbol_type=MetricSymbol)
@@ -415,11 +418,12 @@ def recommend_SUT(server: TDDLSPServer, *args):
         server.show_message(metric)
 
     if tdd_server.debug:
-        debug_file_write(os.path.join(os.getcwd(),tdd_server.sort_metric) , "\n".join(metric_list))
+        debug_file_write(os.path.join(os.getcwd(), tdd_server.sort_metric), "\n".join(metric_list))
 
     server.show_message(f"Recommend SuT by {tdd_server.sort_metric}...")
 
-def debug_file_write( file_path : str = None, content : str = None ):
+
+def debug_file_write(file_path: str = None, content: str = None):
     with open(file_path, mode="w", encoding="utf-8") as f:
         f.write(content)
 

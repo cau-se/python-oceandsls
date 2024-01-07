@@ -60,7 +60,7 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
     #     return self._symbol_table
 
     # Visit a parse tree produced by TestSuiteParser#test_suite.
-    def visitTest_suite(self, ctx:TestSuiteParser.Test_suiteContext):
+    def visitTest_suite(self, ctx: TestSuiteParser.Test_suiteContext):
         self.visitChildren(ctx)
         return self.symbol_table
 
@@ -79,7 +79,7 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
     def visitVarDeclaration(self, ctx: TestSuiteParser.VarDeclarationContext):
         name = ctx.name.text
         # Map variable type to symboltable type
-        var_type = get_fundamental_type(self.visit(ctx.type_))  if ctx.type_ else None
+        var_type = get_fundamental_type(self.visit(ctx.type_)) if ctx.type_ else None
         keys = []
         for key in ctx.keys:
             keys.append(key.keyword.text)
@@ -256,7 +256,8 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
                         return_type = get_fundamental_type(return_type)
                         self._scope = scope_sym
                         # Insert Function symbol with scope name, parameters and return type
-                        self.with_scope(None, FunctionSymbol, lambda: list( map(lambda arg: self.addRoutineParams(arg), scope_args)), scope_name, return_type, is_generated)
+                        self.with_scope(None, FunctionSymbol, lambda: list(
+                            map(lambda arg: self.addRoutineParams(arg), scope_args)), scope_name, return_type, is_generated)
                         self._scope = current_scope
                     case _:
                         # TODO Types?

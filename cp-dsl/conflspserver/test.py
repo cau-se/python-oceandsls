@@ -22,7 +22,7 @@ from conflspserver.cst.symbol_table_visitor import SymbolTableVisitor
 from conflspserver.utils.calc import DeclarationCalculator, ConfigurationCalculator
 
 
-## arrays:
+# arrays:
 def testingArrays():
     def rangeArrayTest(elem) -> bool:
         shouldArray = [None, None, None, None]
@@ -50,6 +50,7 @@ def testingArrays():
         else:
             print("TESTING: Array Test was unsuccesful")
 
+
 ## BASIC ##
 def testBasic():
     tableVisitor = SymbolTableVisitor("testConf")
@@ -70,7 +71,8 @@ def testBasic():
             print("TESTING: Basic Test was successful")
         else:
             print("TESTING: Basic Test was unsuccesful")
-        
+
+
 ## conditions ##
 def testConditions():
     tableVisitor = SymbolTableVisitor("testConf")
@@ -92,10 +94,7 @@ def testConditions():
         else:
             print("TESTING: Conditions Test was unsuccesful")
 
+
 testBasic()
 testConditions()
 testingArrays()
-
-
-
-

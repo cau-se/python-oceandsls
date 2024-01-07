@@ -88,7 +88,7 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
             i += 1
 
     # Visit a parse tree produced by TestSuiteParser#test_suite.
-    def visitTest_suite(self, ctx:TestSuiteParser.Test_suiteContext):
+    def visitTest_suite(self, ctx: TestSuiteParser.Test_suiteContext):
         self.visitChildren(ctx)
         return self.files
 
@@ -114,7 +114,7 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
         self.visit(ctx.src_path())
         # Write pf file
         abs_path: str = os.path.join(self.work_path, self.test_folder, f"{name}.{self.file_suffix}")
-        file_attr = self.files.get(abs_path) # TODO None
+        file_attr = self.files.get(abs_path)  # TODO None
         if self.overwrite:
             # Merge all files that should overwrite other files
             if abs_path in self.overwrite_files:

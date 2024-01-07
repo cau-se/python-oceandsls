@@ -24,7 +24,6 @@ from typing import List, Optional, Union
 from antlr4 import CommonTokenStream, FileStream, InputStream, Token
 from antlr4.IntervalSet import IntervalSet
 
-
 # antlr4-c3
 from .cst.code_completion_core import CodeCompletionCore, CandidatesCollection
 
@@ -49,19 +48,18 @@ from .cst.diagnostic_listener import DiagnosticListener
 from .gen.python.Declaration.DeclarationLexer import DeclarationLexer
 from .gen.python.Declaration.DeclarationParser import DeclarationParser
 
-
 COUNT_DOWN_START_IN_SECONDS = 10
 COUNT_DOWN_SLEEP_IN_SECONDS = 1
 
 
-class dclLSPServer( LanguageServer ):
+class dclLSPServer(LanguageServer):
     CMD_REGISTER_COMPLETIONS = 'registerCompletions'
     CMD_UNREGISTER_COMPLETIONS = 'unregisterCompletions'
 
     CONFIGURATION_SECTION = 'ODslDCLServer'
 
     # Input file path
-    input_path : str
+    input_path: str
 
     def __init__(self, *args):
         super().__init__(*args)
@@ -85,11 +83,13 @@ class dclLSPServer( LanguageServer ):
         self.parser.removeErrorListeners()
         self.parser.addErrorListener(self.error_listener)
 
-        self.parser._errHandler=DCLErrorStrategy()
+        self.parser._errHandler = DCLErrorStrategy()
 
-dcl_server = dclLSPServer( 'pygls-odsl-dcl-prototype', 'v0.4' )
+
+dcl_server = dclLSPServer('pygls-odsl-dcl-prototype', 'v0.4')
 
 logger = logging.getLogger(__name__)
+
 
 def _validate(params):
 
@@ -142,20 +142,20 @@ def lookup_symbol(uri, name):
     logger.info("uri: %s\n", uri, "name: %s\n", name)
 
 
-@dcl_server.feature( TEXT_DOCUMENT_COMPLETION, CompletionOptions( trigger_characters=[','] ) )
+@dcl_server.feature(TEXT_DOCUMENT_COMPLETION, CompletionOptions(trigger_characters=[',']))
 def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     """Returns completion items."""
 
     # set input stream of characters for lexer
-    text_doc: Document = dcl_server.workspace.get_document( params.text_document.uri )
+    text_doc: Document = dcl_server.workspace.get_document(params.text_document.uri)
     source: str = text_doc.source
-    input_stream: InputStream = InputStream( source )
+    input_stream: InputStream = InputStream(source)
 
     # reset the lexer/parser
     dcl_server.error_listener.reset()
     dcl_server.lexer.inputStream = input_stream
-    dcl_server.tokenStream = CommonTokenStream( dcl_server.lexer )
-    dcl_server.parser.setInputStream( dcl_server.tokenStream )
+    dcl_server.tokenStream = CommonTokenStream(dcl_server.lexer)
+    dcl_server.parser.setInputStream(dcl_server.tokenStream)
 
     # Launches parser by invoking top-level rule
     top_level_context = DeclarationParser.DeclarationModelContext
@@ -185,7 +185,7 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
         return completion_list
 
     # Launch c3 core with parser
-    core: CodeCompletionCore = CodeCompletionCore( dcl_server.parser )
+    core: CodeCompletionCore = CodeCompletionCore(dcl_server.parser)
 
     core.ignoredTokens = {Token.EPSILON}
     core.preferredRules = {DeclarationParser.RULE_featureDeclaration, DeclarationParser.RULE_featureGroupDeclaration,
@@ -194,7 +194,7 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
                            DeclarationParser.RULE_enumeral}
 
     # get completion candidates
-    candidates: CandidatesCollection = core.collectCandidates( token_index.index )
+    candidates: CandidatesCollection = core.collectCandidates(token_index.index)
 
     def calcLitAndSymbNames(literalNames):
         literalNames = []
@@ -207,73 +207,79 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
         return (literalNames, symbolic_names)
 
     def addToCompletionList(literalNames):
-        #get labels of completion candidates to return
+        # get labels of completion candidates to return
         symbolic_names, literal_names = calcLitAndSymbNames(literalNames)
         for key, _ in candidates.tokens.items():
-            completion_list.items.append(CompletionItem(
-                label=IntervalSet.elementName(IntervalSet, literal_names,
-                                           symbolic_names, key)))
+            completion_list.items.append(
+                CompletionItem(
+                    label=IntervalSet.elementName(
+                        IntervalSet, literal_names,
+                        symbolic_names, key
+                    )
+                )
+            )
 
     # Feature Declaration Rule
     if any(rule in candidates.rules for rule in [DeclarationParser.RULE_featureDeclaration]):
-        completionItems = ["ID", ":", "{", "}", "sub", "feature", "def", "requires", "excludes", "sub", "alternative", 
-                     "multiple", "group"]
+        completionItems = ["ID", ":", "{", "}", "sub", "feature", "def", "requires", "excludes", "sub", "alternative",
+                           "multiple", "group"]
         addToCompletionList(completionItems)
 
     # Group Rule
     if any(rule in candidates.rules for rule in [DeclarationParser.RULE_featureGroupDeclaration, DeclarationParser.RULE_parameterGroupDeclaration]):
-        completionItems = ["ID", ":", "{", "}", "sub", "feature", "def", "requires", "excludes", "sub", "alternative", 
-                     "multiple"]
+        completionItems = ["ID", ":", "{", "}", "sub", "feature", "def", "requires", "excludes", "sub", "alternative",
+                           "multiple"]
         addToCompletionList(completionItems)
 
     # Parameter Declaration Rule
     if any(rule in candidates.rules for rule in [DeclarationParser.RULE_parameterDeclaration]):
-        completionItems = ["ID", ":", "zetta", "exa", "peta", "tera", "giga", "mega", 
-                     "kilo", "hecto", "deca", "deci", "centi", 
-                     "mili", "micro", "nano", "pico", "femto", 
-                     "atto", "zepto", "yocto", "meter", "gram", 
-                     "ton", "second", "ampere", "kelvin", "mole", 
-                     "candela", "pascal", "Joul"]
+        completionItems = ["ID", ":", "zetta", "exa", "peta", "tera", "giga", "mega",
+                           "kilo", "hecto", "deca", "deci", "centi",
+                           "mili", "micro", "nano", "pico", "femto",
+                           "atto", "zepto", "yocto", "meter", "gram",
+                           "ton", "second", "ampere", "kelvin", "mole",
+                           "candela", "pascal", "Joul"]
         addToCompletionList(completionItems)
-    
+
     # types Declaration Rule
     if any(rule in candidates.rules for rule in [DeclarationParser.RULE_typeReference]):
-        completionItems = ["ID", "range", "float", "zetta", "exa", "peta", "tera", "giga", "mega", 
-                     "kilo", "hecto", "deca", "deci", "centi", 
-                     "mili", "micro", "nano", "pico", "femto", 
-                     "atto", "zepto", "yocto", "meter", "gram", 
-                     "ton", "second", "ampere", "kelvin", "mole", 
-                     "candela", "pascal", "Joul", "ELONG", "EDOUBLE", "EBoolean", 
-                      "INT", "STRING", "WS"]
+        completionItems = ["ID", "range", "float", "zetta", "exa", "peta", "tera", "giga", "mega",
+                           "kilo", "hecto", "deca", "deci", "centi",
+                           "mili", "micro", "nano", "pico", "femto",
+                           "atto", "zepto", "yocto", "meter", "gram",
+                           "ton", "second", "ampere", "kelvin", "mole",
+                           "candela", "pascal", "Joul", "ELONG", "EDOUBLE", "EBoolean",
+                           "INT", "STRING", "WS"]
         addToCompletionList(completionItems)
 
     # enum Declaration Rule
     if any(rule in candidates.rules for rule in [DeclarationParser.RULE_enumeral]):
-        completionItems = ["ID", "range", "float", "zetta", "exa", "peta", "tera", "giga", "mega", 
-                     "kilo", "hecto", "deca", "deci", "centi", 
-                     "mili", "micro", "nano", "pico", "femto", 
-                     "atto", "zepto", "yocto", "meter", "gram", 
-                     "ton", "second", "ampere", "kelvin", "mole", 
-                     "candela", "pascal", "Joul", "ELONG", "EDOUBLE", "EBoolean", 
-                      "INT", "STRING", "WS", "def"]
+        completionItems = ["ID", "range", "float", "zetta", "exa", "peta", "tera", "giga", "mega",
+                           "kilo", "hecto", "deca", "deci", "centi",
+                           "mili", "micro", "nano", "pico", "femto",
+                           "atto", "zepto", "yocto", "meter", "gram",
+                           "ton", "second", "ampere", "kelvin", "mole",
+                           "candela", "pascal", "Joul", "ELONG", "EDOUBLE", "EBoolean",
+                           "INT", "STRING", "WS", "def"]
         addToCompletionList(completionItems)
 
     # Variables finding
-    if any( rule in candidates.rules for rule in [ DeclarationParser.declarationModel ] ):
+    if any(rule in candidates.rules for rule in [DeclarationParser.declarationModel]):
 
-        symbolTableVisitor: SymbolTableVisitorDcl = SymbolTableVisitorDcl( 'completions' )
+        symbolTableVisitor: SymbolTableVisitorDcl = SymbolTableVisitorDcl('completions')
 
-        symbolTable = symbolTableVisitor.visit( parse_tree )
+        symbolTable = symbolTableVisitor.visit(parse_tree)
 
-        variables = suggest_symbols( symbolTable, token_index )
+        variables = suggest_symbols(symbolTable, token_index)
 
         for variable in variables:
-            completion_list.items.append( CompletionItem( label=variable, kind = CompletionItemKind.Variable ) )
+            completion_list.items.append(CompletionItem(label=variable, kind=CompletionItemKind.Variable))
 
     # return completion candidates labels
     return completion_list
 
-def get_lsp_symbol_type(nameOfType : str):
+
+def get_lsp_symbol_type(nameOfType: str):
     # predefine some module and function keywords
     module = ['model', 'types', 'group', 'required', 'requires', 'excludes', 'sub', 'alternative', 'enum']
     function = ['feature', 'multiple', 'def']
@@ -301,7 +307,8 @@ def get_lsp_symbol_type(nameOfType : str):
         return CompletionItemKind.Value
     return CompletionItemKind.Variable
 
-def get_position_and_item_val(inp : str):
+
+def get_position_and_item_val(inp: str):
     from itertools import groupby
 
     ret_val = []
@@ -316,58 +323,64 @@ def get_position_and_item_val(inp : str):
 
 @dcl_server.feature(TEXT_DOCUMENT_DOCUMENT_SYMBOL)
 def document_symbol(
-    server: dclLSPServer, params: DocumentSymbolParams
+        server: dclLSPServer, params: DocumentSymbolParams
 ) -> Optional[Union[List[DocumentSymbol], List[SymbolInformation]]]:
     # get the document
     uri = params.text_document.uri
-    doc = server.workspace.get_document( uri )
+    doc = server.workspace.get_document(uri)
 
     data = []
 
-    #For capturing strings
+    # For capturing strings
     string_entity = False
     string_ident = ""
-    start_string = (0,0) # tuple for (lineno, linepos)
+    start_string = (0, 0)  # tuple for (lineno, linepos)
 
-    for lineno, line in enumerate( doc.lines ):
+    for lineno, line in enumerate(doc.lines):
         for start, end, word in get_position_and_item_val(line):
             if str(word).startswith(("'", '"')):
                 string_entity = True
                 string_ident = word[0]
                 if str(word).endswith(("'", '"')) and word[-1] == string_ident:
                     pos_range = Range(
-                    start = Position(line=lineno, character=start),
-                    end = Position(line=lineno, character=end) 
+                        start=Position(line=lineno, character=start),
+                        end=Position(line=lineno, character=end)
                     )
                     string_entity = False
-                    data.append(SymbolInformation(
-                        name = "STRING",
-                        kind = CompletionItemKind.Text,
-                        location = Location(uri=uri, range=pos_range)
-                    ))
+                    data.append(
+                        SymbolInformation(
+                            name="STRING",
+                            kind=CompletionItemKind.Text,
+                            location=Location(uri=uri, range=pos_range)
+                        )
+                    )
                 start_string = (lineno, start)
             elif string_entity and str(word).endswith(("'", '"')) and word[-1] == string_ident:
                 pos_range = Range(
-                start = Position(line=start_string[0], character=start_string[1]),
-                end = Position(line=lineno, character=end) 
+                    start=Position(line=start_string[0], character=start_string[1]),
+                    end=Position(line=lineno, character=end)
                 )
                 string_entity = False
-                data.append(SymbolInformation(
-                    name = "STRING",
-                    kind = CompletionItemKind.Text,
-                    location = Location(uri=uri, range=pos_range)
-                ))
+                data.append(
+                    SymbolInformation(
+                        name="STRING",
+                        kind=CompletionItemKind.Text,
+                        location=Location(uri=uri, range=pos_range)
+                    )
+                )
             elif not string_entity:
                 pos_range = Range(
-                    start = Position(line=lineno, character=start),
-                    end = Position(line=lineno, character=end) 
+                    start=Position(line=lineno, character=start),
+                    end=Position(line=lineno, character=end)
                 )
                 # for now its only covering keywords, no variables
-                data.append(SymbolInformation(
-                    name = word,
-                    kind = get_lsp_symbol_type(word),
-                    location = Location(uri=uri, range=pos_range)
-                ))
+                data.append(
+                    SymbolInformation(
+                        name=word,
+                        kind=get_lsp_symbol_type(word),
+                        location=Location(uri=uri, range=pos_range)
+                    )
+                )
                 print("added SymbolItem:")
                 print(str(word) + " " + str(get_lsp_symbol_type(word)))
             else:
@@ -375,20 +388,20 @@ def document_symbol(
     return data if data else None
 
 
-@dcl_server.feature( TEXT_DOCUMENT_DID_CHANGE )
+@dcl_server.feature(TEXT_DOCUMENT_DID_CHANGE)
 def did_change(ls, params: DidChangeTextDocumentParams):
     """Text document did change notification."""
-    _validate( ls, params )
+    _validate(ls, params)
 
 
-@dcl_server.feature( TEXT_DOCUMENT_DID_CLOSE )
+@dcl_server.feature(TEXT_DOCUMENT_DID_CLOSE)
 def did_close(server: dclLSPServer, params: DidCloseTextDocumentParams):
     """Text document did close notification."""
-    server.show_message( 'Text Document Did Close' )
+    server.show_message('Text Document Did Close')
 
 
-@dcl_server.feature( TEXT_DOCUMENT_DID_SAVE )
-def did_save( server: dclLSPServer, params: DidSaveTextDocumentParams ):
+@dcl_server.feature(TEXT_DOCUMENT_DID_SAVE)
+def did_save(server: dclLSPServer, params: DidSaveTextDocumentParams):
     """Text document did save notification."""
 
     # Set input stream of characters for lexer
@@ -397,81 +410,89 @@ def did_save( server: dclLSPServer, params: DidSaveTextDocumentParams ):
     # Client or cli call
     if params:
         # Get input from lsp client
-        text_doc: Document = dcl_server.workspace.get_text_document( params.text_document.uri )
+        text_doc: Document = dcl_server.workspace.get_text_document(params.text_document.uri)
         source: str = text_doc.source
-        input_stream = InputStream( source )
+        input_stream = InputStream(source)
     else:
         # Get input from cli
-        input_stream = FileStream( server.input_path )
+        input_stream = FileStream(server.input_path)
 
     # reset the lexer/parser
-    dcl_server.error_listener.reset( )
+    dcl_server.error_listener.reset()
     dcl_server.lexer.inputStream = input_stream
-    dcl_server.tokenStream = CommonTokenStream( dcl_server.lexer )
-    dcl_server.parser.setInputStream( dcl_server.tokenStream )
+    dcl_server.tokenStream = CommonTokenStream(dcl_server.lexer)
+    dcl_server.parser.setInputStream(dcl_server.tokenStream)
 
     Top_levelContext = DeclarationParser.DeclarationModelContext
-    parseTree: Top_levelContext = dcl_server.parser.declarationModel( )
+    parseTree: Top_levelContext = dcl_server.parser.declarationModel()
 
     # TODO Generator
 
-    server.show_message( 'Text Document Did Save' )
+    server.show_message('Text Document Did Save')
 
 
-@dcl_server.feature( TEXT_DOCUMENT_DID_OPEN )
+@dcl_server.feature(TEXT_DOCUMENT_DID_OPEN)
 async def did_open(ls, params: DidOpenTextDocumentParams):
     """Text document did open notification."""
-    ls.show_message( 'Text Document Did Open' )
-    _validate( ls, params )
+    ls.show_message('Text Document Did Open')
+    _validate(ls, params)
 
 
-@dcl_server.feature( TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL,
-                     SemanticTokensLegend( token_types=["operator"], token_modifiers=[] ) )
+@dcl_server.feature(
+    TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL,
+    SemanticTokensLegend(token_types=["operator"], token_modifiers=[])
+)
 def semantic_tokens(ls: dclLSPServer, params: SemanticTokensParams):
     """See https://microsoft.github.io/language-server-protocol/specification#textDocument_semanticTokens
     for details on how semantic tokens are encoded."""
 
-    TOKENS = re.compile( '".*"(?=:)' )
+    TOKENS = re.compile('".*"(?=:)')
 
     uri = params.text_document.uri
-    doc = ls.workspace.get_document( uri )
+    doc = ls.workspace.get_document(uri)
 
     last_line = 0
     last_start = 0
 
     data = []
 
-    for lineno, line in enumerate( doc.lines ):
+    for lineno, line in enumerate(doc.lines):
         last_start = 0
 
-        for match in TOKENS.finditer( line ):
+        for match in TOKENS.finditer(line):
             start, end = match.span()
             data += [(lineno - last_line), (start - last_start), (end - start), 0, 0]
 
             last_line = lineno
             last_start = start
 
-    return SemanticTokens( data=data )
+    return SemanticTokens(data=data)
 
-@dcl_server.command( dclLSPServer.CMD_REGISTER_COMPLETIONS )
+
+@dcl_server.command(dclLSPServer.CMD_REGISTER_COMPLETIONS)
 async def register_completions(ls: dclLSPServer, *args):
     """Register completions method on the client."""
-    params = RegistrationParams( registrations=[Registration( id=str( uuid.uuid4() ), method=TEXT_DOCUMENT_COMPLETION,
-                                                              register_options={"triggerCharacters": "[':']"} )] )
-    response = await ls.register_capability_async( params )
+    params = RegistrationParams(
+        registrations=[Registration(
+            id=str(uuid.uuid4()), method=TEXT_DOCUMENT_COMPLETION,
+            register_options={"triggerCharacters": "[':']"}
+        )]
+    )
+    response = await ls.register_capability_async(params)
     if response is None:
-        ls.show_message( 'Successfully registered completions method' )
+        ls.show_message('Successfully registered completions method')
     else:
-        ls.show_message( 'Error happened during completions registration.', MessageType.Error )
+        ls.show_message('Error happened during completions registration.', MessageType.Error)
 
 
-@dcl_server.command( dclLSPServer.CMD_UNREGISTER_COMPLETIONS )
+@dcl_server.command(dclLSPServer.CMD_UNREGISTER_COMPLETIONS)
 async def unregister_completions(ls: dclLSPServer, *args):
     """Unregister completions method on the client."""
     params = UnregistrationParams(
-        unregisterations=[Unregistration( id=str( uuid.uuid4() ), method=TEXT_DOCUMENT_COMPLETION )] )
-    response = await ls.unregister_capability_async( params )
+        unregisterations=[Unregistration(id=str(uuid.uuid4()), method=TEXT_DOCUMENT_COMPLETION)]
+    )
+    response = await ls.unregister_capability_async(params)
     if response is None:
-        ls.show_message( 'Successfully unregistered completions method' )
+        ls.show_message('Successfully unregistered completions method')
     else:
-        ls.show_message( 'Error happened during completions unregistration.', MessageType.Error )
+        ls.show_message('Error happened during completions unregistration.', MessageType.Error)

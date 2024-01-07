@@ -18,7 +18,7 @@ from antlr4.Parser import Parser
 
 class BGCErrorStrategy(DefaultErrorStrategy):
 
-    def reportInputMismatch( self, recognizer: Parser, e: InputMismatchException ):
+    def reportInputMismatch(self, recognizer: Parser, e: InputMismatchException):
         msg = " expecting " + e.getExpectedTokens().toString(recognizer.literalNames, recognizer.symbolicNames)
 
         recognizer.notifyErrorListeners(msg, e.offendingToken, e)

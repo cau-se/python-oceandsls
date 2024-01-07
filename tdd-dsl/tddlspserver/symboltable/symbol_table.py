@@ -140,6 +140,7 @@ class UnitPrefix:
     Ronto = 23
     Quecto = 24
 
+
 @dataclass
 class Unit:
     """
@@ -280,9 +281,8 @@ def get_fundamental_type(type: str = "") -> Type | FundamentalType:
                 return getattr(FundamentalType, key)
 
             return Type(name=type.lower(), base_types=None, kind=None)
-        else :
+        else:
             return None
-
 
 
 class Symbol:
@@ -756,7 +756,7 @@ class ScopedSymbol(Symbol):
 
         return result
 
-    def get_symbols_of_type_and_name_sync( self, t: type, name: str = None, local_only=True, callers: List[T] = [] ) -> List[T ]:
+    def get_symbols_of_type_and_name_sync(self, t: type, name: str = None, local_only=True, callers: List[T] = []) -> List[T]:
         """
         Synchronously returns symbols of the type and optionally the name, if given.
 
@@ -783,7 +783,7 @@ class ScopedSymbol(Symbol):
 
         return result
 
-    async def get_symbols_of_type_and_name(self, t: type, name: str = None, local_only: bool = True, callers: List[T] = [] ) -> List[T]:
+    async def get_symbols_of_type_and_name(self, t: type, name: str = None, local_only: bool = True, callers: List[T] = []) -> List[T]:
         """
         Asynchronously returns symbols of the type and optionally the name, if given.
 
@@ -811,7 +811,7 @@ class ScopedSymbol(Symbol):
 
         return result
 
-    def get_symbols_of_type_sync(self, t: type, local_only: bool = True, callers: List[T] = [] ) -> List[T]:
+    def get_symbols_of_type_sync(self, t: type, local_only: bool = True, callers: List[T] = []) -> List[T]:
         """
         :param callers: List of visited scopes, that should not be visited again
         :param local_only: If true only child symbols are returned, otherwise also symbols from the parent of this symbol
@@ -837,7 +837,7 @@ class ScopedSymbol(Symbol):
 
         return result
 
-    async def get_symbols_of_type(self, t: type, local_only: bool = True, callers: List[T] = [] ) -> List[T]:
+    async def get_symbols_of_type(self, t: type, local_only: bool = True, callers: List[T] = []) -> List[T]:
         """
         :param callers: List of visited scopes, that should not be visited again
         :param local_only: If true only child symbols are returned, otherwise also symbols from the parent of this symbol
@@ -951,7 +951,7 @@ class ScopedSymbol(Symbol):
 
         return result
 
-    async def resolve(self, name: str, local_only: bool = False, callers: List[T] = [] ) -> Optional[Symbol]:
+    async def resolve(self, name: str, local_only: bool = False, callers: List[T] = []) -> Optional[Symbol]:
         """
         :param callers: List of visited scopes, that should not be visited again
         :param name: The name of the symbol to resolve.
@@ -1003,7 +1003,7 @@ class ScopedSymbol(Symbol):
 
         return None
 
-    def get_typed_symbols(self, local_only: bool = True, callers: List[T] = [] ) -> List[TypedSymbol]:
+    def get_typed_symbols(self, local_only: bool = True, callers: List[T] = []) -> List[TypedSymbol]:
         """
         :param local_only: If true only child symbols are returned, otherwise also symbols from the parent of this symbol
         (recursively) and scopes that are included.
@@ -1030,7 +1030,7 @@ class ScopedSymbol(Symbol):
 
         return result
 
-    def get_typed_symbol_names(self, local_only: bool = True, callers: List[T] = [] ) -> List[str]:
+    def get_typed_symbol_names(self, local_only: bool = True, callers: List[T] = []) -> List[str]:
         """
         The names of all accessible symbols with a type.
 
@@ -1198,7 +1198,7 @@ class TestCaseSymbol(ScopedSymbol):
 
 
 class ModuleSymbol(ScopedSymbol):
-    def __init__(self, name: str = "", file: str = None, include_in : ScopedSymbol = None):
+    def __init__(self, name: str = "", file: str = None, include_in: ScopedSymbol = None):
         super().__init__(name)
         self.__childSymbols = []
 
@@ -1207,7 +1207,7 @@ class ModuleSymbol(ScopedSymbol):
         self._contains_function: bool = False
 
         # Inclusions
-        self.__included_in : Optional[ScopedSymbol] = include_in
+        self.__included_in: Optional[ScopedSymbol] = include_in
         include_in.add_include(self)
 
     def parent(self) -> Optional[ScopedSymbol]:

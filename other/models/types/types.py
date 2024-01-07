@@ -3,140 +3,139 @@ from functools import partial
 import pyecore.ecore as Ecore
 from pyecore.ecore import *
 
-
 name = 'types'
 nsURI = 'http://oceandsl.org/expression/types'
 nsPrefix = 'types'
 
-eClass = EPackage(name=name, nsURI=nsURI, nsPrefix=nsPrefix)
+eClass = EPackage( name = name, nsURI = nsURI, nsPrefix = nsPrefix )
 
 eClassifiers = {}
-getEClassifier = partial(Ecore.getEClassifier, searchspace=eClassifiers)
+getEClassifier = partial( Ecore.getEClassifier, searchspace = eClassifiers )
 
 
-class Type(EObject, metaclass=MetaEClass):
+class Type( EObject, metaclass = MetaEClass ):
 
-    def __init__(self):
+    def __init__( self ):
         # if kwargs:
         #    raise AttributeError('unexpected arguments: {}'.format(kwargs))
 
-        super().__init__()
+        super( ).__init__( )
 
 
 @abstract
-class NamedElement(EObject, metaclass=MetaEClass):
+class NamedElement( EObject, metaclass = MetaEClass ):
 
-    name = EAttribute(eType=EString, unique=True, derived=False, changeable=True)
+    name = EAttribute( eType = EString, unique = True, derived = False, changeable = True )
 
-    def __init__(self, *, name=None):
+    def __init__( self, *, name = None ):
         # if kwargs:
         #    raise AttributeError('unexpected arguments: {}'.format(kwargs))
 
-        super().__init__()
+        super( ).__init__( )
 
         if name is not None:
             self.name = name
 
 
 @abstract
-class TypeAssignment(EObject, metaclass=MetaEClass):
+class TypeAssignment( EObject, metaclass = MetaEClass ):
 
-    def __init__(self):
+    def __init__( self ):
         # if kwargs:
         #    raise AttributeError('unexpected arguments: {}'.format(kwargs))
 
-        super().__init__()
+        super( ).__init__( )
 
 
 @abstract
-class Dimension(EObject, metaclass=MetaEClass):
+class Dimension( EObject, metaclass = MetaEClass ):
 
-    def __init__(self):
+    def __init__( self ):
         # if kwargs:
         #    raise AttributeError('unexpected arguments: {}'.format(kwargs))
 
-        super().__init__()
+        super( ).__init__( )
 
 
-class TypeModel(EObject, metaclass=MetaEClass):
+class TypeModel( EObject, metaclass = MetaEClass ):
 
-    types = EReference(ordered=True, unique=True, containment=True, derived=False, upper=-1)
+    types = EReference( ordered = True, unique = True, containment = True, derived = False, upper = -1 )
 
-    def __init__(self, *, types=None):
+    def __init__( self, *, types = None ):
         # if kwargs:
         #    raise AttributeError('unexpected arguments: {}'.format(kwargs))
 
-        super().__init__()
+        super( ).__init__( )
 
         if types:
-            self.types.extend(types)
+            self.types.extend( types )
 
 
-class Value(EObject, metaclass=MetaEClass):
+class Value( EObject, metaclass = MetaEClass ):
 
-    def __init__(self):
+    def __init__( self ):
         # if kwargs:
         #    raise AttributeError('unexpected arguments: {}'.format(kwargs))
 
-        super().__init__()
+        super( ).__init__( )
 
 
-class Attribute(NamedElement):
+class Attribute( NamedElement ):
 
-    type = EReference(ordered=True, unique=True, containment=False, derived=False)
+    type = EReference( ordered = True, unique = True, containment = False, derived = False )
 
-    def __init__(self, *, type=None, **kwargs):
+    def __init__( self, *, type = None, **kwargs ):
 
-        super().__init__(**kwargs)
+        super( ).__init__( **kwargs )
 
         if type is not None:
             self.type = type
 
 
-class Enumeral(NamedElement):
+class Enumeral( NamedElement ):
 
-    value = EAttribute(eType=ELong, unique=True, derived=False, changeable=True)
+    value = EAttribute( eType = ELong, unique = True, derived = False, changeable = True )
 
-    def __init__(self, *, value=None, **kwargs):
+    def __init__( self, *, value = None, **kwargs ):
 
-        super().__init__(**kwargs)
+        super( ).__init__( **kwargs )
 
         if value is not None:
             self.value = value
 
 
-class TypeReference(TypeAssignment):
+class TypeReference( TypeAssignment ):
 
-    type = EReference(ordered=True, unique=True, containment=False, derived=False)
+    type = EReference( ordered = True, unique = True, containment = False, derived = False )
 
-    def __init__(self, *, type=None, **kwargs):
+    def __init__( self, *, type = None, **kwargs ):
 
-        super().__init__(**kwargs)
+        super( ).__init__( **kwargs )
 
         if type is not None:
             self.type = type
 
 
-class SizeDimension(Dimension):
+class SizeDimension( Dimension ):
 
-    size = EAttribute(eType=ELongObject, unique=True, derived=False, changeable=True)
+    size = EAttribute( eType = ELongObject, unique = True, derived = False, changeable = True )
 
-    def __init__(self, *, size=None, **kwargs):
+    def __init__( self, *, size = None, **kwargs ):
 
-        super().__init__(**kwargs)
+        super( ).__init__( **kwargs )
 
         if size is not None:
             self.size = size
 
 
-class RangeDimension(Dimension):
+class RangeDimension( Dimension ):
 
-    lowerBound = EAttribute(eType=ELongObject, unique=True, derived=False, changeable=True)
-    upperBound = EAttribute(eType=ELongObject, unique=True, derived=False, changeable=True)
+    lowerBound = EAttribute( eType = ELongObject, unique = True, derived = False, changeable = True )
+    upperBound = EAttribute( eType = ELongObject, unique = True, derived = False, changeable = True )
 
-    def __init__(self, *, lowerBound=None, upperBound=None, **kwargs):
+    def __init__( self, *, lowerBound = None, upperBound = None, **kwargs ):
 
-        super().__init__(**kwargs)
+        super( ).__init__( **kwargs )
 
         if lowerBound is not None:
             self.lowerBound = lowerBound
@@ -145,38 +144,38 @@ class RangeDimension(Dimension):
             self.upperBound = upperBound
 
 
-class EnumeralValue(Value):
+class EnumeralValue( Value ):
 
-    value = EReference(ordered=True, unique=True, containment=False, derived=False)
+    value = EReference( ordered = True, unique = True, containment = False, derived = False )
 
-    def __init__(self, *, value=None, **kwargs):
+    def __init__( self, *, value = None, **kwargs ):
 
-        super().__init__(**kwargs)
-
-        if value is not None:
-            self.value = value
-
-
-class ObjectValue(Value):
-
-    value = EReference(ordered=True, unique=True, containment=False, derived=False)
-
-    def __init__(self, *, value=None, **kwargs):
-
-        super().__init__(**kwargs)
+        super( ).__init__( **kwargs )
 
         if value is not None:
             self.value = value
 
 
-class RangeValue(Value):
+class ObjectValue( Value ):
 
-    value = EReference(ordered=True, unique=True, containment=True, derived=False)
-    type = EReference(ordered=True, unique=True, containment=False, derived=False)
+    value = EReference( ordered = True, unique = True, containment = False, derived = False )
 
-    def __init__(self, *, value=None, type=None, **kwargs):
+    def __init__( self, *, value = None, **kwargs ):
 
-        super().__init__(**kwargs)
+        super( ).__init__( **kwargs )
+
+        if value is not None:
+            self.value = value
+
+
+class RangeValue( Value ):
+
+    value = EReference( ordered = True, unique = True, containment = True, derived = False )
+    type = EReference( ordered = True, unique = True, containment = False, derived = False )
+
+    def __init__( self, *, value = None, type = None, **kwargs ):
+
+        super( ).__init__( **kwargs )
 
         if value is not None:
             self.value = value
@@ -185,53 +184,51 @@ class RangeValue(Value):
             self.type = type
 
 
-class NamedType(Type, NamedElement):
+class NamedType( Type, NamedElement ):
 
-    def __init__(self, **kwargs):
+    def __init__( self, **kwargs ):
+        super( ).__init__( **kwargs )
 
-        super().__init__(**kwargs)
 
+class InlineEnumerationType( Type, TypeAssignment ):
 
-class InlineEnumerationType(Type, TypeAssignment):
+    values = EReference( ordered = True, unique = True, containment = True, derived = False, upper = -1 )
 
-    values = EReference(ordered=True, unique=True, containment=True, derived=False, upper=-1)
+    def __init__( self, *, values = None, **kwargs ):
 
-    def __init__(self, *, values=None, **kwargs):
-
-        super().__init__(**kwargs)
+        super( ).__init__( **kwargs )
 
         if values:
-            self.values.extend(values)
+            self.values.extend( values )
 
 
-class RecordType(NamedType):
+class RecordType( NamedType ):
 
-    attributes = EReference(ordered=True, unique=True, containment=True, derived=False, upper=-1)
+    attributes = EReference( ordered = True, unique = True, containment = True, derived = False, upper = -1 )
 
-    def __init__(self, *, attributes=None, **kwargs):
+    def __init__( self, *, attributes = None, **kwargs ):
 
-        super().__init__(**kwargs)
+        super( ).__init__( **kwargs )
 
         if attributes:
-            self.attributes.extend(attributes)
+            self.attributes.extend( attributes )
 
 
-class PrimitiveType(NamedType):
+class PrimitiveType( NamedType ):
 
-    def __init__(self, **kwargs):
+    def __init__( self, **kwargs ):
+        super( ).__init__( **kwargs )
 
-        super().__init__(**kwargs)
 
+class RangeType( NamedType ):
 
-class RangeType(NamedType):
+    type = EReference( ordered = True, unique = True, containment = False, derived = False )
+    minimum = EReference( ordered = True, unique = True, containment = True, derived = False )
+    maximum = EReference( ordered = True, unique = True, containment = True, derived = False )
 
-    type = EReference(ordered=True, unique=True, containment=False, derived=False)
-    minimum = EReference(ordered=True, unique=True, containment=True, derived=False)
-    maximum = EReference(ordered=True, unique=True, containment=True, derived=False)
+    def __init__( self, *, type = None, minimum = None, maximum = None, **kwargs ):
 
-    def __init__(self, *, type=None, minimum=None, maximum=None, **kwargs):
-
-        super().__init__(**kwargs)
+        super( ).__init__( **kwargs )
 
         if type is not None:
             self.type = type
@@ -243,25 +240,25 @@ class RangeType(NamedType):
             self.maximum = maximum
 
 
-class EnumerationType(NamedType):
+class EnumerationType( NamedType ):
 
-    values = EReference(ordered=True, unique=True, containment=True, derived=False, upper=-1)
+    values = EReference( ordered = True, unique = True, containment = True, derived = False, upper = -1 )
 
-    def __init__(self, *, values=None, **kwargs):
+    def __init__( self, *, values = None, **kwargs ):
 
-        super().__init__(**kwargs)
+        super( ).__init__( **kwargs )
 
         if values:
-            self.values.extend(values)
+            self.values.extend( values )
 
 
-class ArrayType(TypeReference, Type):
+class ArrayType( TypeReference, Type ):
 
-    dimensions = EReference(ordered=True, unique=True, containment=True, derived=False, upper=-1)
+    dimensions = EReference( ordered = True, unique = True, containment = True, derived = False, upper = -1 )
 
-    def __init__(self, *, dimensions=None, **kwargs):
+    def __init__( self, *, dimensions = None, **kwargs ):
 
-        super().__init__(**kwargs)
+        super( ).__init__( **kwargs )
 
         if dimensions:
-            self.dimensions.extend(dimensions)
+            self.dimensions.extend( dimensions )
