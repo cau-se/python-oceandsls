@@ -16,8 +16,10 @@
 
 import argparse
 import logging
+import os
+from os.path import isfile
 
-from .server import bgc_server
+from .server import bgc_server, did_save
 
 logging.basicConfig( filename="bgcDSL_pygls.log", level=logging.DEBUG, filemode="w" )
 
@@ -43,6 +45,26 @@ def add_arguments(parser):
         "--port", dest="port", type=int, default=2087,
         help="Bind to this port"
     )
+    parser.add_argument(
+            "-f", "--file", dest = "file", type = readable_file,
+            help = "Input file for file generator"
+    )
+
+
+def readable_file( file_path: str ):
+    """
+    Check for readable file.
+
+    :param file_path: path to file
+    :return: valid readable file path
+    """
+
+    abs_file_path = os.path.join( os.getcwd( ), file_path )
+
+    if isfile( abs_file_path ) and os.access( abs_file_path, os.R_OK ):
+        return abs_file_path
+    else:
+        raise argparse.ArgumentTypeError( f"File {abs_file_path} doesn't exist or isn't readable." )
 
 
 def main():
@@ -50,12 +72,17 @@ def main():
     add_arguments(parser)
     args = parser.parse_args()
 
-    if args.tcp:
-        bgc_server.start_tcp( args.host, args.port )
-    elif args.ws:
-        bgc_server.start_ws( args.host, args.port )
+    if args.file:
+        # Start cli code gen with given path
+        bgc_server.input_path = os.path.join( os.getcwd( ), args.file )
+        did_save( bgc_server, None )
     else:
-        bgc_server.start_io()
+        if args.tcp:
+            bgc_server.start_tcp( args.host, args.port )
+        elif args.ws:
+            bgc_server.start_ws( args.host, args.port )
+        else:
+            bgc_server.start_io()
 
 
 if __name__ == "__main__":
