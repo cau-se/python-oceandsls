@@ -1,6 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="tddlspserver" type="PythonConfigurationType" factoryName="Python">
     <module name="tdd-dsl" />
+    <option name="ENV_FILES" value="" />
     <option name="INTERPRETER_OPTIONS" value="" />
     <option name="PARENT_ENVS" value="true" />
     <envs>
@@ -13,7 +14,7 @@
     <option name="ADD_CONTENT_ROOTS" value="true" />
     <option name="ADD_SOURCE_ROOTS" value="true" />
     <option name="SCRIPT_NAME" value="tdd-dsl.tddlspserver" />
-    <option name="PARAMETERS" value="--tcp" />
+    <option name="PARAMETERS" value="--tcp -f tdd-dsl/input/test_fT_ME_multi.tdd" />
     <option name="SHOW_COMMAND_LINE" value="false" />
     <option name="EMULATE_TERMINAL" value="false" />
     <option name="MODULE_MODE" value="true" />
