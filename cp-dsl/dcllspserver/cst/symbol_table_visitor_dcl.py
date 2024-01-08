@@ -26,7 +26,10 @@ from antlr4.Token import CommonToken
 from conflspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
 
 # user relative imports
-from ..symboltable.symbol_table import SymbolTable, P, T, GroupSymbol, FeatureSymbol, SymbolTableOptions, VariableSymbol, FundamentalUnit, UnitPrefix, UnitKind, EnumSymbol, ArraySymbol, RangeSymbol, ComposedUnit, UnitSpecification, DuplicateSymbolError
+from ..symboltable.symbol_table import (
+    SymbolTable, P, T, GroupSymbol, FeatureSymbol, SymbolTableOptions, VariableSymbol, FundamentalUnit, UnitPrefix, UnitKind, EnumSymbol, ArraySymbol,
+    RangeSymbol, ComposedUnit, UnitSpecification, DuplicateSymbolError
+)
 from ..gen.python.Declaration.DeclarationParser import DeclarationParser
 from ..gen.python.Declaration.DeclarationVisitor import DeclarationVisitor
 
@@ -65,7 +68,7 @@ class SymbolTableVisitorDcl(DeclarationVisitor, Generic[T]):
         # if it is a Array, it was already created, so no need for a variable Symbol
         # if the varName already exists in scope, just overwrite it
         if isinstance(varType, ArraySymbol):
-            if oldSymbol == None:
+            if oldSymbol is None:
                 varType.name = ctx.name.text
                 varType.unit = unit
                 varType.context = ctx
@@ -73,7 +76,7 @@ class SymbolTableVisitorDcl(DeclarationVisitor, Generic[T]):
                 return varType
             else:
                 self._scope.removeSymbol(varType)
-        if not oldSymbol == None:
+        if oldSymbol is not None:
             oldSymbol.unit = unit if unit else oldSymbol.unit
             oldSymbol.type = varType if varType else oldSymbol.type
             oldSymbol.description = description if description else oldSymbol.description
@@ -101,7 +104,11 @@ class SymbolTableVisitorDcl(DeclarationVisitor, Generic[T]):
 
     # sIUnit                      :   (prefix=ePrefix)? type=eSIUnitType #siUnit;
     def visitSiunit(self, ctx: DeclarationParser.SIUnitContext):
-        return FundamentalUnit(name=ctx.type_.getText() if ctx.type_ else "", unitPrefix=self.stringToPrefix(ctx.prefix.getText() if ctx.prefix else ""), unitKind=self.stringToUnitType(ctx.type_.getText() if ctx.type_ else ""))
+        return FundamentalUnit(
+            name=ctx.type_.getText() if ctx.type_ else "",
+            unitPrefix=self.stringToPrefix(ctx.prefix.getText() if ctx.prefix else ""),
+            unitKind=self.stringToUnitType(ctx.type_.getText() if ctx.type_ else "")
+        )
 
     # customUnit                  :   name=STRING #customunit;
     def visitCustomunit(self, ctx: DeclarationParser.CustomUnitContext):

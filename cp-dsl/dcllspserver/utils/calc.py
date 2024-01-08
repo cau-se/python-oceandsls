@@ -53,7 +53,12 @@ class DeclarationCalculator():
                 variableSymbol.val = None
                 print("WARNING: no default value defined for Variable", variableSymbol.name)
 
-    def calcArithmeticExpressionArray(self, varctx: DeclarationParser.ParamAssignStatContext, ctx: DeclarationParser.ArithmeticExpressionContext, arraySymbol: ArraySymbol):
+    def calcArithmeticExpressionArray(
+            self,
+            varctx: DeclarationParser.ParamAssignStatContext,
+            ctx: DeclarationParser.ArithmeticExpressionContext,
+            arraySymbol: ArraySymbol
+    ):
         '''calculates a array in decl language'''
 
         # tupleList representation: list[2:4,5] = [range(2,4), range(5)]

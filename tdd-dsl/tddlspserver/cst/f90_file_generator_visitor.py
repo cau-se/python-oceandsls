@@ -189,7 +189,10 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
             # Write content to file
             self.files[abs_path] = write_file(abs_path, content, file_attr, insert)
 
-            # TODO sut path ?  # Update test case symbol  # test_case_symbol: TestCaseSymbol = get_scope(ctx, self.symbol_table)  # if test_case_symbol:  #     # Add first used module as system under test  #     test_case_symbol.sut_file_path = abs_path
+            # TODO sut path ?  # Update test case symbol  # test_case_symbol:
+            # TestCaseSymbol = get_scope(ctx, self.symbol_table)  # if
+            # test_case_symbol:  #     # Add first used module as system under test  #
+            # test_case_symbol.sut_file_path = abs_path
 
         # Return list of generated files
         return self.files

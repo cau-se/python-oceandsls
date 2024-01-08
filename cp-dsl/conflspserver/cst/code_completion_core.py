@@ -18,15 +18,12 @@
 
 __author__ = 'sgu'
 
-# TODO license
-
 #
 #  The c3 engine is able to provide code completion candidates useful for
 #  editors with ANTLR generated parsers, independent of the actual
 #  language/grammar used for the generation.
 #
 
-# TODO configure module
 # package: com.vmware.antlr4c3
 
 # utils
@@ -524,7 +521,7 @@ class CodeCompletionCore:
                     fullPath.extend(followSetPath)
                     if not self.translateStackToRuleIndex(fullPath):
                         for symbol in intervalSetToList(followSet.intervals):
-                            if not symbol in self.ignoredTokens:
+                            if symbol not in self.ignoredTokens:
                                 if self.showDebugOutput and self.logger.isEnabledFor(logging.DEBUG):
                                     self.logger.debug(
                                         "=====> collected: " + IntervalSet.elementName(
@@ -532,7 +529,7 @@ class CodeCompletionCore:
                                             self.symbolicNames, symbol
                                         )
                                     )
-                                if not symbol in self.candidates.tokens:
+                                if symbol not in self.candidates.tokens:
                                     # Following is empty if there is more than one entry in the set.
                                     self.candidates.tokens[symbol] = followSet.following
                                 else:
@@ -549,7 +546,7 @@ class CodeCompletionCore:
             # or if the current input symbol will be matched somewhere after this entry point.
             # Otherwise, stop here.
             currentSymbol: int = self.tokens[tokenListIndex].type
-            if not Token.EPSILON in followSets.combined and not currentSymbol in followSets.combined:
+            if Token.EPSILON not in followSets.combined and currentSymbol not in followSets.combined:
                 callStack.pop()
 
                 return result
@@ -590,7 +587,7 @@ class CodeCompletionCore:
             # We simulate here the same precedence handling as the parser does, which uses hard coded values.
             # For rules that are not left recursive this value is ignored (since there is no precedence transition).
             for transition in transitions:
-                if type(transition) == RuleTransition:
+                if type(transition) is RuleTransition:
                     ruleTransition: RuleTransition = transition
                     endStatus: Set[int] = self.processRule(
                         transition.target, currentEntry.tokenListIndex, callStack,
@@ -599,16 +596,16 @@ class CodeCompletionCore:
                     for position in endStatus:
                         statePipeline.append(IPipelineEntry(transition.followState, position))
 
-                elif type(transition) == PredicateTransition:
+                elif type(transition) is PredicateTransition:
                     if self.checkPredicate(transition):
                         statePipeline.append(IPipelineEntry(transition.target, currentEntry.tokenListIndex))
 
-                elif type(transition) == PrecedencePredicateTransition:
+                elif type(transition) is PrecedencePredicateTransition:
                     predTransition: PrecedencePredicateTransition = transition
                     if predTransition.precedence >= self.precedenceStack[len(self.precedenceStack) - 1]:
                         statePipeline.append(IPipelineEntry(transition.target, currentEntry.tokenListIndex))
 
-                elif type(transition) == WildcardTransition:
+                elif type(transition) is WildcardTransition:
                     if atCaret:
                         if not self.translateStackToRuleIndex(callStack):
                             intern: IntervalSet = IntervalSet()
@@ -619,7 +616,7 @@ class CodeCompletionCore:
                                 )
                             )  # range upper limit is exclusive
                             for token in intervalSetToList(intern):
-                                if not token in self.ignoredTokens:
+                                if token not in self.ignoredTokens:
                                     self.candidates.tokens[token] = []
                     else:
                         statePipeline.append(IPipelineEntry(transition.target, currentEntry.tokenListIndex + 1))
@@ -639,7 +636,7 @@ class CodeCompletionCore:
                                 followList: List[int] = intervalSetToList(followSet)
                                 addFollowing: bool = len(followList) == 1
                                 for symbol in followList:
-                                    if not symbol in self.ignoredTokens:
+                                    if symbol not in self.ignoredTokens:
                                         if self.showDebugOutput and self.logger.isEnabledFor(logging.DEBUG):
                                             self.logger.debug(
                                                 "=====> collected: " + IntervalSet.elementName(

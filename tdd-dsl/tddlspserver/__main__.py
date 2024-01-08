@@ -89,7 +89,7 @@ def fxtran_executable(path: str):
         subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
         raise argparse.ArgumentTypeError(
-            f"Did not found fxtran. command '{e.cmd}' return with error (code {e.returncode}): {e.output}. Provide valid path via -f path_to_fxtran or add fxtran to system PATH."
+            f"Did not found fxtran. Command '{e.cmd}' returned error (code {e.returncode}): {e.output}. Provide valid path via -fx PATH or add to system PATH."
         )
 
     return path

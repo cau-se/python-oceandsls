@@ -140,7 +140,7 @@ class mitGcmCodeGenerator(StandartCodeGenerator):
         """
         index = 0
         for param in elem.getNestedSymbolsOfTypeSync(type):
-            if param.value == None:
+            if param.value is None:
                 index += 1
             else:
                 return index
@@ -153,8 +153,18 @@ class mitGcmCodeGenerator(StandartCodeGenerator):
         featureList = {}
         activatedList = []
         layer_size = False
-        alreadyDone = {"EEPARMS": [False, "eedata"], "MNC": [False, "data.mnc"], "GMRedi": [False, "data.gmredi"], "RBCS": [False, "data.rbcs"], "Layers": [False, "data.layers"], "PTRACERS": [
-            False, "data.ptracers"], "Shap": [False, "data.shap"], "obcs": [False, "data.obcs"], "GCHEM": [False, "data.gchem"], "offline": [False, "data.offline"]}
+        alreadyDone = {
+            "EEPARMS": [
+                False, "eedata"], "MNC": [
+                False, "data.mnc"], "GMRedi": [
+                False, "data.gmredi"], "RBCS": [
+                    False, "data.rbcs"], "Layers": [
+                        False, "data.layers"], "PTRACERS": [
+                            False, "data.ptracers"], "Shap": [
+                                False, "data.shap"], "obcs": [
+                                    False, "data.obcs"], "GCHEM": [
+                                        False, "data.gchem"], "offline": [
+                                            False, "data.offline"]}
         featureTemplate = self.templateEnv.get_template("data.feature.template")
 
         def checkFeature(elem):
@@ -174,8 +184,20 @@ class mitGcmCodeGenerator(StandartCodeGenerator):
                     return
                 if elem.name == "EEPARMS":
                     eeparmsTemplate = self.templateEnv.get_template("eedata.template")
-                    self.writeFile(eeparmsTemplate.render(group=elem, isinstance=isinstance, variableSymbol=VariableSymbol, float=float, int=int,
-                                   bool=bool, groupSymbol=GroupSymbol, none=None, str=str, enumerate=enumerate, firstNotNoneElem=self.firstNotNoneElem), "eedata")
+                    self.writeFile(
+                        eeparmsTemplate.render(
+                            group=elem,
+                            isinstance=isinstance,
+                            variableSymbol=VariableSymbol,
+                            float=float,
+                            int=int,
+                            bool=bool,
+                            groupSymbol=GroupSymbol,
+                            none=None,
+                            str=str,
+                            enumerate=enumerate,
+                            firstNotNoneElem=self.firstNotNoneElem),
+                        "eedata")
                     return
                 if not elem.is_activated:
                     return
@@ -183,7 +205,7 @@ class mitGcmCodeGenerator(StandartCodeGenerator):
                 alreadyDone[elem.name] = [True, fileName]
                 self.writeFile(featureTemplate.render(feature=elem, isinstance=isinstance, variableSymbol=VariableSymbol, float=float, int=int,
                                bool=bool, groupSymbol=GroupSymbol, none=None, str=str, enumerate=enumerate, firstNotNoneElem=self.firstNotNoneElem), fileName)
-            except:
+            except IndexError:
                 pass
 
         for elem in self._symbolTable.getAllNestedSymbolsSync():
@@ -196,8 +218,8 @@ class mitGcmCodeGenerator(StandartCodeGenerator):
             if elem.name == "layers_size":
                 layer_size = True
 
-        # give group for eedata, feature for data.mnc, data.gmredi, data.rbcs, data.layers, data.ptracers, data.shap, data.obcs, data.gchem, data.off all same template
-        # for every feature give to data.pkg + check for feature diagnostic
+        # give group for eedata, feature for data.mnc, data.gmredi, data.rbcs, data.layers, data.ptracers, data.shap, data.obcs, data.gchem, data.off all same
+        # template for every feature give to data.pkg + check for feature diagnostic
         dataPkgTemplate = self.templateEnv.get_template("data.pkg.template")
         self.writeFile(dataPkgTemplate.render(actData=activatedList, enumerate=enumerate), "data.pkg")
 
@@ -212,7 +234,7 @@ class mitGcmCodeGenerator(StandartCodeGenerator):
         packagesTemplate = self.templateEnv.get_template("packages.conf.template")
         try:
             activatedList.remove("EEPARMS")
-        except:
+        except ValueError:
             pass
         self.writeFile(packagesTemplate.render(features=activatedList), "packages.conf")
 

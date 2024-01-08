@@ -28,7 +28,8 @@ from ..gen.python.Declaration.DeclarationParser import DeclarationParser
 from ..gen.python.Declaration.DeclarationLexer import DeclarationLexer
 # user relative imports
 from .symbol_table_visitor_dcl import SymbolTableVisitorDcl as DeclSymbolTableVisitor
-from ..symboltable.symbol_table import SymbolTable, P, T, GroupSymbol, FeatureSymbol, SymbolTableOptions, VariableSymbol, FundamentalUnit, UnitPrefix, UnitKind, EnumSymbol, ArraySymbol
+from ..symboltable.symbol_table import SymbolTable, P, T, GroupSymbol, FeatureSymbol, SymbolTableOptions, VariableSymbol, FundamentalUnit, UnitPrefix, \
+    UnitKind, EnumSymbol, ArraySymbol
 from ..gen.python.Configuration.ConfigurationParser import ConfigurationParser
 from ..gen.python.Configuration.ConfigurationVisitor import ConfigurationVisitor
 from ..gen.python.Configuration.ConfigurationLexer import ConfigurationLexer
@@ -78,7 +79,7 @@ class SymbolTableVisitor(ConfigurationVisitor, Generic[T]):
     def visitParameterAssignment(self, ctx: ConfigurationParser.ParameterAssignmentContext):
         # define the given Parameter
         varName = ctx.declaration.getText()  # set and get the variable name here
-        prefix = self.visit(ctx.unit) if ctx.unit != None else UnitPrefix.NoP
+        prefix = self.visit(ctx.unit) if ctx.unit is not None else UnitPrefix.NoP
         # isArray = True if len(ctx.selectors) > 0 else False
         symbol = self._scope.getAllNestedSymbolsSync(varName)[0]
         if prefix != UnitPrefix.NoP:

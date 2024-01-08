@@ -164,7 +164,8 @@ class ComposedUnit():
     exponent: FundamentalUnit
     basicUnit: FundamentalUnit
 
-    def __init__(self, basicUnit: FundamentalUnit = None, numerator: FundamentalUnit = None, denominator: FundamentalUnit = None, exponent: FundamentalUnit = None) -> None:
+    def __init__(self, basicUnit: FundamentalUnit = None, numerator: FundamentalUnit = None,
+                 denominator: FundamentalUnit = None, exponent: FundamentalUnit = None) -> None:
         self.basicUnit = basicUnit
         self.numerator = numerator
         self.denominator = denominator
@@ -601,7 +602,8 @@ class ScopedSymbol(Symbol):
         symbol_table = self.symbol_table()
         if symbol_table is None or not symbol_table.options.allow_duplicate_symbols:
             for child in self.children():
-                if child == symbol or (len(symbol.name) > 0 and child.name == symbol.name) and type(child) == type(symbol):
+                if child is symbol or (len(symbol.name) > 0 and child.name == symbol.name) and type(child) is type(symbol):
+                if child is symbol or (len(symbol.name) > 0 and child.name == symbol.name) and isinstance(child, type(symbol)):
                     symbol_name = symbol.name if symbol.name else "<anonymous>"
                     scope_name = self.name if self.name else "<anonymous>"
                     msg: str = f"Attempt to add duplicate symbol \"{symbol_name}\" to \"{scope_name}\""
@@ -1113,7 +1115,7 @@ class ArraySymbol(VariableSymbol):
             if isinstance(index, list):
                 return self.arrVal[self.vectors.index(index[0])]
             return self.arrVal[self.vectors.index(index)]
-        except:
+        except IndexError or ValueError:
             return None
 
     def getVector(self, vector) -> T:
@@ -1129,7 +1131,7 @@ class ArraySymbol(VariableSymbol):
                     index = self.vectors.index(i)
                     currArray = currArray.value[index]
                 return currArray
-            except:
+            except IndexError or ValueError:
                 # return the last value reached
                 return currArray
         else:

@@ -29,11 +29,37 @@ from .cst.code_completion_core import CodeCompletionCore, CandidatesCollection
 
 # pygls
 from lsprotocol.types import (
-    CompletionItem, CompletionItemKind, CompletionList, CompletionOptions, CompletionParams, Diagnostic, DidChangeTextDocumentParams, DidCloseTextDocumentParams,
-    DidOpenTextDocumentParams, DidSaveTextDocumentParams, DocumentSymbol, DocumentSymbolParams, Location, MessageType, Position, Range, Registration, RegistrationParams, SemanticTokens, SemanticTokensLegend,
-    SemanticTokensParams, SymbolInformation, TEXT_DOCUMENT_COMPLETION, TEXT_DOCUMENT_DID_CHANGE, TEXT_DOCUMENT_DID_CLOSE, TEXT_DOCUMENT_DID_OPEN, TEXT_DOCUMENT_DID_SAVE,
-    TEXT_DOCUMENT_DOCUMENT_SYMBOL, TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL, Unregistration, UnregistrationParams
-)
+    CompletionItem,
+    CompletionItemKind,
+    CompletionList,
+    CompletionOptions,
+    CompletionParams,
+    Diagnostic,
+    DidChangeTextDocumentParams,
+    DidCloseTextDocumentParams,
+    DidOpenTextDocumentParams,
+    DidSaveTextDocumentParams,
+    DocumentSymbol,
+    DocumentSymbolParams,
+    Location,
+    MessageType,
+    Position,
+    Range,
+    Registration,
+    RegistrationParams,
+    SemanticTokens,
+    SemanticTokensLegend,
+    SemanticTokensParams,
+    SymbolInformation,
+    TEXT_DOCUMENT_COMPLETION,
+    TEXT_DOCUMENT_DID_CHANGE,
+    TEXT_DOCUMENT_DID_CLOSE,
+    TEXT_DOCUMENT_DID_OPEN,
+    TEXT_DOCUMENT_DID_SAVE,
+    TEXT_DOCUMENT_DOCUMENT_SYMBOL,
+    TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL,
+    Unregistration,
+    UnregistrationParams)
 from pygls.server import LanguageServer
 from pygls.workspace import Document
 
