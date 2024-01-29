@@ -17,14 +17,13 @@ __author__ = "sgu"
 #  limitations under the License.
 
 import os
-import re
-# util imports
+# Util imports
 from typing import Callable, Generic
 
-# antlr4
+# Antlr4
 from antlr4.tree.Tree import ParseTree
 
-# user relative imports
+# User relative imports
 from ..fxca.util.fxtran_utils import get_files, write_decorate_src_xml
 from ..gen.python.TestSuite.TestSuiteParser import TestSuiteParser
 from ..gen.python.TestSuite.TestSuiteVisitor import TestSuiteVisitor
@@ -36,7 +35,7 @@ class CalculateComplexityVisitor(TestSuiteVisitor, Generic[T]):
     _symbol_table: SymbolTable
     _test_path: str
 
-    def __init__(self, name: str = "", test_work_path: str = "tdd-dsl/output", fxtran_path: str = "fxtran", sort_metric=None):
+    def __init__(self, name: str = "", test_work_path: str = "tdd-dsl/output", fxtran_path: str = "fxtran", sort_metric=None, debug: bool = False):
         super().__init__()
         self.sort_metric = sort_metric
         self.fxtran_path = fxtran_path
@@ -44,6 +43,7 @@ class CalculateComplexityVisitor(TestSuiteVisitor, Generic[T]):
         self._scope = None
         self._test_work_path = test_work_path
         self._test_path = ""
+        self._debug = debug
 
     @property
     def work_path(self) -> str:
@@ -62,7 +62,6 @@ class CalculateComplexityVisitor(TestSuiteVisitor, Generic[T]):
     def visitSrc_path(self, ctx: TestSuiteParser.Src_pathContext):
         # Strip string terminals
         user_path: str = ctx.path.text.strip("\'") if ctx.path else ''
-        # candidates = list( map( lambda c: f"{os.sep}{c}" , candidates ) )
 
         # TODO document
         # Update source directory
@@ -86,7 +85,7 @@ class CalculateComplexityVisitor(TestSuiteVisitor, Generic[T]):
             else:
                 # Relative path is current dir and omitted
                 src_path: str = os.path.join(self._test_path, src_filename)
-            scope_elements = calculate_metrics(xml_path=os.path.join(path, filename), src=src_path, sort_metric=self.sort_metric)
+            scope_elements = calculate_metrics(xml_path=os.path.join(path, filename), src=src_path, sort_metric=self.sort_metric, debug = self._debug)
 
             for scope_name, scope in scope_elements.items():
                 if scope.is_testable:

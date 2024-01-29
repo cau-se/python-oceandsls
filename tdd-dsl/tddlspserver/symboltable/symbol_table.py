@@ -18,15 +18,13 @@ __author__ = "sgu"
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# TODO license
-
-# utils import
+# Utils import
 import asyncio
 from enum import Enum
 from dataclasses import dataclass
 from typing import Coroutine, List, Optional, ParamSpec, Set, TypeVar
 
-# antlr4
+# Antlr4
 from antlr4.tree.Tree import ParseTree
 
 
@@ -51,7 +49,7 @@ class MemberVisibility(Enum):
     Library = 6
 
 
-# class Modifier(Enum):
+# Class Modifier(Enum):
 #     Static = 0
 #     Final = 1
 #     Sealed = 2
@@ -81,7 +79,7 @@ class TypeKind(Enum):
     Alias = 12
 
 
-# class ReferenceKind(Enum):
+# Class ReferenceKind(Enum):
 #     Irrelevant = 0
 #     # Default for most languages for dynamically allocated memory ("Type*" in C++).
 #     Pointer = 1
@@ -98,13 +96,11 @@ class UnitKind(Enum):
     Unknown = 0
     Second = 1
     Metre = 2
-    # TODO si unit is kilogram | added to FundamentalUnit
     Gram = 3
     Ampere = 4
     Kelvin = 5
     Mole = 6
     Candela = 7
-    # TODO add non si units?
     Pascal = 8
     Joule = 9
     ton = 10
@@ -149,12 +145,9 @@ class Unit:
     name: str
 
     # The super unit of this unit or empty if this is a SI unit such as second.
-    # TODO add units
-    # TODO add aliases?
     base_types: List[Unit]
     prefix: UnitPrefix
     kind: UnitKind
-    # reference: ReferenceKind
 
 
 @dataclass
@@ -168,7 +161,6 @@ class Type:
     # Also used as the target type for type aliases.
     base_types: Optional[List[Type]]
     kind: Optional[TypeKind]
-    # reference: Optional[ReferenceKind]
 
 
 @dataclass
@@ -177,7 +169,6 @@ class SymbolTableOptions:
 
 
 class classproperty(property):
-    # TODO use metaclass factory https://stackoverflow.com/q/6760685/
     def __get__(self, cls, owner):
         return classmethod(self.fget).__get__(None, owner)()
 
@@ -198,12 +189,10 @@ class FundamentalUnit(Unit):
     def metre_unit(self) -> FundamentalUnit:
         return FundamentalUnit(name="metre", unit_kind=UnitKind.Metre)
 
-    # TODO si unit is kilogram but unitKind has gram
     @classproperty
     def gram_unit(self) -> FundamentalUnit:
         return FundamentalUnit(name="gram", unit_kind=UnitKind.Gram)
 
-    # TODO si unit is kilogram but unitKind has gram
     @classproperty
     def kilogram_unit(self) -> FundamentalUnit:
         return FundamentalUnit(name="kilogram", unit_prefix=UnitPrefix.Kilo, unit_kind=UnitKind.Gram)
@@ -232,7 +221,6 @@ class FundamentalUnit(Unit):
     def joule_unit(self) -> FundamentalUnit:
         return FundamentalUnit(name="Joule", unit_kind=UnitKind.Joule)
 
-    # TODO si unit is kilogram. unitKind has gram but could include ton
     @classproperty
     def ton_unit(self) -> FundamentalUnit:
         return FundamentalUnit(name="Ton", unit_prefix=UnitPrefix.Mega, unit_kind=UnitKind.Gram)
@@ -243,9 +231,7 @@ class FundamentalType(Type):
     A single class for all fundamental types. They are distinguished via the kind field.
     """
 
-    # , reference_kind=ReferenceKind.Irrelevant
     def __init__(self, name: str, base_types=[], type_kind=TypeKind.Unknown):
-        # , reference=reference_kind
         super().__init__(name=name, base_types=base_types, kind=type_kind)
 
     @classproperty
@@ -272,7 +258,7 @@ class FundamentalType(Type):
 def get_fundamental_type(type: str = "") -> Type | FundamentalType:
     """
     Return FundamentalType of type or, if non-existent, new Type of type
-    :param type: type name to return
+    :param type: Type name to return
     :return: FundamentalType of type or, if non-existent, new Type of type
     """
     for key in FundamentalType.__dict__.keys():
@@ -314,7 +300,7 @@ class Symbol:
 
     def first_sibling(self) -> Symbol:
         if isinstance(self.__the_parent, ScopedSymbol):
-            # expect not to be None
+            # Expect not to be None
             return self.__the_parent.first_child()
 
         return self
@@ -339,7 +325,7 @@ class Symbol:
 
     def last_sibling(self) -> Symbol:
         if isinstance(self.__the_parent, ScopedSymbol):
-            # expect not to be None
+            # Expect not to be None
             return self.__the_parent.last_child()
 
         return self
@@ -454,7 +440,6 @@ class Symbol:
 
         return None
 
-    # TODO <anonymous> special string for empty scope names
     def qualified_name(self, separator=".", full=False, include_anonymous=False) -> str:
         """
         Creates a qualified identifier from this symbol and its parent. If `full` is true then all parents are traversed
@@ -493,14 +478,13 @@ class TypedSymbol(Symbol):
 
     # Type such as int
     attached_type: Optional[Type]
-    # TODO make enum baseclass?
     # List of keys such as parameter
     attached_type_keys: Optional[List[str]]
 
     def __init__(self, name: str, attached_type: Type = None, attached_type_keys=None):
         super().__init__(name)
 
-        # mutable default argument
+        # Mutable default argument
         if attached_type_keys is None:
             attached_type_keys = []
 
@@ -517,26 +501,6 @@ class UnitSymbol(TypedSymbol):
     def __init__(self, name: str, attached_type: Type = None, attached_keys=None, attached_unit: Unit = None):
         super().__init__(name, attached_type, attached_keys)
         self.attached_unit = attached_unit
-
-
-# class TypeAlias(Symbol, Type):
-#     """
-#     An alias for another type.
-#     """
-#     __target_type: Type
-#
-#     def __init__(self, name: str, target: Type):
-#         super().__init__(name)
-#         self.__target_type = target
-#
-#     def base_types(self) -> List[Type]:
-#         return [self.__target_type]
-#
-#     def kind(self) -> TypeKind:
-#         return TypeKind.Alias
-#
-#     def reference(self) -> ReferenceKind:
-#         return ReferenceKind.Irrelevant
 
 
 class ScopedSymbol(Symbol):
@@ -636,15 +600,15 @@ class ScopedSymbol(Symbol):
         result: List[ModuleSymbol] = []
 
         for child in self.children():
-            # check all ModuleSymbols if basefile is file or if file is None if basefile is defined
+            # Check all ModuleSymbols if basefile is file or if file is None if basefile is defined
             if isinstance(child, ModuleSymbol) and (file is not None and child.file == file or file is None and child.file is not None):
                 result.append(child)
 
-            # recursively call children scopes, except for scopes that called us
+            # Recursively call children scopes, except for scopes that called us
             if isinstance(child, ScopedSymbol) and child not in callers:
                 result.extend(child.get_all_modules_with_file_sync(file, True, callers + [self]))
 
-        # recursively call parent scopes, except for scopes that called us
+        # Recursively call parent scopes, except for scopes that called us
         if not local_only:
             if isinstance(self.parent(), ScopedSymbol) and self.parent() not in callers:
                 local_list = self.parent().get_all_modules_with_file_sync(file, local_only, callers + [self])
@@ -681,7 +645,6 @@ class ScopedSymbol(Symbol):
 
         return result
 
-    # TODO async
     def get_nested_symbols_of_type_and_name_sync(self, t: type, name: str = None) -> List[T]:
         """
         Synchronously retrieves child symbols of a given type and name from this symbol.
@@ -824,7 +787,6 @@ class ScopedSymbol(Symbol):
             if isinstance(child, t):
                 result.append(child)
 
-        # TODO check modded by sgu?
         if not local_only:
             # Call parent scope
             if isinstance(self.parent(), ScopedSymbol) and self.parent() not in callers:
@@ -850,7 +812,6 @@ class ScopedSymbol(Symbol):
             if isinstance(child, t):
                 result.append(child)
 
-        # TODO check modded by sgu?
         if not local_only:
             # Call parent scope
             if isinstance(self.parent(), ScopedSymbol) and self.parent() not in callers:
@@ -865,7 +826,6 @@ class ScopedSymbol(Symbol):
 
         return result
 
-    # TODO: add optional position dependency (only symbols defined before a given caret pos are viable).
     async def get_all_symbols(self, t: type, local_only: bool = False, callers: List[T] = []) -> List[T]:
         """
         :param callers: List of visited scopes, that should not be visited again
@@ -883,17 +843,12 @@ class ScopedSymbol(Symbol):
             if isinstance(child, t):
                 result.append(child)
 
-            # if isinstance(child, NamespaceSymbol) and child not in callers:
-            #     child_symbols: List[T] = await child.get_all_symbols(t, True, callers + [self])
-            #     result.extend(child_symbols)
-
-            # recursively call children scopes, except for scopes that called us
+            # Recursively call children scopes, except for scopes that called us
             if isinstance(child, ScopedSymbol) and child not in callers:
                 localList: List[T] = await child.get_all_symbols(t, True, callers + [self])
                 result.extend(localList)
 
-        # recursively call parent scopes, except for scopes that called us
-        # TODO sgu fixed bug: no recursive call
+        # Recursively call parent scopes, except for scopes that called us
         if not local_only:
             # Call parent scope
             if isinstance(self.parent(), ScopedSymbol) and self.parent() not in callers:
@@ -910,8 +865,6 @@ class ScopedSymbol(Symbol):
 
     def get_all_symbols_sync(self, t: type, local_only: bool = False, callers: List[T] = []) -> List[T]:
         """
-        TODO: add optional position dependency (only symbols defined before a given caret pos are viable).
-
         :param callers: List of visited scopes, that should not be visited again
         :param t: The type of the objects to return.
         :param local_only: If true only child symbols are returned, otherwise also symbols from the parent of this symbol
@@ -921,22 +874,17 @@ class ScopedSymbol(Symbol):
         """
         result: List[T] = []
 
-        # Special handling for namespaces, which act like grouping symbols in this scope,
-        # so we show them as available in this scope.
+        # Special handling for namespaces, which act like grouping symbols in this scope, so we show them as available
+        # in this scope.
         for child in self.children():
             if isinstance(child, t):
                 result.append(child)
 
-            # if isinstance(child, NamespaceSymbol) and child not in callers:
-            #     child_symbols: List[T] = child.get_all_symbols_sync(t, True, callers + [self])
-            #     result.extend(child_symbols)
-
-            # recursively call children scopes, except for scopes that called us
+            # Recursively call children scopes, except for scopes that called us
             if isinstance(child, ScopedSymbol) and child not in callers:
                 result.extend(child.get_all_symbols_sync(t, True, callers + [self]))
 
-        # recursively call parent scopes, except for scopes that called us
-        # TODO sgu fixed bug: no recursive call
+        # Recursively call parent scopes, except for scopes that called us
         if not local_only:
             # Call parent scope
             if isinstance(self.parent(), ScopedSymbol) and self.parent() not in callers:
@@ -1034,7 +982,6 @@ class ScopedSymbol(Symbol):
         """
         The names of all accessible symbols with a type.
 
-
         :param local_only: If true only child symbols are returned, otherwise also symbols from the parent of this symbol
         (recursively) and scopes that are included.
         :param callers: List of visited scopes, that should not be visited again
@@ -1092,8 +1039,7 @@ class ScopedSymbol(Symbol):
         :param child: The child to search for.
         :return: the index of the given child symbol in the child list or -1 if it couldn't be found.
         """
-        # two pass org
-        # return lambda child,self.children() : self.children().index(child) if child in self.children() else -1
+
         try:
             return self.children().index(child)
         except ValueError:
@@ -1140,10 +1086,6 @@ class ScopedSymbol(Symbol):
             return sibling
 
         return self.parent().next_of(self)
-
-
-# class NamespaceSymbol(ScopedSymbol):
-#     pass
 
 class TestCaseSymbol(ScopedSymbol):
     """
@@ -1240,7 +1182,6 @@ class ModuleSymbol(ScopedSymbol):
 
 class VariableSymbol(UnitSymbol):
 
-    # TODO add unit
     def __init__(self, name: str, value=None, attached_type: Type = None, attached_keys: List[str] = None):
         super().__init__(name, attached_type, attached_keys)
 
@@ -1341,59 +1282,6 @@ class SymbolTable(ScopedSymbol):
 
         return result
 
-    # async def add_new_namespace_from_path(
-    #     self, parent: Optional[ScopedSymbol], path: str, delimiter="."
-    # ) -> NamespaceSymbol:
-    #     """
-    #     Asynchronously adds a new namespace to the symbol table or the given parent. The path parameter specifies a
-    #     single namespace name or a chain of namespaces (which can be e.g. "outer.intermittent.inner.final"). If any of
-    #     the parent namespaces is missing they are created implicitly. The final part must not exist however or you'll
-    #     get a duplicate symbol error.
-    #
-    #     :param parent: The parent to add the namespace to.
-    #     :param path: The namespace path.
-    #     :param delimiter: The delimiter used in the path.
-    #     :return: The new symbol.
-    #     """
-    #     parts = path.split(delimiter)
-    #     i = 0
-    #     current_parent = self if parent is None else parent
-    #     while i < len(parts) - 1:
-    #         namespace: NamespaceSymbol = await current_parent.resolve(parts[i], True)
-    #         if namespace is None:
-    #             namespace = self.add_new_symbol_of_type(NamespaceSymbol, current_parent, parts[i])
-    #
-    #         current_parent = namespace
-    #         i += 1
-    #
-    #     return self.add_new_symbol_of_type(NamespaceSymbol, current_parent, parts[len(parts) - 1])
-    #
-    # def add_new_namespace_from_path_sync(self, parent: Optional[ScopedSymbol], path: str, delimiter=".") -> NamespaceSymbol:
-    #     """
-    #     Synchronously adds a new namespace to the symbol table or the given parent. The path parameter specifies a
-    #     single namespace name or a chain of namespaces (which can be e.g. "outer.intermittent.inner.final"). If any of
-    #     the parent namespaces is missing they are created implicitly. The final part must not exist however or you'll
-    #     get a duplicate symbol error.
-    #
-    #     :param parent: The parent to add the namespace to.
-    #     :param path: The namespace path.
-    #     :param delimiter: The delimiter used in the path.
-    #     :return: The new symbol.
-    #     """
-    #     parts = path.split(delimiter)
-    #     i = 0
-    #     current_parent = self if parent is None else parent
-    #
-    #     while i < len(parts) - 1:
-    #         namespace: NamespaceSymbol = current_parent.resolve_sync(parts[i], True)
-    #         if namespace is None:
-    #             namespace = self.add_new_symbol_of_type(NamespaceSymbol, current_parent, parts[i])
-    #
-    #         current_parent = namespace
-    #         i += 1
-    #
-    #     return self.add_new_symbol_of_type(NamespaceSymbol, current_parent, parts[len(parts) - 1])
-
     async def get_all_symbols(self, t: type, local_only: bool = False, callers: List[T] = []) -> List[T]:
         """
         Asynchronously returns all symbols from this scope (and optionally those from dependencies) of a specific type.
@@ -1405,8 +1293,6 @@ class SymbolTable(ScopedSymbol):
         result: List[T] = await super().get_all_symbols(t, local_only, callers)
 
         if not local_only and self.parent() not in callers:
-            # TODO alternative
-            # dependencyResults = await asyncio.gather(*[x.get_all_symbols(t, local_only) for x in self.dependencies])
             dependencyResults = await asyncio.gather(
                 *(map((lambda x: x.get_all_symbols(t, local_only, callers + [self])), self.dependencies))
             )

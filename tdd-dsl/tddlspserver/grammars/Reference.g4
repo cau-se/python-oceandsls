@@ -16,16 +16,16 @@
  *  Grammars always start with a grammar header. This grammar is called
  *  TestDrivenDev and must match the filename: TestDrivenDev.g4
  *
- *  TODO description This grammars defines referenceable rules
+ *  This grammars defines referenceable rules
  *
  *  author Sven Gundlach
  */
 grammar Reference;
 
-/** imports include all rules, imported rules are overwritten by existing rules */
+/** Imports include all rules, imported rules are overwritten by existing rules */
 import CommonLexerRules;
 
-/** arithmetic expression for value calculation */
+/** Arithmetic expression for value calculation */
 expr                    : '(' inner=expr ')'                                # parensExpr    /** Parenthesized expression */
                         | left=expr op=('*' | '/') right=expr               # mulDivExpr    /** Multiplication, Division have precedence */
                         | left=expr op=('+' | '-') right=expr               # addSubExpr    /** Addition, Subtraction have not precedence */
@@ -36,7 +36,7 @@ expr                    : '(' inner=expr ')'                                # pa
                         | value=reference                                   # refExpr
                         ;
 
-/** function or variables to lookup in the symboltable */
-reference               : name=ID '(' (args+=expr(',' args+=expr)*)? ')'    # funRef        /** function call like f(), f(x), f(1,2) */
+/** Function or variables to lookup in the symboltable */
+reference               : name=ID '(' (args+=expr(',' args+=expr)*)? ')'    # funRef        /** Function call like f(), f(x), f(1,2) */
                         | name=ID                                           # varRef
                         ;

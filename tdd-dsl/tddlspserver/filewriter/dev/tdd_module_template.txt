@@ -1,2 +1,0 @@
-   {% for mod in test.mods %}use {{ mod.name }}
-   {% endfor %}use funit

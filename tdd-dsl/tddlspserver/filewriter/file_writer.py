@@ -16,20 +16,18 @@ __author__ = "sgu"
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# TODO license
-
 import difflib
 import hashlib
-# utils
+# Utils
 import logging
 import re
 import os
 from typing import Dict, List, Tuple
 
-# debug
+# Debug
 logger = logging.getLogger(__name__)
-# TODO debug flag
-show_debug_output: bool = True
+
+show_debug_output: bool = False
 
 
 def difflib_merge(file_content0: str, file_content1: str) -> str:
@@ -51,7 +49,7 @@ def difflib_merge(file_content0: str, file_content1: str) -> str:
 
 def cmake_merge(insert_contents: Dict[str, str], file_content):
     """
-    TODO
+    Merge cmake configuration files.
 
     :param insert_contents: List of code to be merged
     :param file_content: File content in which to be merged
@@ -249,12 +247,11 @@ def write_file(file_path: str = "", content: str | Dict = "", file_attr: tuple[f
     # Get File extension for merge functions
     extension: str = os.path.splitext(file_path)[1]
 
-    # TODO hc
     # Create file if it doesn't exist else merge with existing file
     if os.path.exists(file_path):
-        # check if file is known or was modified
+        # Check if file is known or was modified
         if file_attr is None or file_modified(file_path, file_attr[0], file_attr[1]):
-            # reload file from disk if it is unknown or modified
+            # Reload file from disk if it is unknown or modified
             with open(file_path, mode="r", encoding="utf-8") as f:
                 content_org = f.read()
         else:
@@ -276,7 +273,6 @@ def write_file(file_path: str = "", content: str | Dict = "", file_attr: tuple[f
             case ".txt":
                 content = cmake_merge(content, content_org) if insert else content
             case _:
-                # TODO error
                 pass
 
     else:
@@ -293,7 +289,6 @@ def write_file(file_path: str = "", content: str | Dict = "", file_attr: tuple[f
                 # Keep new content for later insert merge
                 content_org = content
             case _:
-                # TODO error
                 pass
 
     # Write rendered and optional merged content to file

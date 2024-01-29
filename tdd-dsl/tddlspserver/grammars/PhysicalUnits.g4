@@ -16,19 +16,19 @@
  *  Grammars always start with a grammar header. This grammar is called
  *  PhysicalUnits and must match the filename: PhysicalUnits.g4
  *
- *  TODO description This grammar defines the units for physical values.
+ *  This grammar defines the units for physical values.
  *
  *  author Sven Gundlach
  */
 grammar PhysicalUnits;
 
-/** imports include all rules, imported rules are overwritten by existing rules */
+/** Imports include all rules, imported rules are overwritten by existing rules */
 import CommonLexerRules;
 
-/** arithmetic expression for value calculation */
+/** Arithmetic expression for value calculation */
 unitSpec             : '(' type=unitSpec ')'                            # parensUnit    /** Parenthesized expression */
                         | left=unitSpec op=('*' | '/') right=unitSpec   # mulDivUnit    /** Multiplication, Division have precedence */
-                        | type=unitSpec op='**' exponent=INT            # expUnit    /** Addition, Subtraction have not precedence */
+                        | type=unitSpec op='**' exponent=INT            # expUnit       /** Addition, Subtraction have not precedence */
                         | type=siUnit                                   # stdUnit
                         | type=customUnit                               # cstUnit
                         ;

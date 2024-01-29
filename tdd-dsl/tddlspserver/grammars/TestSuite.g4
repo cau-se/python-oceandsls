@@ -16,29 +16,29 @@
  *  Grammars always start with a grammar header. This grammar is called
  *  TestDrivenDev and must match the filename: TestDrivenDev.g4
  *
- *  TODO description This grammars defines pfUnit4.0 Scripts
+ *  This grammar defines TDD-DSL for test-driven development.
  *
  *  author Sven Gundlach
  */
 grammar TestSuite;
 
-/** imports include all rules, imported rules are overwritten by existing rules */
+/** Imports include all rules, imported rules are overwritten by existing rules */
 import Keyword, Typing, Reference, PhysicalUnits, CommonLexerRules;
 
-/** test_suite ; top-level rule; begin parsing here */
+/** Test_suite ; top-level rule; begin parsing here */
 test_suite              : 'suite' name=ID ':' NEWLINE
-                          (cases+=test_case)?           /** ends on newline */
-                          (cases+=test_case)*           /** ends on newline */
+                          (cases+=test_case)?           /** Ends on newline */
+                          (cases+=test_case)*           /** Ends on newline */
                         ;
 
-/** test case ends on newline */
+/** Test case ends on newline */
 test_case               : 'test' name=ID ':' NEWLINE
-                          (test_flags=test_flag)?               /** ends on newline */
-                          ()'srcpath' ':' srcpath=src_path      /** ends on newline */
-                          (modules=use_modules)?                /** ends on newline */
-                          (vars=test_vars)?                     /** ends on newline */
-                          (assertions+=test_assertion)?         /** ends on newline */
-                          (assertions+=test_assertion)*         /** ends on newline */
+                          (test_flags=test_flag)?               /** Ends on newline */
+                          ()'srcpath' ':' srcpath=src_path      /** Ends on newline */
+                          (modules=use_modules)?                /** Ends on newline */
+                          (vars=test_vars)?                     /** Ends on newline */
+                          (assertions+=test_assertion)?         /** Ends on newline */
+                          (assertions+=test_assertion)*         /** Ends on newline */
                         ;
 
 test_flag               : 'overwrite' ':' overwrite_flag (',' overwrite_flag)* NEWLINE
@@ -49,61 +49,60 @@ overwrite_flag          : 'pf'                                               # o
                         | 'f90'                                              # overwriteF90
                         ;
 
-// TODO use special literal for filepath eg FILEPATH : [-.a-zA-Z0-9:/\\]+ ;
 /** Placeholder for code completion of system path to source code files; ends on newline */
 src_path                : path=STRING NEWLINE
                         ;
 
-/** variables used in test case; ends on newline*/
+/** Variables used in test case; ends on newline*/
 test_vars               : 'var' ':' NEWLINE
                           vars+=test_var+
                         ;
 
-/** variables used in test case*/
-test_var                : decl=varDeclaration ('=' value=expr)? comment=optionalDesc  /** ends on newline */
+/** Variables used in test case*/
+test_var                : decl=varDeclaration ('=' value=expr)? comment=optionalDesc  /** Ends on newline */
                         ;
 
-/** declaration of variables used in test cases  */
+/** Declaration of variables used in test cases  */
 varDeclaration          : name=ID ':' type=paramType (',' keys+=f90StdKey (',' keys+=f90StdKey)*)?
                         ;
 
-/** modules used in the test; ends on newline*/
+/** Modules used in the test; ends on newline*/
 use_modules            : 'modules' ':'  NEWLINE
                           modules+=test_module+
                         ;
 
-/** modules names; ends on newline*/
+/** Modules names; ends on newline*/
 test_module             : name=ID NEWLINE
                         ;
 
-/** test assertion; ends on newline */
+/** Test assertion; ends on newline */
 test_assertion          : 'assert' directive=test_directive ':' NEWLINE
                           'in' ':' NEWLINE input=test_parameter     /** ends on newline */
                           'out' ':' NEWLINE output=test_parameter   /** ends on newline */
                           attr=pubAttributes (comment=COMMENT)?     /** ends on newline */
                         ;
 
-/** arguments of pfUnit prepparser rules start with lowercase letters */
+/** Arguments of pfUnit prepparser rules start with lowercase letters */
 pubAttributes           : ('tolerance' ':' tol=expr NEWLINE)?
                           ('failmessage' ':' msg=STRING NEWLINE)?
-                          ('whitespace' '=' ign='IGNORE_DIFFERENCES' NEWLINE)?       /** option for assertEqual */
+                          ('whitespace' '=' ign='IGNORE_DIFFERENCES' NEWLINE)?       /** Option for assertEqual */
                         ;
 
 /** IO parameter; ends on newline */
-test_parameter          : (decl=parameterDeclaration '=')? value=expr comment=optionalDesc  /** ends on newline */
+test_parameter          : (decl=parameterDeclaration '=')? value=expr comment=optionalDesc  /** Ends on newline */
                         ;
 
-/** optional description for declarations; ensures non description to be newline */
+/** Optional description for declarations; ensures non description to be newline */
 optionalDesc            : NEWLINE                                            # emptyDesc
-                        | ',' type=unitSpec comment=optionalComment          # specDesc      /** ends on newline */
+                        | ',' type=unitSpec comment=optionalComment          # specDesc      /** Ends on newline */
                         ;
 
-/** ensure non comment to be newline */
+/** Ensure non comment to be newline */
 optionalComment         : NEWLINE                                            # emptyComment
-                        | comment=COMMENT                                    # specComment   /** ends on newline */
+                        | comment=COMMENT                                    # specComment   /** Ends on newline */
                         ;
 
-/** optional IO parameter declaration */
+/** Optional IO parameter declaration */
 parameterDeclaration    : name=reference                                     # nameDecl
                         | type=paramType                                     # typeDecl
                         | name=reference ':' type=paramType                  # combinedDecl

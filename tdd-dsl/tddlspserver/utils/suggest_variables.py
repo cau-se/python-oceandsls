@@ -27,7 +27,6 @@ from antlr4 import ParserRuleContext
 # user relative imports
 from ..symboltable.symbol_table import MetricSymbol, ModuleSymbol, PathSymbol, RoutineSymbol, SymbolTable, Symbol, ScopedSymbol, VariableSymbol
 from .compute_token_index import TokenPosition
-
 from ..gen.python.TestSuite.TestSuiteParser import TestSuiteParser
 
 Top_levelContext = TestSuiteParser.Test_suiteContext
@@ -61,7 +60,7 @@ def run_async(func, *args: P.args or None, **kwargs: P.kwargs or None):
 
         # print("Async event loop already running. Adding coroutine to the event loop.")
         # tsk = loop.create_task(symbolTable.symbolWithContext( context ))
-        # ^-- https://docs.python.org/3/library/asyncio-task.html#task-object
+        # https://docs.python.org/3/library/asyncio-task.html#task-object
         # Optionally, a callback function can be executed when the coroutine completes
         # tsk.add_done_callback( lambda t: print(f"Task done with result={t.result()}  << return val of main()"))
     else:
@@ -104,12 +103,6 @@ def suggest_symbols(symbol_table: SymbolTable, position: TokenPosition, symbol_t
 
         text: str = position.text
 
-        # TODO deprecated if not in preferred rule
-        # variable = position.context
-        # while not isinstance( variable, Top_levelContext ) and variable.parentCtx is not None:
-        #     variable = variable.parentCtx
-        #
-        # return filterSymbols( position.text if variable is not None else "", symbols, symbolType )
     else:
         symbols = run_async(symbol_table.get_nested_symbols_of_type, symbol_type)
         text = ""

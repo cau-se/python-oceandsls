@@ -1,8 +1,0 @@
-@test
-{{ test.callable.type }} {{ test.ID().getText() }}()
-   {% for mod in test.scope.test_modules().modules %}use {{ mod.module.text }}
-   {% endfor %}use funit
-
-   {% for assertion in test.assertions %}@{{ assertion.directive().ppDirective.text }}( {{ assertion.input }} == {{ assertion.output }} )
-   {% endfor %}
-end {{ test.callable.type }} {{ test.callable.name }}

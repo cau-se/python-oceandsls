@@ -16,20 +16,23 @@ __author__ = "sgu"
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# util
+# Util
 import os
+import logging
 from typing import Dict, List, Tuple
 
-# jinja2
+# Jinja2
 from jinja2 import Environment, FileSystemLoader
 
-# user relative imports
+# User relative imports
 from ..symboltable.symbol_table import SymbolTable
 from ..filewriter.file_writer import write_file
 from ..gen.python.TestSuite.TestSuiteParser import TestSuiteParser
 from ..gen.python.TestSuite.TestSuiteVisitor import TestSuiteVisitor
 from ..utils.suggest_variables import get_scope
 
+# Debug Log
+logger = logging.getLogger(__name__)
 
 class PFFileGeneratorVisitor(TestSuiteVisitor):
     file_templates: Dict[int, str]
@@ -42,7 +45,6 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
     found_par: bool
     symbol_table: SymbolTable
 
-    # TODO hc
     def __init__(
             self, template_path: str = "tdd-dsl/tddlspserver/filewriter/jinjatemplates/pf", files: Dict[str, Tuple[float, str, str]] = {},
             symbol_table: SymbolTable = None, work_path: str = "tdd-dsl/output", test_folder: str = "tests", file_suffix: str = "pf", rel_file_path=None
@@ -76,7 +78,7 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
         # Load Jinja2 templates
         self.environment = Environment(loader=FileSystemLoader(template_path), trim_blocks=True, lstrip_blocks=True, keep_trailing_newline=False)
 
-        # variable flags
+        # Variable flags
         self.found_ref = False
         self.found_par = False
 
@@ -127,7 +129,6 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
         test_case_symbol = get_scope(ctx, self.symbol_table)
         if test_case_symbol:
             test_case_symbol.test_file_path = abs_path
-        # TODO else error
 
         # Return list of generated files
         return self.files
@@ -171,11 +172,10 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
                     self.found_ref = False
                     self.found_par = False
                 case _:
-                    # TODO error
                     pass
 
-        # set declaration list to None if empty
-        # decl = decl if decl else None
+        # Set declaration list to None if empty
+        # Decl = decl if decl else None
 
         return template.render(parm=parm, decl=decl, vars=vars)
 
@@ -184,33 +184,26 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
         template = self.environment.get_template(self.file_templates[ctx.getRuleIndex()])
         comment = self.visit(ctx.optionalDesc())
 
-        # reset foundPar flag for left side
+        # Reset foundPar flag for left side
         self.found_par = False
         decl = self.visit(ctx.varDeclaration())
         name = ctx.decl.name.text
 
         self.found_ref = False
-        # reset foundRef flag for right side
+        # Reset foundRef flag for right side
         value = self.visit(ctx.expr())
 
         templates: List[str] = []
 
-        # TODO deprecated
-        # if self.foundRef:
-        #     templates.extend( [ decl, template.render( decl = None, name = name, value = value, comment = comment ) ] )
-        # else:
-        #     templates.extend( [ None, template.render( decl = decl, name = None, value = value, comment = comment ) ] )
 
         match (self.found_par, self.found_ref):
             case [True, _] | [_, False]:
-                # TODO put parameters at the top
                 # Found Parameter no reference on right side: Add declaration with constant expression
                 templates.extend([template.render(decl=decl, name=None, value=value, comment=comment), None])
             case [False, True]:
                 # Found reference on right side: Separate declaration and initialization
                 templates.extend([template.render(decl=None, name=name, value=value, comment=comment), decl])
             case _:
-                # TODO error
                 pass
 
         return templates
@@ -222,21 +215,13 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
         type = self.visit(ctx.type_)
         keys = []
         for key in ctx.keys:
-            # TODO check for parameter
             key_text: str = key.keyword.text
-            # flag parameter
+            # Flag parameter
             if key_text.lower() == "parameter":
                 self.found_par = True
             keys.append(key_text)
-        # match keys:
-        #     case []:
-        #         return template.render( name=name, type=type )
-        #     case _:
-        #         return template.render( name=name, type=type, keys=keys )
 
         return template.render(name=name, type=type, keys=keys)
-
-        # if keys:  #     return template.render( name = name, type = type, keys = keys )  # else:  #     return template.render( name = name, type = type )
 
     # Visit a parse tree produced by TestSuiteParser#funRef.
     def visitFunRef(self, ctx: TestSuiteParser.FunRefContext):
@@ -257,12 +242,10 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
 
     # Visit a parse tree produced by TestSuiteParser#enm.
     def visitEnm(self, ctx: TestSuiteParser.EnmContext):
-        # TODO type ENUM
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by TestSuiteParser#array.
     def visitArray(self, ctx: TestSuiteParser.ArrayContext):
-        # TODO type ARRAY
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by TestSuiteParser#parensExpr.
@@ -373,7 +356,6 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
     # Visit a parse tree produced by TestSuiteParser#test_parameter.
     def visitTest_parameter(self, ctx: TestSuiteParser.Test_parameterContext):
         template = self.environment.get_template(self.file_templates[ctx.getRuleIndex()])
-        # TODO use decl and comment in upper template
         value = self.visit(ctx.value)
         return template.render(value=value)
 
@@ -402,5 +384,4 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
             # Write rendered and optional merged content to file
             with open(path, mode="w", encoding="utf-8") as f:
                 f.write()
-                # TODO add to debug info
-                print(f"... wrote {path}")
+                logger.info(f"... wrote file {path}")

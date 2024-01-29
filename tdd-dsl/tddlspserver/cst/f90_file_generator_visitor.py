@@ -16,14 +16,14 @@ __author__ = "sgu"
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# util
+# Util
 import os
 from typing import Dict, List, Optional, Tuple
 
-# jinja2
+# Jinja2
 from jinja2 import Environment, FileSystemLoader
 
-# user relative imports
+# User relative imports
 from ..symboltable.symbol_table import FundamentalType, SymbolTable, ModuleSymbol, RoutineSymbol, Type, VariableSymbol
 from ..filewriter.file_writer import write_file
 from ..gen.python.TestSuite.TestSuiteParser import TestSuiteParser
@@ -45,7 +45,6 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
     found_ref: bool
     found_par: bool
 
-    # TODO hc
     def __init__(
             self, template_path: str = "tdd-dsl/tddlspserver/filewriter/jinjatemplates/f90", files: Dict[str, Tuple[float, str, str]] = {},
             symbol_table: SymbolTable = None, work_path: str = "tdd-dsl/output", file_suffix: str = "f90", rel_file_path=None
@@ -71,11 +70,11 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
         # Load Jinja2 templates
         self.environment = Environment(loader=FileSystemLoader(template_path), trim_blocks=True, lstrip_blocks=True, keep_trailing_newline=False)
 
-        # variable flags
+        # Variable flags
         self.found_ref = False
         self.found_par = False
 
-        # set symboltable
+        # Set symboltable
         self._symbol_table = symbol_table
 
         # Get template file names from grammar
@@ -121,16 +120,7 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
             scope = get_scope(ctx, self.symbol_table)
             routine_symbols = scope.get_symbols_of_type_and_name_sync(RoutineSymbol, key, False)
 
-            # TODO check rewrite of once generated routines or delete if from complete rewrite
-            # Check if operation was added before
-            # add_ops: bool = False
-            # for routine_symbol in routine_symbols:
-            #     if routine_symbol.is_generated:
-            #         add_ops = True
-            #         break
-
             # If operations does not exist or was added before, add to newly generated ops
-            # if not routine_symbols or add_ops:
             if not routine_symbols:
                 ops_names.append(key)
                 ops_impl.append(value_list[3])
@@ -189,11 +179,6 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
             # Write content to file
             self.files[abs_path] = write_file(abs_path, content, file_attr, insert)
 
-            # TODO sut path ?  # Update test case symbol  # test_case_symbol:
-            # TestCaseSymbol = get_scope(ctx, self.symbol_table)  # if
-            # test_case_symbol:  #     # Add first used module as system under test  #
-            # test_case_symbol.sut_file_path = abs_path
-
         # Return list of generated files
         return self.files
 
@@ -227,10 +212,6 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
         # Load operation template
         template = self.environment.get_template(self.file_templates[ctx.getRuleIndex()])
 
-        # Extract comment
-        # TODO remove comment
-        # comment = ctx.comment.text.rstrip("\n").lstrip("#") if ctx.comment is not None else None
-
         # Extract assertion line start/end
         start_stop: str
         if ctx.start is not None and ctx.stop is not None:
@@ -253,7 +234,6 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
 
             # Warn if return types do not match
             if last_op[2] and return_type is not last_op[2]:
-                # TODO add Error
                 pass
             else:
                 last_op[2] = return_type
@@ -271,8 +251,6 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
                 arg_names.append(arg_name)
                 args_decl.append(f"{arg_type.name}, INTENT(IN)  :: {arg_name}")
 
-            # TODO Unit pfUnit error 'There is no specific subroutine for the generic'
-            # unit = None
             unit = value_list[1]
             # Add unit parameter if unit exists
             arg_names += ["unit"] if unit is not None else []
@@ -292,11 +270,10 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
 
     # Visit a parse tree produced by TestSuiteParser#test_parameter.
     def visitTest_parameter(self, ctx: TestSuiteParser.Test_parameterContext):
-        # TODO rm declaration from grammar?
-        # get value name and optional argument types
+        # Get value name and optional argument types
         parameter_type = self.visit(ctx.value)
 
-        # unit of expression
+        # Unit of expression
         expr_unit: str = self.visit(ctx.comment)
 
         # Update input unit of last new operation if no function expression was in between
@@ -310,23 +287,22 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
 
     # Visit a parse tree produced by TestSuiteParser#emptyDesc.
     def visitEmptyDesc(self, ctx: TestSuiteParser.EmptyDescContext):
-        # return no unit
-        # TODO no unit symbol?
+        # Return no unit
         return None
 
     # Visit a parse tree produced by TestSuiteParser#specDesc.
     def visitSpecDesc(self, ctx: TestSuiteParser.SpecDescContext):
-        # get unit of expression
+        # Get unit of expression
         return self.visit(ctx.type_)
 
     # Visit a parse tree produced by TestSuiteParser#customUnit.
     def visitCustomUnit(self, ctx: TestSuiteParser.CustomUnitContext):
-        # return custom unit
+        # Return custom unit
         return ctx.name.text
 
     # Visit a parse tree produced by TestSuiteParser#siUnit.
     def visitSiUnit(self, ctx: TestSuiteParser.SiUnitContext):
-        # return si unit
+        # Return si unit
         return ctx.type_.value.text
 
     # Visit a parse tree produced by TestSuiteParser#funRef.
@@ -354,8 +330,7 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
             self.ops[name] = self.ops.get(name, [args, None, return_type])
             self.last_op_id = name
         else:
-            # TODO doc
-            # uppercase written operations are ignored as general fortran operations
+            # Uppercase written operations are ignored as general fortran operations
             self.last_op_id = None
 
         # Return operation return_type
@@ -365,7 +340,7 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
     def visitVarRef(self, ctx: TestSuiteParser.VarRefContext):
         name = ctx.ID().getText()
 
-        # extract most local type of reference from symboltable
+        # Extract most local type of reference from symboltable
         scope = get_scope(ctx, self.symbol_table)
         var = scope.get_nested_symbols_of_type_and_name_sync(VariableSymbol, name)
         varType = var[0].attached_type if var else None
@@ -380,69 +355,65 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
 
     # Visit a parse tree produced by TestSuiteParser#mulDivExpr.
     def visitMulDivExpr(self, ctx: TestSuiteParser.MulDivExprContext):
-        # extract left and right operator
+        # Extract left and right operator
         left_type = self.visit(ctx.left)
         right_type = self.visit(ctx.right)
 
-        # determine type of expression
-        # https://web.chem.ox.ac.uk/fortran/arithmetic.html
+        # Determine type of expression
         match (left_type, right_type):
             case [FundamentalType.real_type, _]:
-                # if any of the operands are real then result of the operation will be real
+                # If any of the operands are real then result of the operation will be real
                 expr_type: str = FundamentalType.real_type
             case [_, FundamentalType.real_type]:
-                # if any of the operands are real then result of the operation will be real
+                # If any of the operands are real then result of the operation will be real
                 expr_type: str = FundamentalType.real_type
             case [FundamentalType.integer_type, FundamentalType.integer_type]:
                 if ctx.op == "*":
-                    # if all the operands are integer then result of the operation will be integer
+                    # If all the operands are integer then result of the operation will be integer
                     expr_type: str = FundamentalType.integer_type
                 else:
                     expr_type: str = FundamentalType.real_type
             case [None, None]:
-                # if both operands are None then result of the operation will be None
+                # If both operands are None then result of the operation will be None
                 expr_type: str = None
             case _:
-                # custom types have precedence
-                # TODO mod custom type with second type
+                # Custom types have precedence
                 expr_type: str = ctx.op.text.join([str(left_type), str(left_type)])
 
         # Mark last added operation as not last operation
         self.last_op_id = None
 
-        # return determined type
+        # Return determined type
         return expr_type
 
     # Visit a parse tree produced by TestSuiteParser#addSubExpr.
     def visitAddSubExpr(self, ctx: TestSuiteParser.AddSubExprContext):
-        # extract left and right operator
+        # Extract left and right operator
         left_type = self.visit(ctx.left)
         right_type = self.visit(ctx.right)
 
-        # extract types from function references
-        # https://web.chem.ox.ac.uk/fortran/arithmetic.html
+        # Extract types from function references
         match (left_type, right_type):
             case [FundamentalType.real_type, _]:
-                # if any of the operands are real then result of the operation will be real
+                # If any of the operands are real then result of the operation will be real
                 expr_type: str = FundamentalType.real_type
             case [_, FundamentalType.real_type]:
-                # if any of the operands are real then result of the operation will be real
+                # If any of the operands are real then result of the operation will be real
                 expr_type: str = FundamentalType.real_type
             case [FundamentalType.integer_type, FundamentalType.integer_type]:
-                # if all the operands are integer then result of the operation will be integer
+                # If all the operands are integer then result of the operation will be integer
                 expr_type: str = FundamentalType.integer_type
             case [None, None]:
-                # if both operands are None then result of the operation will be None
+                # If both operands are None then result of the operation will be None
                 expr_type: str = None
             case _:
-                # custom types have precedence
-                # TODO mod custom type with second type
+                # Custom types have precedence
                 expr_type: str = ctx.op.text.join([str(left_type), str(left_type)])
 
         # Mark last added operation as not last operation
         self.last_op_id = None
 
-        # return determined type
+        # Return determined type
         return expr_type
 
     # Visit a parse tree produced by TestSuiteParser#signExpr.
@@ -452,13 +423,12 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
 
     # Visit a parse tree produced by TestSuiteParser#numberExpr.
     def visitNumberExpr(self, ctx: TestSuiteParser.NumberExprContext):
-        # power and decimal operation will be real
+        # Power and decimal operation will be real
         return FundamentalType.real_type
 
     # Visit a parse tree produced by TestSuiteParser#strExpr.
     def visitStrExpr(self, ctx: TestSuiteParser.StrExprContext):
-        # custom types will be string
-        # TODO add specific custom types
+        # Custom types will be string
         return "character(len = *)"
 
     # Visit a parse tree produced by TestSuiteParser#intExpr.

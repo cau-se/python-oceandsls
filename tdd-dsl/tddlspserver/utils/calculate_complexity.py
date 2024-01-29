@@ -2,6 +2,20 @@
 
 __author__ = "sgu"
 
+#  Copyright (c) 2023.  OceanDSL (https://oceandsl.uni-kiel.de)
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from math import log2
@@ -679,7 +693,7 @@ def add_operators_to(scope: Scope, element: ET.Element):
                 scope.add_operator(operator.text.strip())
 
 
-def calculate_metrics(xml_path: str = None, src: str = None, sort_metric=None) -> dict[str, Scope]:
+def calculate_metrics(xml_path: str = None, src: str = None, sort_metric=None, debug: bool = False) -> dict[str, Scope]:
     """
     Calculate cyclomatic complexity and halstead complexity measures from fxtran formatted xml file for Fortran code
     :param xml_path:
@@ -728,7 +742,7 @@ def calculate_metrics(xml_path: str = None, src: str = None, sort_metric=None) -
         current_scope: Scope = scope_stack[-1] if scope_stack else None
 
         # Reduce the scope stack when leaving scopes
-        if element.tag.endswith(tuple(dyn_end_scope_elements)):
+        if tag in tuple(dyn_end_scope_elements):
 
             name = ".".join(list(map(lambda scope: scope.name, scope_stack)))
 
@@ -739,7 +753,7 @@ def calculate_metrics(xml_path: str = None, src: str = None, sort_metric=None) -
                 add_operators_to(current_scope, element)
 
         # Extend the scope stack when entering scopes
-        elif element.tag.endswith(tuple(dyn_scope_elements)):
+        elif tag in tuple(dyn_scope_elements):
 
             # Extract scope name
             scope_name = name_element.find(path=f"{search_global}{name_tag}", namespaces=ns)
@@ -758,7 +772,7 @@ def calculate_metrics(xml_path: str = None, src: str = None, sort_metric=None) -
                 scope_results.extend(list(map(lambda element: element.text, result_element.findall(f"{search_global}{name_tag}", namespaces=ns))))
 
             # Build new scope
-            new_scope = Scope(name=scope_name, type=scope_type, arguments=scope_arguments, scope_result_names=scope_results, src=src, sort_metric=sort_metric)
+            new_scope = Scope(name=scope_name, type=scope_type, arguments=scope_arguments, scope_result_names=scope_results, src=src, sort_metric=sort_metric, debug = debug)
 
             # Add scope to parent
             if current_scope:

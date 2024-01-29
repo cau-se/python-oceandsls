@@ -1,2 +1,0 @@
-   {% for assertion in test.assertions %}@{{ assertion.name }}( {{ assertion.input }} == {{ assertion.output }} )
-   {% endfor %}

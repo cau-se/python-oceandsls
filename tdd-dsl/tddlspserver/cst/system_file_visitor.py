@@ -17,13 +17,13 @@ __author__ = "sgu"
 #  limitations under the License.
 
 import os
-# util imports
+# Util imports
 from typing import Callable, Generic
 
-# antlr4
+# Antlr4
 from antlr4.tree.Tree import ParseTree
 
-# user relative imports
+# User relative imports
 from ..fxca.util.fxtran_utils import get_subdirectories_gen
 from ..gen.python.TestSuite.TestSuiteParser import TestSuiteParser
 from ..gen.python.TestSuite.TestSuiteVisitor import TestSuiteVisitor
@@ -58,7 +58,6 @@ class SystemFileVisitor(TestSuiteVisitor, Generic[T]):
     def visitSrc_path(self, ctx: TestSuiteParser.Src_pathContext):
         # Strip string terminals
         user_path: str = ctx.path.text.strip("\'") if ctx.path else ''
-        # candidates = list( map( lambda c: f"{os.sep}{c}" , candidates ) )
 
         # Remove incomplete basename from path
         if not user_path.endswith(os.sep):
@@ -72,7 +71,7 @@ class SystemFileVisitor(TestSuiteVisitor, Generic[T]):
         if self.get_sub_directories:
 
             # TODO document
-            # get direct subdirectories without following symlinks or directories starting with "."
+            # Get direct subdirectories without following symlinks or directories starting with "."
             sub_directories = get_subdirectories_gen(self._test_path, False, False)
 
             # Add subdirectories under current scope to symboltable

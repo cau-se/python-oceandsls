@@ -17,21 +17,23 @@ __author__ = "sgu"
 #  limitations under the License.
 
 import os
+import logging
 import shutil
-# util imports
+# Util imports
 from typing import Callable, Generic, List
 
-# antlr4
+# Antlr4
 from antlr4.tree.Tree import ParseTree
 
-# user relative imports
-from ..utils.suggest_variables import get_all_symbols_of_type
+# User relative imports
 from ..fxca.util.fxtran_utils import filter_xml, get_files, write_decorate_src_xml
 from ..gen.python.TestSuite.TestSuiteParser import TestSuiteParser
 from ..gen.python.TestSuite.TestSuiteVisitor import TestSuiteVisitor
 from ..symboltable.symbol_table import FunctionSymbol, ModuleSymbol, ParameterSymbol, RoutineSymbol, ScopedSymbol, SymbolTable, SymbolTableOptions, \
     TestCaseSymbol, VariableSymbol, P, T, get_fundamental_type
 
+# Debug Log
+logger = logging.getLogger(__name__)
 
 class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
     _symbol_table: SymbolTable
@@ -41,8 +43,6 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
         super().__init__()
         self.fxtran_path = fxtran_path
         self._symbol_table = SymbolTable(name, SymbolTableOptions(False))
-        # TODO scope marker
-        # self._scope = self._symbolTable.addNewSymbolOfType( ScopedSymbol, None )
         self._scope = None
         self._test_work_path = test_work_path
         self._test_path = ""
@@ -54,10 +54,6 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
     @property
     def work_path(self) -> str:
         return self._test_work_path
-
-    # def defaultResult(self) -> SymbolTable:
-    #     # Return the symboltable by default
-    #     return self._symbol_table
 
     # Visit a parse tree produced by TestSuiteParser#test_suite.
     def visitTest_suite(self, ctx: TestSuiteParser.Test_suiteContext):
@@ -71,7 +67,6 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
 
     # Visit a parse tree produced by TestSuiteParser#test_var.
     def visitTest_var(self, ctx: TestSuiteParser.Test_varContext):
-        # TODO add comment (symbolTable Class and instance)
         decl = self.visit(ctx.varDeclaration())
         return self._symbol_table.add_new_symbol_of_type(VariableSymbol, self._scope, decl[0], ctx.value, decl[1], decl[2])
 
@@ -87,7 +82,7 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
 
     # Visit a parse tree produced by TestSuiteParser#mulDivExpr.
     def visitMulDivExpr(self, ctx: TestSuiteParser.MulDivExprContext):
-        # concatenate operators with op
+        # Concatenate operators with op
         left = self.visit(ctx.left)
         right = self.visit(ctx.right)
         ops: List[str] = [left, right]
@@ -96,34 +91,34 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
 
     # Visit a parse tree produced by TestSuiteParser#addSubExpr.
     def visitAddSubExpr(self, ctx: TestSuiteParser.AddSubExprContext):
-        # concatenate operators with op
+        # Concatenate operators with op
         ops: List[str] = [self.visit(ctx.left), self.visit(ctx.right)]
 
         return ctx.op.text.join(ops)
 
     # Visit a parse tree produced by TestSuiteParser#signExpr.
     def visitSignExpr(self, ctx: TestSuiteParser.SignExprContext):
-        # return inner type
+        # Return inner type
         return self.visit(ctx.inner)
 
     # Visit a parse tree produced by TestSuiteParser#numberExpr.
     def visitNumberExpr(self, ctx: TestSuiteParser.NumberExprContext):
-        # return user input
+        # Return user input
         return ctx.value.text
 
     # Visit a parse tree produced by TestSuiteParser#strExpr.
     def visitStrExpr(self, ctx: TestSuiteParser.StrExprContext):
-        # return user input
+        # Return user input
         return ctx.value.text
 
     # Visit a parse tree produced by TestSuiteParser#intExpr.
     def visitIntExpr(self, ctx: TestSuiteParser.IntExprContext):
-        # return user input
+        # Return user input
         return ctx.value.text
 
     # Visit a parse tree produced by TestSuiteParser#refExpr.
     def visitRefExpr(self, ctx: TestSuiteParser.RefExprContext):
-        # forward reference type
+        # Forward reference type
         return self.visit(ctx.value)
 
     # Visit a parse tree produced by TestSuiteParser#ref.
@@ -145,7 +140,6 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
 
     # Visit a parse tree produced by TestSuiteParser#enm.
     def visitEnm(self, ctx: TestSuiteParser.EnmContext):
-        # TODO type ENUM
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by TestSuiteParser#enumType.
@@ -171,7 +165,6 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
 
     # Visit a parse tree produced by TestSuiteParser#arrayType.
     def visitArrayType(self, ctx: TestSuiteParser.ArrayTypeContext):
-        # TODO test
         ar_type: str = self.visit(ctx.type_)
         dims: List[str] = []
         for dim in ctx.dimensions:
@@ -204,17 +197,14 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
         for module in ctx.modules:
             module_symbols.append(self.visit(module))
 
-        # TODO hc
         xml_path = os.path.join(self._test_path, "tmp")
         # Write XML files
         write_decorate_src_xml(self._test_path, xml_path, fxtran_path=self.fxtran_path)
 
-        # TODO hc, specify modules
         # Get Fortran files
         xml_files = get_files(xml_path, "*.[fF]90.xml")
 
         for path, filename in xml_files:
-            # TODO add key for variables
             xml_elements = filter_xml(os.path.join(path, filename), True, module_symbols)
 
             # Add scopes
@@ -226,19 +216,6 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
                 scope_sym: ScopedSymbol = self._scope
                 for scope in parent_scopes:
                     scope_sym = scope_sym.resolve_sync(scope)
-
-                # scope_sym: ScopedSymbol
-                # # Get scope from symboltable, add the scope if it does not exist
-                # if parent_scopes:
-                #     # Top level symbols are omitted as only filtered modules are in the current test case
-                #     # Resolve scope
-                #     parent_scopes: List[str] = parent_scopes.split(".")
-                #     scope_sym = self._scope
-                #     for scope in parent_scopes:
-                #         scope_sym = scope_sym.resolve_sync(scope)
-                # else:
-                #     # Add unknown top level symbols for content assist without include
-                #     scope_sym = self._scope.parent()
 
                 match scope_type:
                     case "module":
@@ -260,13 +237,11 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
                             map(lambda arg: self.addRoutineParams(arg), scope_args)), scope_name, return_type, is_generated)
                         self._scope = current_scope
                     case _:
-                        # TODO Types?
                         continue
 
             # Add variables
             for variable_name, variable_type, variableScope in xml_elements[0]:
                 # Get scope from symboltable
-                # TODO differentiate same scopes in different files -> error as unclear scoping
                 variableScope: List[str] = variableScope.split(".")
                 scope_sym = self._scope
                 for scope in variableScope:
@@ -275,15 +250,13 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
                 # Map type to symboltable
                 variable_type = get_fundamental_type(variable_type)
 
-                # TODO add value
                 # Add the variable to the symboltable
                 self._symbol_table.add_new_symbol_of_type(VariableSymbol, scope_sym, variable_name, None, variable_type)
         try:
-            # remove temporary xml files
+            # Remove temporary xml files
             shutil.rmtree(xml_path)
         except OSError as e:
-            # TODO error
-            print("Error: %s - %s." % (e.filename, e.strerror))
+            logger.error("Error deleting temporary xml directory : %s - %s." % (e.filename, e.strerror))
 
     # Visit a parse tree produced by TestSuiteParser#test_module.
     def visitTest_module(self, ctx: TestSuiteParser.Test_moduleContext):

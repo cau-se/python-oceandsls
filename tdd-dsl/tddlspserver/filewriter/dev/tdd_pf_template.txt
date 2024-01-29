@@ -1,6 +1,0 @@
-@test
-{{ test.callable.type }} {{ test.callable.name }}()
-{{ modules }}
-
-{{ assertions }}
-end {{ test.callable.type }} {{ test.callable.name }}
