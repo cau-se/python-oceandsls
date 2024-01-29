@@ -16,19 +16,19 @@ __author__ = "sgu"
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# util imports
+# Util imports
 import logging
 from typing import List
 
-# antlr4
+# Antlr4
 from antlr4.Recognizer import Recognizer
 from antlr4.Token import Token
 from antlr4.error.ErrorListener import ErrorListener
 from antlr4.error.Errors import RecognitionException
 
-# pygls
+# Pygls
 # Deprecated from 0.13
-# from pygls.lsp.types import (Diagnostic, Range, Position)
+# From pygls.lsp.types import (Diagnostic, Range, Position)
 # Migrating to pygls v1.0
 # https://pygls.readthedocs.io/en/latest/pages/migrating-to-v1.html
 from lsprotocol.types import (Diagnostic, Position, Range)
@@ -43,7 +43,7 @@ class DiagnosticListener(ErrorListener):
     # Enables printing ATN state info to terminal.
     show_debug_output: bool = False
 
-    # reset the listener's state
+    # Reset the listener's state
     def reset(self):
         self.diagnostics = []
 
@@ -69,6 +69,3 @@ class DiagnosticListener(ErrorListener):
 
         if self.show_debug_output and self.logger.isEnabledFor(logging.DEBUG):
             self.logger.debug("ERROR: when parsing line %d column %d: %s\n" % (line, column, msg))
-        # dev alternatives
-        # print("ERROR: when parsing line %d column %d: %s\n" % (line, column, msg), file=sys.stderr)
-        # raise Exception("ERROR: when parsing line %d column %d: %s\n" % (line, column, msg))

@@ -16,16 +16,16 @@
  *  Grammars always start with a grammar header. This grammar is called
  *  Typing and must match the filename: Typing.g4
  *
- *  TODO description This grammar defines object typing.
+ *  This grammar defines object typing.
  *
  *  author Sven Gundlach
  */
 grammar Typing;
 
-/** imports include all rules, imported rules are overwritten by existing rules */
+/** Imports include all rules, imported rules are overwritten by existing rules */
 import Reference, CommonLexerRules;
 
-/** parser rules start with lowercase letters */
+/** Parser rules start with lowercase letters */
 paramType       : type=typeRef                                          # ref
                 | type=enumType                                         # enm
                 | type=arrayType                                        # array

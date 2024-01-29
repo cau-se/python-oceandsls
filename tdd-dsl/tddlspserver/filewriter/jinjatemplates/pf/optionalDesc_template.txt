@@ -1,1 +1,1 @@
-{% if type is defined %}{{ type }}{% endif %}{% (if type is defined) and (if comment is defined) %}, {% endif %}{% if comment is defined %}{{ comment }}{% endif %}{# TODO alternative {{ msg | trim("'") }} https://jinja.palletsprojects.com/en/3.1.x/templates/#jinja-filters.trim #}
+{% if type is defined %}{{ type }}{% endif %}{% (if type is defined) and (if comment is defined) %}, {% endif %}{% if comment is defined %}{{ comment }}{% endif %}

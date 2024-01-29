@@ -1,1 +1,1 @@
-{% if msg is defined %}message={{ msg }}{% endif %}{% if (msg is defined) and (tol is defined) %}, {% endif %}{% if tol is defined %}tolerance={{ tol }}{% endif %}{# TODO alternative {{ msg | trim("'") }} https://jinja.palletsprojects.com/en/3.1.x/templates/#jinja-filters.trim #}
+{% if msg is defined %}message={{ msg }}{% endif %}{% if (msg is defined) and (tol is defined) %}, {% endif %}{% if tol is defined %}tolerance={{ tol }}{% endif %}

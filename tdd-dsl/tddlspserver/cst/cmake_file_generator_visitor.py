@@ -17,13 +17,13 @@ __author__ = "sgu"
 #  limitations under the License.
 
 import os
-# util
+# Util
 from typing import Dict, List, Tuple
 
-# jinja2
+# Jinja2
 from jinja2 import Environment, FileSystemLoader
 
-# user relative imports
+# User relative imports
 from ..filewriter.file_writer import write_file
 from ..gen.python.TestSuite.TestSuiteParser import TestSuiteParser
 from ..symboltable.symbol_table import SymbolTable, TestCaseSymbol

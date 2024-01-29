@@ -16,30 +16,29 @@
  *  Grammars always start with a grammar header. This grammar is called
  *  CommonLexerRules and must match the filename: CommonLexerRules.g4
  *
- *  TODO description This grammar defines common rules for lexer tokens.
+ *  This grammar defines common rules for lexer tokens.
  *
  *  author Sven Gundlach
  */
 lexer grammar CommonLexerRules;
 
 // Identifiers
-ID: [a-zA-Z][a-zA-Z0-9_]*;                                      // match identifiers
+ID: [a-zA-Z][a-zA-Z0-9_]*;                                      // Match identifiers
 
-// TODO comment
 // Strings and comments
 STRING          : '\'' (ESC|.)*? '\'';
 COMMENT         : '#' (ESC|.)*? NEWLINE;
 fragment ESC    : '\\' [btnr'"\\];
 
 // Numeric literals
-INT             : '0' | [1-9] DIG* ;                            // fragment match integers without leading zeros
-NUM             : '-'? (('.' DIG+)| (DIG+ ('.' DIG*)? EXP?));   // match numbers
-DP              : '-'? (('.' DIG+)| (DIG+ ('.' DIG*)? DEXP?));  // match numbers
-fragment EXP    : [eE] [+\-]? DIG+;                             // fragment match exponent
-fragment DEXP   : 'D' [+\-]? DIG+;                              // fragment match double precision exponent
-fragment DIG    : [0-9];                                        // fragment match digits
+INT             : '0' | [1-9] DIG* ;                            // Fragment match integers without leading zeros
+NUM             : '-'? (('.' DIG+)| (DIG+ ('.' DIG*)? EXP?));   // Match numbers
+DP              : '-'? (('.' DIG+)| (DIG+ ('.' DIG*)? DEXP?));  // Match numbers
+fragment EXP    : [eE] [+\-]? DIG+;                             // Fragment match exponent
+fragment DEXP   : 'D' [+\-]? DIG+;                              // Fragment match double precision exponent
+fragment DIG    : [0-9];                                        // Fragment match digits
 
 // Newlines, whitespace and comments
-TDD_COMMENT     :   '//' .*? NEWLINE -> channel(HIDDEN);        // hide comments from parser, match '//' until newline optionally preceded by a carriage return
-NEWLINE         : '\r'? '\n';                                   // return newlines wiht optional carriage return to parser (is end-statement signal)
-WS              : [ \t]+ -> channel(HIDDEN);                    // hide spaces and tabs from the parser but generate tokens aka toss out whitespace
+TDD_COMMENT     :   '//' .*? NEWLINE -> channel(HIDDEN);        // Hide comments from parser, match '//' until newline optionally preceded by a carriage return
+NEWLINE         : '\r'? '\n';                                   // Return newlines wiht optional carriage return to parser (is end-statement signal)
+WS              : [ \t]+ -> channel(HIDDEN);                    // Hide spaces and tabs from the parser but generate tokens aka toss out whitespace

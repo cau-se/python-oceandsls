@@ -14,18 +14,21 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# util imports
+# Util imports
 import logging
 import re
 import uuid
 import os.path
 from typing import List, Optional, Tuple
 
-# antlr4
+# Antlr4
 from antlr4 import CommonTokenStream, FileStream, InputStream, Token
 from antlr4.IntervalSet import IntervalSet
 
-# pygls
+# Antlr4-c3
+from codeCompletionCore.CodeCompletionCore import CandidatesCollection, CodeCompletionCore
+
+# Pygls
 from lsprotocol.types import (
     CompletionItem, CompletionList, CompletionOptions, CompletionParams, Diagnostic, DidChangeTextDocumentParams, DidCloseTextDocumentParams,
     DidOpenTextDocumentParams, DidSaveTextDocumentParams, MessageType, Position, Range, Registration, RegistrationParams, SemanticTokens, SemanticTokensLegend,
@@ -35,10 +38,7 @@ from lsprotocol.types import (
 from pygls.server import LanguageServer
 from pygls.workspace import Document
 
-# antlr4-c3
-from codeCompletionCore.CodeCompletionCore import CandidatesCollection, CodeCompletionCore
-
-# user relative imports
+# User relative imports
 from .cst.calculate_complexity_visitor import CalculateComplexityVisitor
 from .cst.cmake_file_generator_visitor import CMakeFileGeneratorVisitor
 from .cst.f90_file_generator_visitor import F90FileGeneratorVisitor
@@ -63,11 +63,14 @@ class TDDLSPServer(LanguageServer):
 
     top_level_context = TestSuiteParser.Test_suiteContext
     parseTree: top_level_context
-    # Recommendation metric
+    # Recommendation metric option
     sort_metric: str
 
     # Debug flag
-    debug = False
+    show_debug_output: bool = True
+
+    # Debug Log
+    logger = logging.getLogger(__name__)
 
     # Input file path
     input_path: str
@@ -94,16 +97,17 @@ class TDDLSPServer(LanguageServer):
         self.parser.removeErrorListeners()
         self.parser.addErrorListener(self.error_listener)
 
+        # Set error strategy to custom input mismatch report
         self.parser._errHandler = TDDErrorStrategy()
 
-        # Attributes of generated files
+        # Empty attribute init for generated files
         self.files: dict[str, Tuple[float, str, str]] = {}
 
-        # Fxtran system file path
+        # Default Fxtran system file path can be overwritten
         self.fxtran_path = "fxtran"
 
-        # Number of SuT to return
-        self.show_n_metrics = 2
+        # Number of SuT to return for metric calculation
+        self.show_n_metrics = 0
 
 
 tdd_server = TDDLSPServer("pygls-odsl-tdd-prototype", "v0.8")
@@ -111,10 +115,10 @@ tdd_server = TDDLSPServer("pygls-odsl-tdd-prototype", "v0.8")
 logger = logging.getLogger(__name__)
 
 
-def _validate(params):
+def _validate(text_doc: Document):
+    """Validates LSP input."""
 
     # Get file content for lexer input stream
-    text_doc: Document = tdd_server.workspace.get_text_document(params.text_document.uri)
     source: str = text_doc.source
     # Validate format if source is determined
     diagnostics: List[Diagnostic] = _validate_format(tdd_server, source) if source is not None else []
@@ -128,7 +132,7 @@ def _validate_format(server: TDDLSPServer, source: str):
     # Get input stream of characters for lexer
     input_stream: InputStream = InputStream(source)
 
-    # set the input stream and reset the lexer/parser/listener
+    # Set the input stream and reset the lexer/parser/listener
     server.error_listener.reset()
     server.lexer.inputStream = input_stream
     server.token_stream = CommonTokenStream(server.lexer)
@@ -150,7 +154,7 @@ def _validate_format(server: TDDLSPServer, source: str):
 
         server.error_listener.diagnostics.append(msg)
 
-    # return diagnostics
+    # Return diagnostics
     return server.error_listener.diagnostics
 
 
@@ -167,9 +171,8 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     """Returns completion items."""
 
     # Set input stream of characters for lexer
-    text_doc: Document = tdd_server.workspace.get_text_document(params.text_document.uri)
-    source: str = text_doc.source
-    input_stream: InputStream = InputStream(source)
+    text_doc: Document = get_text_document(params)
+    input_stream: InputStream = InputStream(text_doc.source)
 
     # Reset the lexer/parser
     tdd_server.error_listener.reset()
@@ -244,8 +247,6 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
         for symbol in symbols:
             completion_list.items.append(CompletionItem(label=symbol))
 
-    # TODO modules, type check, asserts, functions, subroutines
-
     # Add tokens to completion candidates
     # Strip ' from terminals
     stripped_literal_names: list = stripTerminals(elements=tdd_server.parser.literalNames, terminal="\'")
@@ -264,7 +265,7 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     if not completion_list.items:
         # VSCode empty list workaround
         completion_list.items.append(CompletionItem(label=""))
-    if tdd_server.debug:
+    if tdd_server.show_debug_output:
         for entry in completion_list.items:
             print(f"{entry}")
     # Return completion candidates labels
@@ -283,9 +284,14 @@ def stripTerminals(elements: List[str] = None, terminal: str = "\'") -> List[str
 
 @tdd_server.feature(TEXT_DOCUMENT_DID_CHANGE)
 def did_change(server: TDDLSPServer, params: DidChangeTextDocumentParams):
-    """Text document did change notification."""
-    server.parseTree = parse_document(params)
-    _validate(params)
+    """Valdiate input and return text document did change notification."""
+
+    # Set input stream of characters for lexer
+    text_doc: Document = get_text_document(params)
+    input_stream: InputStream = InputStream(text_doc.source)
+
+    server.parseTree = parse_stream( input_stream )
+    _validate(text_doc)
 
 
 @tdd_server.feature(TEXT_DOCUMENT_DID_CLOSE)
@@ -296,7 +302,7 @@ def did_close(server: TDDLSPServer, params: DidCloseTextDocumentParams):
 
 @tdd_server.feature(TEXT_DOCUMENT_DID_SAVE)
 def did_save(server: TDDLSPServer, params: DidSaveTextDocumentParams):
-    """Text document did save notification."""
+    """Execute file generator and return text document did save notification."""
 
     # Set input stream of characters for lexer
     input_stream: InputStream
@@ -305,19 +311,18 @@ def did_save(server: TDDLSPServer, params: DidSaveTextDocumentParams):
     # Client or cli call
     if params:
         # Get input from lsp client
-        text_doc: Document = tdd_server.workspace.get_text_document(params.text_document.uri)
+        text_doc: Document = get_text_document(params)
         file_path = os.path.abspath(text_doc.path)
-        source: str = text_doc.source
-        input_stream = InputStream(source)
+        input_stream = InputStream(text_doc.source)
     else:
         # Get input from cli
-        input_stream = FileStream(tdd_server.input_path)
         file_path = tdd_server.input_path
+        input_stream = FileStream(tdd_server.input_path)
 
     # Get relative input path for file generation
     rel_file_path: str = os.path.relpath(file_path, os.getcwd())
-    # launch parser
-    server.parseTree = parse_document(input_stream)
+    # Launch parser
+    server.parseTree = parse_stream( input_stream )
 
     # Get symboltable for f90 generator
     symbol_table_visitor: SymbolTableVisitor = SymbolTableVisitor("variables", os.getcwd(), tdd_server.fxtran_path)
@@ -327,42 +332,44 @@ def did_save(server: TDDLSPServer, params: DidSaveTextDocumentParams):
     pf_file_generator_visitor: PFFileGeneratorVisitor = PFFileGeneratorVisitor(
         work_path=os.getcwd(), files=tdd_server.files, symbol_table=symbol_table, rel_file_path=rel_file_path
     )
-    # write pf files and save generated files
+    # Write pf files and save generated files
     tdd_server.files = pf_file_generator_visitor.visit(server.parseTree)
 
     # Generate F90 files
     f90_file_generator_visitor: F90FileGeneratorVisitor = F90FileGeneratorVisitor(
         work_path=os.getcwd(), files=tdd_server.files, symbol_table=symbol_table, rel_file_path=rel_file_path
     )
-    # update fortran file and save generated files
+    # Update fortran file and save generated files
     tdd_server.files = f90_file_generator_visitor.visit(server.parseTree)
 
     # Generate CMake files
     cmake_file_generator_visitor: CMakeFileGeneratorVisitor = CMakeFileGeneratorVisitor(
         work_path=os.getcwd(), files=tdd_server.files, symbol_table=symbol_table
     )
-    # update CMake files and save generated files
+    # Update CMake files and save generated files
     tdd_server.files = cmake_file_generator_visitor.visit(server.parseTree)
 
     server.show_message("Text Document Did Save")
 
-
 @tdd_server.feature(TEXT_DOCUMENT_DID_OPEN)
 async def did_open(server: TDDLSPServer, params: DidOpenTextDocumentParams):
-    """Text document did open notification."""
+    """Validate input and return text document did open notification."""
     server.show_message("Text Document Did Open")
 
     # Set input stream of characters for lexer
-    text_doc: Document = tdd_server.workspace.get_text_document(params.text_document.uri)
-    source: str = text_doc.source
-    input_stream: InputStream = InputStream(source)
 
-    server.parseTree = parse_document(input_stream)
+    text_doc: Document = get_text_document(params)
+    input_stream: InputStream = InputStream(text_doc.source)
 
-    _validate(params)
+    server.parseTree = parse_stream( input_stream )
+    _validate(text_doc)
 
+def get_text_document( params ) -> Document:
+    """Return managed document."""
+    return tdd_server.workspace.get_text_document(params.text_document.uri)
 
-def parse_document(input_stream: InputStream) -> TestSuiteParser.Test_suiteContext:
+def parse_stream( input_stream: InputStream ) -> TestSuiteParser.Test_suiteContext:
+    """Parse input stream."""
     # Reset the lexer/parser
     tdd_server.error_listener.reset()
     tdd_server.lexer.inputStream = input_stream
@@ -408,7 +415,8 @@ def recommend_SUT(server: TDDLSPServer, *args):
     """Calculates the complexity of the SuTs in the path and returns test recommendations."""
 
     calculate_complexity_visitor: CalculateComplexityVisitor = CalculateComplexityVisitor(
-        name="paths", test_work_path=os.getcwd(), fxtran_path=tdd_server.fxtran_path, sort_metric=tdd_server.sort_metric
+        name="paths", test_work_path=os.getcwd(), fxtran_path=tdd_server.fxtran_path,
+            sort_metric=tdd_server.sort_metric, debug = tdd_server.show_debug_output
     )
     symbol_table = calculate_complexity_visitor.visit(server.parseTree)
 
@@ -417,13 +425,15 @@ def recommend_SUT(server: TDDLSPServer, *args):
     for metric in metric_list[:tdd_server.show_n_metrics]:
         server.show_message(metric)
 
-    if tdd_server.debug:
+    if tdd_server.show_debug_output:
         debug_file_write(os.path.join(os.getcwd(), tdd_server.sort_metric), "\n".join(metric_list))
 
     server.show_message(f"Recommend SuT by {tdd_server.sort_metric}...")
 
 
 def debug_file_write(file_path: str = None, content: str = None):
+    if tdd_server.logger.isEnabledFor(logging.DEBUG):
+        tdd_server.logger.debug("Log metric to file %s\n" % file_path)
     with open(file_path, mode="w", encoding="utf-8") as f:
         f.write(content)
 

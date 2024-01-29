@@ -17,8 +17,6 @@ __author__ = "sgu"
 #  limitations under the License.
 
 # utils
-import logging
-
 from dataclasses import dataclass
 from typing import Any, List, Optional
 
@@ -26,11 +24,6 @@ from typing import Any, List, Optional
 from antlr4 import BufferedTokenStream, TerminalNode, Token
 from antlr4.ParserRuleContext import ParserRuleContext
 from antlr4.tree.Tree import ErrorNodeImpl, TerminalNodeImpl
-
-# debug
-logger = logging.getLogger(__name__)
-logger.disabled = True
-
 
 @dataclass
 class CaretPosition:
