@@ -11,12 +11,12 @@ from typing import TypeVar, Generic, Dict, Optional, Callable, Any
 from antlr4.tree.Tree import ParseTree
 
 # user relative imports
-from symbolTable.SymbolTable import (ScopedSymbol, SymbolTable, P, T, VariableSymbol, RoutineSymbol,
+from ..symbolTable.SymbolTable import (ScopedSymbol, SymbolTable, P, T, VariableSymbol, RoutineSymbol,
                                        SymbolTableOptions, UnitSymbol, FundamentalUnit, FundamentalType, UnitPrefix,
                                        UnitKind,ReferenceKind, AggregatedUnit, CompartmentSymbol
                                        )
-from gen.python.BgcDsl.BgcDslParser import BgcDslParser
-from gen.python.BgcDsl.BgcDslVisitor import BgcDslVisitor
+from ..gen.python.BgcDsl.BgcDslParser import BgcDslParser
+from ..gen.python.BgcDsl.BgcDslVisitor import BgcDslVisitor
 
 
 def _stringToPrefix(input: str):

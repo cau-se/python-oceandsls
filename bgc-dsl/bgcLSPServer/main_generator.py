@@ -12,7 +12,8 @@ if __name__ == '__main__':
     tableVisitor = SymbolTableVisitor("testConf")
 
 
-    with open("/home/serafim/Desktop/python-oceandsls/bgc-dsl/bgcLSPServer/example/example.bgc") as conf_file:
+def generate(input, output)
+    with open(input) as conf_file:
         data = conf_file.read()
         input_stream = InputStream(data)
         lexer = BgcDslLexer(input_stream)
@@ -20,5 +21,5 @@ if __name__ == '__main__':
         dcl_parsed = BgcDslParser(stream).bgcModel()
         tableVisitor.visit(dcl_parsed)
         table = tableVisitor.symbolTable
-        generator = BgcCodeGenerator(table, "/home/serafim/Desktop/python-oceandsls/bgc-dsl/bgcLSPServer/example/")
+        generator = BgcCodeGenerator(table, "output")
         generator.generate()

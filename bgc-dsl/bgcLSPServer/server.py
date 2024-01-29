@@ -20,10 +20,12 @@
 # util imports
 import asyncio
 import re
+
 import time
 import uuid
 import sys, os, logging
 from typing import List, Optional
+from urllib.parse import urlparse
 
 # antlr4
 from antlr4.IntervalSet import IntervalSet
@@ -67,6 +69,7 @@ from .cst.DiagnosticListener import DiagnosticListener
 from .gen.python.BgcDsl.BgcDslLexer import BgcDslLexer
 from .gen.python.BgcDsl.BgcDslParser import BgcDslParser
 from .gen.python.BgcDsl.BgcDslVisitor import BgcDslVisitor
+from .fileWriter.Generator import BgcCodeGenerator
 
 # debug import
 # from pprint import pprint
@@ -242,7 +245,9 @@ def did_close(server: bgcLSPServer, params: DidCloseTextDocumentParams):
 @bgc_server.feature( TEXT_DOCUMENT_DID_SAVE )
 def did_save(server: bgcLSPServer, params: DidSaveTextDocumentParams):
     """Text document did save notification."""
-
+    
+    uri_path = params.text_document.uri
+    uri_parsed = urlparse(uri_path).path
     # set input stream of characters for lexer
     text_doc: Document = bgc_server.workspace.get_document( params.text_document.uri )
     source: str = text_doc.source
@@ -256,9 +261,16 @@ def did_save(server: bgcLSPServer, params: DidSaveTextDocumentParams):
 
     Top_levelContext = BgcDslParser.BgcModelContext
     parseTree: Top_levelContext = bgc_server.parser.bgcModel()
+    tableVisitor = SymbolTableVisitor( str(os.getcwd( )))
+    tableVisitor.visit(parseTree)
+    print(f'path existssss{os.path.isdir(uri_parsed)}')
+    print(uri_path)
+    generator = BgcCodeGenerator(tableVisitor.symbolTable, os.path.dirname(uri_parsed))
+    
+    generator.generate()
 
     # TODO
-
+    server.show_message(f'Saved in {os.path.dirname(uri_parsed)}')
     server.show_message( 'Text Document Did Save' )
 
 

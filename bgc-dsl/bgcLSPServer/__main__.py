@@ -18,7 +18,7 @@
 ############################################################################
 import argparse
 import logging
-
+import main_generator
 from .server import bgc_server
 
 logging.basicConfig( filename="bgcDSL_pygls.log", level=logging.DEBUG, filemode="w" )
@@ -43,6 +43,10 @@ def add_arguments(parser):
         "--port", type=int, default=2087,
         help="Bind to this port"
     )
+    parser.add_argument(
+        "--input", help="Input file")
+    parser.add_argument(
+        "--output", help="Output directory")                
 
 
 def main():
@@ -54,6 +58,8 @@ def main():
         bgc_server.start_tcp( args.host, args.port )
     elif args.ws:
         bgc_server.start_ws( args.host, args.port )
+    elif args.input and args.output:
+        main_generator.generate(args.input, args.output)
     else:
         bgc_server.start_io()
 

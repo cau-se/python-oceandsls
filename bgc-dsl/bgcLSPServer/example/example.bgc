@@ -6,7 +6,7 @@ substances
 	float Chl : mmol
 
 parameters
-	float Q_r_C_N : mmol C (mmol N)^-1 = 5.5   //
+	float Q_r_C_N : mmol C (mmol N)^-1 = 5.6   //
 	float Q_r_N_P :  mmol N (mmol P)^-1 = 16.0  //
 
 diagnostics
@@ -19,7 +19,7 @@ compartment Nutrients {
 		DIN = 0
 		DIP = 0
 		DIC = 0
-		_TA = 0
+		_TA = 1
 
 	parameters
 

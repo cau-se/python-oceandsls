@@ -2,8 +2,8 @@
 import jinja2 as j
 import os
 
-from symbolTable.SymbolTable import SymbolTable, VariableSymbol, Enum, CompartmentSymbol
-from gen.python.BgcDsl.BgcDslParser import BgcDslParser
+from ..symbolTable.SymbolTable import SymbolTable, VariableSymbol, Enum, CompartmentSymbol
+from ..gen.python.BgcDsl.BgcDslParser import BgcDslParser
 
 class BgcCodeGenerator():
    
@@ -40,7 +40,8 @@ class BgcCodeGenerator():
             module = e.name
             print(f'module:{module}')
             fungroup_path = os.path.join(self.outputPath, f'{module}')
-            control = open(fungroup_path, "w")
+            print(f'path exists{os.path.isdir(self.outputPath)}')
+            control = open(fungroup_path, "w+")
             control.write(mainTemplate.render(class_name = classname, parameters = parameters, modulname = module, namelist = parameters))
             control.close()
 
