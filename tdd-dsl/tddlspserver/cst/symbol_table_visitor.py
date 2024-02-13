@@ -35,6 +35,7 @@ from ..symboltable.symbol_table import FunctionSymbol, ModuleSymbol, ParameterSy
 # Debug Log
 logger = logging.getLogger(__name__)
 
+
 class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
     _symbol_table: SymbolTable
     _test_path: str

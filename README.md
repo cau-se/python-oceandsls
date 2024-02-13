@@ -12,7 +12,7 @@ This project contains multiple DSLs for ocean and earth system models.
 - TDD-DSL testing DSL for test-driven development
 - BGC-DSL language to specify biogeochemical models
 
-Documentation including the languages and architecture can be found in the `doc`.
+Documentation can be found in the `doc`.
 
 ## License
 
@@ -20,123 +20,84 @@ Apache 2.0
 
 ## Install
 
-### Install Python
+### Optional: check python packages
+- update package manager tools
+  - `python -m pip install --upgrade pip setuptools wheel`
+- check if python package `virtualenv` is installed if Python < 3.3 is used else a subset of it has been integrated into the standard library under `venv`
+  - `python -m pip show virtualenv`
+  - if not install package `virtualenv` into global system environment
+    - `python -m pip install virtualenv`
 
-The OceanDSL languages are based on python3.
-Install Python in Ubuntu with:
-- `sudo apt install python3 python3-pip`
-
-In some distributions *python3* uses the executable name *python3* leaving
-python for *python2*. As the following instructions use *python*, you have
-either substitute the names accordingly or in Ubuntu install the following
-packages:
-
-- `sudo apt install python-is-python3`
-
-Install the virtual environment. This helps to keep your distribution
-Python setup and the setup for the DSLs separate.
-
-- `sudo apt install python3-virtualenv`
-
-Alternatively, you can install the packages via *pip*. Howver, this does
-not work in Ubuntu, as it manages its packages via apt/dpkg.
-- `python -m pip install --upgrade pip setuptools wheel`
-
-Check whether *virtualenv* is installed:
-
-- `python -m pip show virtualenv`
-
-This should result in
-```
-Name: virtualenv
-Version: 20.24.1+ds
-Summary: Virtual Python Environment builder
-Home-page: 
-Author: 
-Author-email: 
-License: 
-Location: /usr/lib/python3/dist-packages
-Requires: distlib, filelock, platformdirs
-Required-by:
-```
-
-If missing install it:
-- `python -m pip install virtualenv`
-
-### Install LSP Server Dependencies
-
-For this how to, we assume that you install your virtual environment in your
-home directory. You can, however, install it anywhere.
-
-Generate virtual environment in directory `.venv` using the standard
-library `venv`:
-
-- `cd $HOME`
-- `python -m venv .venv`
-
-Or use `virtualenv`:
-- `virtualenv .venv`
-
-Activate virtual environment `.venv`
-- `source .venv/bin/activate`
-
-This will result in the following output:
-```
-(.venv) user@glasgow:~$ 
-```
-
-Install `antlr4-python3-runtime`, `Jinja2`, `mock`, `pygls` and `pytest`
-package into virtual environment `.venv`
-- `python -m pip install antlr4-python3-runtime Jinja2 mock pygls pytest`
-
-Last line of this operation should look like this:
-```
-Successfully installed Jinja2-3.1.3 MarkupSafe-2.1.5 antlr4-python3-runtime-4.13.1 attrs-23.2.0 cattrs-23.2.3 iniconfig-2.0.0 lsprotocol-2023.0.1 mock-5.1.0 packaging-23.2 pluggy-1.4.0 pygls-1.3.0 pytest-8.0.0
-```
-
+### Install Server Dependencies
+- generate virtual environment in directory `.venv` using the standard library `venv`
+  - `python -m venv .venv`
+  - alternative use `virtualenv`, see optional python packages
+- activate virtual environment `.venv`
+  - `source .venv/bin/activate`
+- install `antlr4-python3-runtime`, `Jinja2`, `mock`, `pygls` and `pytest` package into virtual environment `.venv`
+  - `python -m pip install antlr4-python3-runtime Jinja2 mock pygls pytest`
 
 ## Optional: update npm and node
+- check `npm` version
+  - `npm --version`
+- install latest `npm` version globally (`-g` or `--global`)
+  - `sudo npm install -g npm@latest`
+- install latest `node` version
+  - `sudo n latest`
+- Install the dependencies to the global mode (`-g` or `--global`)
+  - `sudo npm update -g`
 
-Install and update JavaScript package manager which is used by VSCode.
-- `sudo apt install npm`
+### Install Client Dependencies e.g. cp-dsl
 
-Check `npm` version
-- `npm --version`
+- Goto extension directory `python-oceandsls/cp-dsl`
+- Install the dependencies to the local node_modules 
+  - `npm install`
 
-Outputs, e.g., 10.4.0 or a later version
+### Run Example using VSCode
 
-In case the package is not up-to-date, install latest `npm` version globally
-(`-g` or `--global`)
-- `sudo npm install -g npm@latest`
+- Open `python-oceandsls/cp-dsl` in VSCode
+- Trust author files in `python-oceandsls/cp-dsl`
+- Goto Run and Debug
+  - `Ctrl/Cmd+Shift+D`
+- Select `Server + Client`
+- Start Debugging via `F5` or GUI
+- Open a `*.odsl` file
+- If server is working correctly notification shows `Text Document Did Open`
 
-Output:
-```
-changed 14 packages in 1s
+### Troubleshooting
 
-24 packages are looking for funding
-  run `npm fund` for details
-```
-Depending on your installation, the numbers may differ.
+- If VS Code doesn`t automatically locate the interpreter of the virtual environment. [Set it manually](https://code.visualstudio.com/docs/python/environments#_manually-specify-an-interpreter)
+  - Open Command prompt
+  `Ctrl/Cmd+Shift+P`
+    - Run select interpreter command
+  `Python: Select Interpreter`
+  - Alternative create `.vscode/settings.json` file in `python-oceandsls/cp-dsl` directory and set `python.defaultInterpreterPath` to point to the virtual environment
+    - settings.json
 
-Install latest `node` version
-- `sudo n latest`
+          {
+              // set Python Interpreter relative to workspaceFolder to virtual environment '.venv'
+              "python.defaultInterpreterPath": "${workspaceFolder}/../.venv/bin/python",
+              // alternative
+              //"python.defaultInterpreterPath": "../.venv",
+              // deprecated
+              // "python.pythonPath": "${workspaceFolder}/../.venv/bin/python",
 
-Output:
-```
-  copying : node/21.6.1
-installed : v21.6.1 (with npm 10.2.4)
-```
-The version numbers may differ in your installation.
+              // Pylance VSCode code analysis and auto-completion using Python 3.10
+              "python.analysis.extraPaths": [
+                  "{workspaceFolder}/../.venv/lib/python3.10/site-packages/:${workspaceFolder}/../antlrLib/"
+              ],
 
-Install the dependencies to the global mode (`-g` or `--global`)
-- `sudo npm update -g`
 
-Output:
-```
-removed 25 packages, and changed 47 packages in 1s
+              // Object with environment variables that will be added to the VS Code process to be used by the terminal on OS X
+              "terminal.integrated.env.osx": {"PYTHONPATH": "${workspaceFolder}/.."},
 
-24 packages are looking for funding
-  run `npm fund` for details
-```
-The version numbers may differ in your installation.
+              // Object with environment variables that will be added to the VS Code process to be used by the terminal on Linux
+              "terminal.integrated.env.linux": {"PYTHONPATH": "${workspaceFolder}/.."},
 
+              // Object with environment variables that will be added to the VS Code process to be used by the terminal on Windows
+              "terminal.integrated.env.windows": {"PYTHONPATH": "${workspaceFolder}/.."},
+          }
+
+- If npm version conflicts exists change npm to the required version
+  - E.g. reset npm version to 9.2.0
+    - `sudo npm install -g npm@9.2.0`

@@ -24,6 +24,7 @@ from .server import did_save, tdd_server
 
 logging.basicConfig(level=logging.DEBUG)
 
+
 def add_arguments(parser):
     parser.prog = "TDD-Language-Server"
     parser.description = "A program for a language server based on the test driven development ocean-dsl"

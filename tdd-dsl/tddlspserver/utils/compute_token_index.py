@@ -25,6 +25,7 @@ from antlr4 import BufferedTokenStream, TerminalNode, Token
 from antlr4.ParserRuleContext import ParserRuleContext
 from antlr4.tree.Tree import ErrorNodeImpl, TerminalNodeImpl
 
+
 @dataclass
 class CaretPosition:
     line: int

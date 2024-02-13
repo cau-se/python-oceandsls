@@ -1,87 +1,70 @@
-# CP-DSL - Parameter Declaration and Configuration DSL
-
-The CP-DSL allows to declare parameter and features for the configuration of
-the build and setup of models.
-
-This documentation shows how to setup VSCode, Vi and Emacs with the LSP
-service.
+# cp-dsl for biogeochemical models
 
 ## Prerequisites
 
-You need `python3` installed and, in case your python installation is managed
-by the distribution installer, you need a virtual environment.
+You need `python3` installed and, in case your python installation is managed by the distribution installer, you
+need a virtual environment.
 
-For VSCode, you also need `npm` installed
+You also need `npm` installed
 
-See main README.md for details.
+In Ubuntu you can install `virtualenv` with
+- `sudo apt install python3-virtualenv`
+
+Alternatively, you can install it via pip
+- `python -m pip install virtualenv`
 
 ## Installation
 
-You can either install additional python packages in your system using pip or
-use a virtual evnironment to ensure the system installation is not modified.
+You can either install additional python packages in your system using pip or use a virtual evnironment to
+ensure the system installation is not modified.
 
-Instructions are in the main README.md
+### Create virtual environment
 
-After installing the dependencies and setting up the virutal environment,
-go to the extension directory `python-oceandsls/cp-dsl`
+- Open a terminal and ensure you are in the home folder `cd`
+- Run `virtualenv local` local is then the name of your virtual environment
+- Activate virtual environment
+  `source local/bin/activate`
+  This will change your command line prompt to `(local) username@hostname:~$`
 
-## Install and setup VSCode
+### Install required packages
 
-Install VScode in Ubuntu:
+required python packages: (antlr4), antlr4-python3-runtime, pygls, jinja2, lsprotocol
+- Type `pip install antlr4-python3-runtime pygls mock jinja2 lsprotocol`
 
-`$ sudo apt install code`
+### Check python packages (optional)
+- update package manager tools
+  - `pip install --upgrade pip setuptools wheel`
 
-### Install Python extensions in VSCode
+### Update npm and node
+- check `npm` version
+  - `npm --version`
+- install latest `npm` version globally (`-g` or `--global`)
+  - Replace $VERSION with the actual version of your npm
+  - `sudo npm install -g npm@$VERSION`
+- Install and setup node version
+  - `sudo npm cache clean -f`
+  - `sudo npm install -g n`
+  - `sudo n latest`
+- Install the dependencies to the global mode (`-g` or `--global`)
+  - `sudo npm update -g`
 
-Start VScode by typing:
+### Install Client Dependencies
 
-`$ code`
+- Goto extension directory `python-oceandsls/cp-dsl`
+- Install the dependencies to the local node_modules 
+  - `npm install`
 
-![vscode start screen](images/vscode-start-screen.png)
+## Run Example using VSCode
 
-You can no choose a theme, if you like.
-
-Click on *extensions*. This is the icon on the left made out of squares. If
-unsure hover with the mouse over the icons on the left until you find extensions.
-
-Search for the Python plugin as depicted in the screenshot below.
-You can either browse the list or type the name in the search field at the top.
-
-![vscode install python](images/vscode-install-python.png)
-
-### Include LSPs in VSCode
-
-Include the Declaration DSL in VSCode
-
-Open `python-oceandsls/cp-dsl/dcllspserver` in VSCode
-
-Type 
-
-`$ code python-oceandsls/cp-dsl`
-
-or, in case your vscode is still open, go to File > Open Folder and choose
-`python-oceandsls/cp-dsl`
-
-Trust author files in `python-oceandsls/cp-dsl`
-
-gNow open `python-oceandsls/cp-dsl/dcllspserver` with File > Open Folder
-
-Goto *Run and Debug* (press `Ctrl/Cmd+Shift+D`)
-
-Select *Server + Client*
-
-Start Debugging via `F5` or GUI
-
-This opens a new VSCode instance with support for the Declaration DSL.
-
-Open a `*.dcl` file
-
-If server is working correctly notification shows `Text Document Did Open`
-
-
-Open `python-oceandsls/cp-dsl/conflspserver` in VSCode
-
-Follow the same steps as above, but for `*.conf` files and conflspserver
+- Open `python-oceandsls/cp-dsl/confLSPServer` or `python-oceandsls/cp-dsl/dclLSPServer` in VSCode
+  - Type for decl `code python-oceandsls/cp-dsl/dclLSPServer`
+- Trust author files in `python-oceandsls/cp-dsl`
+- Goto Run and Debug
+  - `Ctrl/Cmd+Shift+D`
+- Select `Server + Client`
+- Start Debugging via `F5` or GUI
+- Open a `*.oconf`/`*.decl` file
+- If server is working correctly notification shows `Text Document Did Open`
 
 ### Troubleshooting
 
@@ -120,10 +103,6 @@ Follow the same steps as above, but for `*.conf` files and conflspserver
 - If npm version conflicts exists change npm to the required version
   - E.g. reset npm version to 9.2.0
     - `sudo npm install -g npm@9.2.0`
-
-## Setup Vi
-
-# Setup Emacs
 
 # Compile and generate code
 

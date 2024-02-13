@@ -34,6 +34,7 @@ from ..utils.suggest_variables import get_scope
 # Debug Log
 logger = logging.getLogger(__name__)
 
+
 class PFFileGeneratorVisitor(TestSuiteVisitor):
     file_templates: Dict[int, str]
     template_path: str
@@ -194,7 +195,6 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
         value = self.visit(ctx.expr())
 
         templates: List[str] = []
-
 
         match (self.found_par, self.found_ref):
             case [True, _] | [_, False]:

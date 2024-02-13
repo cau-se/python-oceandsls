@@ -51,11 +51,13 @@ class PublicObj:
         else:
             return False
 
+
 # Set the namespace as Fxtran for XPath expressions
 ns = {"fx": "http://fxtran.net/#syntax"}
 
+
 def filter_xml(
-        xml_path: str = "", need_public: bool = False, modules: List[ModuleSymbol] = [] ) -> Tuple[List[Tuple[str]], List[Tuple[str, str, List[str]]]]:
+        xml_path: str = "", need_public: bool = False, modules: List[ModuleSymbol] = []) -> Tuple[List[Tuple[str]], List[Tuple[str, str, List[str]]]]:
     """
     XML filter for Fxtran output files (http://fxtran.net/#syntax) using XPath expressions
     """
@@ -344,6 +346,7 @@ def get_subdirectories_gen(path: str = "", recursive: bool = False, follow_symli
             yield entry
             if recursive:
                 yield from get_subdirectories_gen(entry.path, recursive)
+
 
 def write_decorate_src_xml(src_dir: str = "", out_dir: str = "out", fxtran_path: str = "~/bin/fxtran"):
     """
