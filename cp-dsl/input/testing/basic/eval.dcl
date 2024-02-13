@@ -19,6 +19,8 @@ feature general : "feature general description" {
 feature offline : "the disabled one" {
 }
 
+
+
 group common : "Common Description" {
 	def ground_temp Temperature : kelvin
 	def ground_color Color : ""

@@ -1,63 +1,46 @@
-# cp-dsl for biogeochemical models
+# CP-DSL - Parameter Declaration and Configuration DSL
+
+The CP-DSL allows to declare parameter and features for the configuration of
+the build and setup of models.
+
+This documentation shows how to setup VSCode, Vi and Emacs with the LSP
+service.
 
 ## Prerequisites
 
-You need `python3` installed and, in case your python installation is managed by the distribution installer, you
-need a virtual environment.
+You need `python3` installed and, in case your python installation is managed
+by the distribution installer, you need a virtual environment.
 
-You also need `npm` installed
+For VSCode, you also need `npm` installed
 
-In Ubuntu you can install `virtualenv` with
-- `sudo apt install python3-virtualenv`
-
-Alternatively, you can install it via pip
-- `python -m pip install virtualenv`
+See main README.md for details.
 
 ## Installation
 
-You can either install additional python packages in your system using pip or use a virtual evnironment to
-ensure the system installation is not modified.
+You can either install additional python packages in your system using pip or
+use a virtual evnironment to ensure the system installation is not modified.
 
-### Create virtual environment
+Instructions are in the main README.md
 
-- Open a terminal and ensure you are in the home folder `cd`
-- Run `virtualenv local` local is then the name of your virtual environment
-- Activate virtual environment
-  `source local/bin/activate`
-  This will change your command line prompt to `(local) username@hostname:~$`
-
-### Install required packages
-
-required python packages: (antlr4), antlr4-python3-runtime, pygls, jinja2, lsprotocol
-- Type `pip install antlr4-python3-runtime pygls mock jinja2 lsprotocol`
-
-### Check python packages (optional)
-- update package manager tools
-  - `pip install --upgrade pip setuptools wheel`
-
-### Update npm and node
-- check `npm` version
-  - `npm --version`
-- install latest `npm` version globally (`-g` or `--global`)
-  - Replace $VERSION with the actual version of your npm
-  - `sudo npm install -g npm@$VERSION`
-- Install and setup node version
-  - `sudo npm cache clean -f`
-  - `sudo npm install -g n`
-  - `sudo n latest`
-- Install the dependencies to the global mode (`-g` or `--global`)
-  - `sudo npm update -g`
+After installing the dependencies and setting up the virutal environment,
+go to the extension directory `python-oceandsls/cp-dsl`
 
 ### Install Client Dependencies
 
-- Goto extension directory `python-oceandsls/cp-dsl`
-- Install the dependencies to the local node_modules 
-  - `npm install`
+Install the dependencies to the local node_modules 
+- `npm install`
 
-## Run Example using VSCode
+## Setup VSCode
 
-- Open `python-oceandsls/cp-dsl/confLSPServer` or `python-oceandsls/cp-dsl/dclLSPServer` in VSCode
-  - Type for decl `code python-oceandsls/cp-dsl/dclLSPServer`
+### Install Python extensions in VSCode
+
+### Include LSPs in VSCode
+
+Include the Declaration DSL in VSCode
+
+Open  `python-oceandsls/cp-dsl/dcllspserver` in VSCode
+
+- Type for decl `code python-oceandsls/cp-dsl`
 - Trust author files in `python-oceandsls/cp-dsl`
 - Goto Run and Debug
   - `Ctrl/Cmd+Shift+D`
@@ -65,6 +48,10 @@ required python packages: (antlr4), antlr4-python3-runtime, pygls, jinja2, lspro
 - Start Debugging via `F5` or GUI
 - Open a `*.oconf`/`*.decl` file
 - If server is working correctly notification shows `Text Document Did Open`
+
+
+Open `python-oceandsls/cp-dsl/conflspserver` in VSCode
+
 
 ### Troubleshooting
 
@@ -103,6 +90,10 @@ required python packages: (antlr4), antlr4-python3-runtime, pygls, jinja2, lspro
 - If npm version conflicts exists change npm to the required version
   - E.g. reset npm version to 9.2.0
     - `sudo npm install -g npm@9.2.0`
+
+## Setup Vi
+
+# Setup Emacs
 
 # Compile and generate code
 
