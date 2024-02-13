@@ -28,12 +28,12 @@ go to the extension directory `python-oceandsls/cp-dsl`
 ## Install and setup VSCode
 
 Install VScode in Ubuntu:
-- ` sudo apt install code`
+`$ sudo apt install code`
 
 ### Install Python extensions in VSCode
 
-Start VScode:
-- `code`
+Start VScode by typing:
+`$ code`
 
 ![vscode start screen](images/vscode-start-screen.png)
 
@@ -47,19 +47,20 @@ You can either browse the list or type the name in the search field at the top.
 
 ![vscode install python](images/vscode-install-python.png)
 
-
 ### Include LSPs in VSCode
 
 Include the Declaration DSL in VSCode
 
-Open  `python-oceandsls/cp-dsl/dcllspserver` in VSCode
+Open `python-oceandsls/cp-dsl/dcllspserver` in VSCode
 
-Type for decl `code python-oceandsls/cp-dsl` or, in case your vscode is still
-open, go to File > Open Folder and choose `python-oceandsls/cp-dsl
+Type 
+`$ code python-oceandsls/cp-dsl`
+or, in case your vscode is still open, go to File > Open Folder and choose
+`python-oceandsls/cp-dsl`
 
 Trust author files in `python-oceandsls/cp-dsl`
 
-Now open `python-oceandsls/cp-dsl/dcllspserver`
+gNow open `python-oceandsls/cp-dsl/dcllspserver` with File > Open Folder
 
 Goto *Run and Debug* (press `Ctrl/Cmd+Shift+D`)
 
