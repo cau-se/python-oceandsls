@@ -28,11 +28,13 @@ go to the extension directory `python-oceandsls/cp-dsl`
 ## Install and setup VSCode
 
 Install VScode in Ubuntu:
+
 `$ sudo apt install code`
 
 ### Install Python extensions in VSCode
 
 Start VScode by typing:
+
 `$ code`
 
 ![vscode start screen](images/vscode-start-screen.png)
@@ -54,7 +56,9 @@ Include the Declaration DSL in VSCode
 Open `python-oceandsls/cp-dsl/dcllspserver` in VSCode
 
 Type 
+
 `$ code python-oceandsls/cp-dsl`
+
 or, in case your vscode is still open, go to File > Open Folder and choose
 `python-oceandsls/cp-dsl`
 
