@@ -25,14 +25,28 @@ Instructions are in the main README.md
 After installing the dependencies and setting up the virutal environment,
 go to the extension directory `python-oceandsls/cp-dsl`
 
-### Install Client Dependencies
+## Install and setup VSCode
 
-Install the dependencies to the local node_modules 
-- `npm install`
-
-## Setup VSCode
+Install VScode in Ubuntu:
+- ` sudo apt install code`
 
 ### Install Python extensions in VSCode
+
+Start VScode:
+- `code`
+
+![vscode start screen](images/vscode-start-screen.png)
+
+You can no choose a theme, if you like.
+
+Click on *extensions*. This is the icon on the left made out of squares. If
+unsure hover with the mouse over the icons on the left until you find extensions.
+
+Search for the Python plugin as depicted in the screenshot below.
+You can either browse the list or type the name in the search field at the top.
+
+![vscode install python](images/vscode-install-python.png)
+
 
 ### Include LSPs in VSCode
 
@@ -40,18 +54,29 @@ Include the Declaration DSL in VSCode
 
 Open  `python-oceandsls/cp-dsl/dcllspserver` in VSCode
 
-- Type for decl `code python-oceandsls/cp-dsl`
-- Trust author files in `python-oceandsls/cp-dsl`
-- Goto Run and Debug
-  - `Ctrl/Cmd+Shift+D`
-- Select `Server + Client`
-- Start Debugging via `F5` or GUI
-- Open a `*.oconf`/`*.decl` file
-- If server is working correctly notification shows `Text Document Did Open`
+Type for decl `code python-oceandsls/cp-dsl` or, in case your vscode is still
+open, go to File > Open Folder and choose `python-oceandsls/cp-dsl
+
+Trust author files in `python-oceandsls/cp-dsl`
+
+Now open `python-oceandsls/cp-dsl/dcllspserver`
+
+Goto *Run and Debug* (press `Ctrl/Cmd+Shift+D`)
+
+Select *Server + Client*
+
+Start Debugging via `F5` or GUI
+
+This opens a new VSCode instance with support for the Declaration DSL.
+
+Open a `*.dcl` file
+
+If server is working correctly notification shows `Text Document Did Open`
 
 
 Open `python-oceandsls/cp-dsl/conflspserver` in VSCode
 
+Follow the same steps as above, but for `*.conf` files and conflspserver
 
 ### Troubleshooting
 
