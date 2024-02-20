@@ -53,7 +53,7 @@ You can either browse the list or type the name in the search field at the top.
 
 Include the Declaration DSL in VSCode
 
-Open `python-oceandsls/cp-dsl/dcllspserver` in VSCode
+Open `python-oceandsls/cp-dsl` in VSCode
 
 Type 
 
@@ -64,24 +64,22 @@ or, in case your vscode is still open, go to File > Open Folder and choose
 
 Trust author files in `python-oceandsls/cp-dsl`
 
-gNow open `python-oceandsls/cp-dsl/dcllspserver` with File > Open Folder
-
 Goto *Run and Debug* (press `Ctrl/Cmd+Shift+D`)
 
 Select *Server + Client*
 
-Start Debugging via `F5` or GUI
+Start Debugging via **F5** or GUI
 
 This opens a new VSCode instance with support for the Declaration DSL.
 
-Open a `*.dcl` file
+Open a `*.decl` file
 
 If server is working correctly notification shows `Text Document Did Open`
 
 
 Open `python-oceandsls/cp-dsl/conflspserver` in VSCode
 
-Follow the same steps as above, but for `*.conf` files and conflspserver
+Follow the same steps as above, but for `*.oconf` files and conflspserver
 
 ### Troubleshooting
 

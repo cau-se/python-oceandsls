@@ -14,7 +14,7 @@
   ],
   "activationEvents": [
     "onLanguage:oceandsl_conf",
-    "onLanguage:oceandsl_dcl"
+    "onLanguage:oceandsl_decl"
   ],
   "contributes": {
     "languages": [
@@ -25,9 +25,9 @@
         ]
       },
       {
-        "id": "oceandsl_dcl",
+        "id": "oceandsl_decl",
         "extensions": [
-          ".dcl"
+          ".decl"
         ]
       }
     ],

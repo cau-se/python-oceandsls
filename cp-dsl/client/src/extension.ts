@@ -28,7 +28,7 @@ import {
 } from "vscode-languageclient/node";
 
 const CONF_LANGUAGE_ID = "oceandsl_conf";
-const DCL_LANGUAGE_ID = "oceandsl_dcl";
+const DECL_LANGUAGE_ID = "oceandsl_decl";
 
 let client: LanguageClient;
 
@@ -38,8 +38,8 @@ function getClientOptions(): LanguageClientOptions {
         documentSelector: [
             { scheme: "file", language: CONF_LANGUAGE_ID },
             { scheme: "untitled", language: CONF_LANGUAGE_ID },
-            { scheme: "file", language: DCL_LANGUAGE_ID },
-            { scheme: "untitled", language: DCL_LANGUAGE_ID },
+            { scheme: "file", language: DECL_LANGUAGE_ID },
+            { scheme: "untitled", language: DECL_LANGUAGE_ID },
         ],
         outputChannelName: "[pygls] ODslCPLanguageServer",
         synchronize: {
