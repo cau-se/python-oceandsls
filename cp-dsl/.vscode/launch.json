@@ -40,7 +40,7 @@
       "name": "Launch CONF Server",
       "type": "python",
       "request": "launch",
-      "module": "confLSPServer",
+      "module": "conflspserver",
       "args": [
         "--tcp"
       ],

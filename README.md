@@ -94,7 +94,6 @@ Last line of this operation should look like this:
 Successfully installed Jinja2-3.1.3 MarkupSafe-2.1.5 antlr4-python3-runtime-4.13.1 attrs-23.2.0 cattrs-23.2.3 iniconfig-2.0.0 lsprotocol-2023.0.1 mock-5.1.0 packaging-23.2 pluggy-1.4.0 pygls-1.3.0 pytest-8.0.0
 ```
 
-
 ## Optional: update npm and node
 
 Install and update JavaScript package manager which is used by VSCode.

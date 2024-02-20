@@ -59,27 +59,41 @@ Type
 
 `$ code python-oceandsls/cp-dsl`
 
-or, in case your vscode is still open, go to File > Open Folder and choose
-`python-oceandsls/cp-dsl`
+or, in case your vscode is still open, go to **File** > **Open Folder** and
+choose `python-oceandsls/cp-dsl`
 
 Trust author files in `python-oceandsls/cp-dsl`
 
-Goto *Run and Debug* (press `Ctrl/Cmd+Shift+D`)
+Goto **Run and Debug** (press **Ctrl/Cmd+Shift+D**)
 
-Select *Server + Client*
+Select *DCL Server + Client*
 
-Start Debugging via **F5** or GUI
+Start Debugging via **F5**
 
 This opens a new VSCode instance with support for the Declaration DSL.
 
-Open a `*.decl` file
+![vscode install python](images/vscode-open-declaration-file.png)
 
-If server is working correctly notification shows `Text Document Did Open`
+Open a `*.decl` file in one of the example projects `MITgcm`, `testing`, or 
+`UVic`.
+
+If server is working correctly, a notification is shown with the text
+**Text Document Did Open**.
+
+You can now edit the declaration file.
+
+For the **Configuration DSL** you can perform the same steps after opening
+VSCode.
+
+Goto **Run and Debug** (press **Ctrl/Cmd+Shift+D**)
+
+Select *CONF Server + Client*
+
+Start Debugging via **F5**
+
+This opens a new VSCode instance with support for the Configuration DSL.
 
 
-Open `python-oceandsls/cp-dsl/conflspserver` in VSCode
-
-Follow the same steps as above, but for `*.oconf` files and conflspserver
 
 ### Troubleshooting
 

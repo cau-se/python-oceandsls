@@ -89,23 +89,23 @@ class confLSPServer(LanguageServer):
 
     def __init__(self, *args):
         super().__init__(*args)
-        # set ErrorListener
+        # Set error listener
         self.error_listener: DiagnosticListener = DiagnosticListener()
-        # set empty input stream
+        # Set empty input stream
         input_stream: InputStream = InputStream(str())
 
-        # set lexer
+        # Set lexer
         self.lexer: ConfigurationLexer = ConfigurationLexer(input_stream)
-        # set ErrorListener for diagnostics
+        # Set error listener for diagnostics
         self.lexer.removeErrorListeners()
         self.lexer.addErrorListener(self.error_listener)
 
-        # set token stream pipe between lexer and parser
+        # Set token stream pipe between lexer and parser
         self.tokenStream: CommonTokenStream = CommonTokenStream(self.lexer)
 
-        # set parser
+        # Set parser
         self.parser: ConfigurationParser = ConfigurationParser(self.tokenStream)
-        # set ErrorListener for diagnostics
+        # Set error listener for diagnostics
         self.parser.removeErrorListeners()
         self.parser.addErrorListener(self.error_listener)
 

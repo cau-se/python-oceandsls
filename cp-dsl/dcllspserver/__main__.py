@@ -41,7 +41,9 @@ def add_arguments(parser):
     parser.add_argument(
         "--port", dest="port", type=int, default=2087, help="Bind to this port"
     )
-
+    parser.add_argument(
+        "--testing", dest="test", action="store_true", help="Run the tests"
+    )
     parser.add_argument(
         "-f", "--file", dest="file", type=readable_file, help="Input file for file generator"
     )
@@ -68,12 +70,14 @@ def main():
     add_arguments(parser)
     args = parser.parse_args()
 
+    if args.test:
+        import test
+
     if args.file:
         # Start cli code gen with given path
         dcl_server.input_path = os.path.join(os.getcwd(), args.file)
         did_save(dcl_server, None)
     else:
-
         if args.tcp:
             dcl_server.start_tcp(args.host, args.port)
         elif args.ws:
