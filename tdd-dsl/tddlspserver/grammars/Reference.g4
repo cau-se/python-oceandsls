@@ -38,5 +38,6 @@ expr                    : '(' inner=expr ')'                                # pa
 
 /** Function or variables to lookup in the symboltable */
 reference               : name=ID '(' (args+=expr(',' args+=expr)*)? ')'    # funRef        /** Function call like f(), f(x), f(1,2) */
+                        | name=ID '{' (args+=expr(',' args+=expr)*)? '}'    # suRRef
                         | name=ID                                           # varRef
                         ;

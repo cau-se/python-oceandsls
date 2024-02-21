@@ -126,7 +126,7 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
                 ops_impl.append(value_list[3])
 
         # Write content to module if module is set
-        if module_symbols:
+        for module_symbol in module_symbols:
 
             # Check test flags. E.g. overwrite flag
             self.overwrite = False
@@ -137,7 +137,7 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
                 # Merge all files that should overwrite other files
 
                 # Set module file
-                module_name = module_symbols[0].name
+                module_name = module_symbol.name
                 module_file = ".".join([module_name, self.file_suffix])
                 abs_path: str = os.path.join(self.work_path, module_file)
 
@@ -146,14 +146,14 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
                 else:
                     self.overwrite_files.append(abs_path)
 
-            if module_symbols[0].file and not self.overwrite:
+            if module_symbol.file and not self.overwrite:
                 # Module exists
 
                 insert = True
-                module_file = module_symbols[0].file
+                module_file = module_symbol.file
 
                 if ops_names or ops_impl:
-                    content = {module_symbols[0].name: [", ".join(ops_names), "\n\n".join(ops_impl)]}
+                    content = {module_symbol.name: [", ".join(ops_names), "\n\n".join(ops_impl)]}
                 else:
                     content = {}
 
@@ -162,9 +162,9 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
                 insert = False
 
                 # Set module file
-                module_name = module_symbols[0].name
+                module_name = module_symbol.name
                 module_file = ".".join([module_name, self.file_suffix])
-                module_symbols[0].file = module_file
+                module_symbol.file = module_file
 
                 # Render template with new operations
                 content = template.render(name=module_name, opsNames=ops_names, ops=ops_impl)

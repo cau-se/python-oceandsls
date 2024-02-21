@@ -2,7 +2,9 @@ MODULE {{ name }}
   IMPLICIT NONE
 
   PRIVATE{# private by default +#}
+  {% if opsNames %}
   PUBLIC :: {{ opsNames|join(", ") }}{# functions and methods from assertions +#}
+  {%- endif %}
 
 
 CONTAINS

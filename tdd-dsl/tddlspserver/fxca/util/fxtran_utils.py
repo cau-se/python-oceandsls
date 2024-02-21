@@ -23,7 +23,7 @@ import subprocess
 
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
-from typing import Dict, List, Tuple
+from typing import Dict, List, Set, Tuple
 
 from symboltable.symbol_table import ModuleSymbol
 
@@ -93,6 +93,9 @@ def filter_xml(
     dyn_scope_elements = set()
     dyn_end_scope_elements = set()
 
+    # Special element tags
+    end_function_stmt_elements: Set = {"end-function-stmt"}
+
     # Iterate over all elements in the XML tree
     for element in root.iter():
 
@@ -116,7 +119,7 @@ def filter_xml(
         if tag in tuple(dyn_end_scope_elements):
             # Update generic status and return type for functions
 
-            if tag in tuple("function-stmt"):
+            if tag in tuple(end_function_stmt_elements):
                 current_scope = ".".join(scope_stack)
                 for scope in reversed(scopes):
                     if ".".join([scope[4], scope[1]]) == current_scope:
@@ -179,7 +182,7 @@ def filter_xml(
                 # Extract resultId for functions
                 if element.tag.endswith("function-stmt"):
                     result_element = element.find(".//fx:result-spec", ns)
-                    if result_element:
+                    if result_element is not None:
                         result_id = result_element.find(".//fx:n", ns).text
                     else:
                         result_id = -1
@@ -252,23 +255,51 @@ def filter_xml(
                 current_scope = ".".join(scope_stack)
 
                 # Get the type of the variable if it exists
-                t_spec_element = element.findall(".//fx:T-N", ns)
+                t_spec_element = element.find(".//fx:T-N", ns)
 
                 # Extract variable type
-                if t_spec_element:
+                if t_spec_element is not None:
                     if t_spec_element[0].text:
                         # Direct type name
                         variable_type = t_spec_element[0].text
                     else:
-                        # Derived type name
                         derived_element: ET.Element = element.find(".//fx:derived-T-spec", ns)
-                        derived_type: str = derived_element.text if derived_element else ""
-                        type_name_element: ET.Element = t_spec_element[0].find(".//fx:n", ns)
-                        if type_name_element:
-                            variable_type = "".join([derived_type, type_name_element.text, ")"])
+                        if derived_element is not None:
+                            derived_type: str = derived_element.text
+                            type_name_element: ET.Element = t_spec_element[0].find(".//fx:n", ns)
+                            if type_name_element is not None and derived_type is not None:
+                                # Derived selector type name
+                                variable_type = "".join([derived_type, "(", type_name_element.text, ")"])
+                            elif type_name_element is not None:
+                                # Derived Selector type name
+                                variable_type = type_name_element.text if type_name_element.text else ""
+                            elif derived_type is not None:
+                                # Derived type name
+                                variable_type = derived_type
+                            else:
+                                # No type found
+                                variable_type = ""
                         else:
-                            # No type found
-                            variable_type = ""
+                            intrinsic_element:  ET.Element = element.find(".//fx:intrinsic-T-spec", ns)
+                            if intrinsic_element is not None:
+                                intrinsic_element_type = intrinsic_element[0].find(".//fx:c", ns)
+                                intrinsic_type: str = intrinsic_element_type.text
+                                type_name_element: ET.Element = intrinsic_element[0].find(".//fx:n", ns)
+                                if type_name_element is not None and intrinsic_element_type is not None:
+                                    # Intrinsic selector type name
+                                    variable_type = "".join([intrinsic_type, "(", type_name_element.text, ")"])
+                                elif type_name_element is not None:
+                                    # Intrinsic Selector type name
+                                    variable_type = type_name_element.text if type_name_element.text else ""
+                                elif intrinsic_type is not None:
+                                    # Intrinsic type name
+                                    variable_type = intrinsic_type
+                                else:
+                                    # No type found
+                                    variable_type = ""
+                            else:
+                                # No type found
+                                variable_type = ""
                 else:
                     # No type found
                     variable_type = ""
