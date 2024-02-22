@@ -17,6 +17,7 @@ __author__ = "sgu"
 #  limitations under the License.
 
 import fnmatch
+import logging
 import os
 import pathlib
 import subprocess
@@ -27,6 +28,7 @@ from typing import Dict, List, Set, Tuple
 
 from symboltable.symbol_table import ModuleSymbol
 
+logger = logging.getLogger(__name__)
 
 @dataclass
 class PublicObj:
@@ -420,6 +422,6 @@ def write_decorate_src_xml(src_dir: str = "", out_dir: str = "out", fxtran_path:
             # Call fxtran via subprocess with filepath as working directory
             subprocess.check_output(fxtran_cmd, shell=True, stderr=subprocess.STDOUT, cwd=filepath)
         except subprocess.CalledProcessError as e:
-            raise RuntimeError(f"command \"{e.cmd}\" return with error (code {e.returncode}): {e.output}")
+            logger.warning(f"command \"{e.cmd}\" return with error (code {e.returncode}): {e.output}")
         except PermissionError as e:
             raise RuntimeError(f"Permission denied for calling fxtran parser \"{fxtran_path}\". Error (code {e.errno}): {e.strerror} \"{e.filename}\"")

@@ -17,6 +17,7 @@ __author__ = "sgu"
 #  limitations under the License.
 
 import os
+import stat
 # Util
 from typing import Dict, List, Tuple
 
@@ -111,6 +112,11 @@ class CMakeFileGeneratorVisitor(TestSuiteVisitor):
             driver_template = self.template_env.get_template("driver.txt")
             with open(driver_path, mode="w", encoding="utf-8") as f:
                 f.write(driver_template.render())
+
+            # Add executable permission if running on a Unix system
+            if os.name == "posix":
+                st = os.stat(driver_path)
+                os.chmod(driver_path, st.st_mode | stat.S_IEXEC)
 
         # Check if file exists and need to be merged
         if os.path.exists(abs_path) and not overwrite:
