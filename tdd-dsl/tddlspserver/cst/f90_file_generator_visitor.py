@@ -93,13 +93,13 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
     def symbol_table(self) -> SymbolTable:
         return self._symbol_table
 
-    # Visit a parse tree produced by TestSuiteParser#test_suite.
-    def visitTest_suite(self, ctx: TestSuiteParser.Test_suiteContext):
+    # Visit a parse tree produced by TestSuiteParser#testSuite.
+    def visitTestSuite(self, ctx: TestSuiteParser.TestSuiteContext):
         self.visitChildren(ctx)
         return self.files
 
-    # Visit a parse tree produced by TestSuiteParser#test_case.
-    def visitTest_case(self, ctx: TestSuiteParser.Test_caseContext) -> dict[str, Tuple[float, str, str]]:
+    # Visit a parse tree produced by TestSuiteParser#testCase.
+    def visitTestCase(self, ctx: TestSuiteParser.TestCaseContext) -> dict[str, Tuple[float, str, str]]:
         # Load Jinja2 template
         template = self.environment.get_template(self.file_templates[ctx.getRuleIndex()])
 
@@ -183,7 +183,7 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
         return self.files
 
     # Save the source path to scan for existing variables
-    def visitSrc_path(self, ctx: TestSuiteParser.Src_pathContext):
+    def visitSrcPath(self, ctx: TestSuiteParser.SrcPathContext):
         # Strip string terminals
         user_path: str = ctx.path.text.strip("\'")
 
@@ -193,7 +193,7 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
         self.work_path = os.path.join(self.cwd, user_path)
 
     # Get list of used module symbols
-    def visitUse_modules(self, ctx: TestSuiteParser.Use_modulesContext):
+    def visitUseModules(self, ctx: TestSuiteParser.UseModulesContext):
 
         # Accumulate module names
         module_symbols: List[ModuleSymbol] = []
@@ -203,12 +203,12 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
         return module_symbols
 
     # Find corresponding module symbol
-    def visitTest_module(self, ctx: TestSuiteParser.Test_moduleContext):
+    def visitTestModule(self, ctx: TestSuiteParser.TestModuleContext):
         # Return corresponding module symbol, optionally with implementing file and contain functions flag
         return get_scope(ctx, self.symbol_table)
 
-    # Visit a parse tree produced by TestSuiteParser#test_assertion.
-    def visitTest_assertion(self, ctx: TestSuiteParser.Test_assertionContext):
+    # Visit a parse tree produced by TestSuiteParser#testAssertion.
+    def visitTestAssertion(self, ctx: TestSuiteParser.TestAssertionContext):
         # Load operation template
         template = self.environment.get_template(self.file_templates[ctx.getRuleIndex()])
 
@@ -241,7 +241,7 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
 
         # Generate fortran implementations for operations
         for key, value_list in self.ops.items():
-            # Get name, arguments, unit and return_type
+            # Get name, arguments, unit and returnType
             name = key
             # Arguments
             arg_names: List[str] = []
@@ -264,12 +264,12 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
             # Update operation list
             self.ops[key] = value_list
 
-    # Visit a parse tree produced by TestSuiteParser#test_var.
-    def visitTest_var(self, ctx: TestSuiteParser.Test_varContext):
+    # Visit a parse tree produced by TestSuiteParser#testVar.
+    def visitTestVar(self, ctx: TestSuiteParser.TestVarContext):
         return self.visit(ctx.value)
 
-    # Visit a parse tree produced by TestSuiteParser#test_parameter.
-    def visitTest_parameter(self, ctx: TestSuiteParser.Test_parameterContext):
+    # Visit a parse tree produced by TestSuiteParser#testParameter.
+    def visitTestParameter(self, ctx: TestSuiteParser.TestParameterContext):
         # Get value name and optional argument types
         parameter_type = self.visit(ctx.value)
 
@@ -306,7 +306,7 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
         return ctx.type_.value.text
 
     # Visit a parse tree produced by TestSuiteParser#funRef.
-    def visitFunRef(self, ctx: TestSuiteParser.FunRefContext):
+    def visitPrcRef(self, ctx: TestSuiteParser.PrcRefContext):
         # Get routine id
         name: str = ctx.ID().getText()
 

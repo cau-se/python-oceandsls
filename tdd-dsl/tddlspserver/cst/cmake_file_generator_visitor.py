@@ -72,8 +72,8 @@ class CMakeFileGeneratorVisitor(TestSuiteVisitor):
             self.file_templates[i] = f"{rule}_template.txt"
             i += 1
 
-    # Visit a parse tree produced by TestSuiteParser#test_suite.
-    def visitTest_suite(self, ctx: TestSuiteParser.Test_suiteContext):
+    # Visit a parse tree produced by TestSuiteParser#testSuite.
+    def visitTestSuite(self, ctx: TestSuiteParser.TestSuiteContext):
 
         suts = {}
         test_dirs = []
@@ -167,8 +167,8 @@ class CMakeFileGeneratorVisitor(TestSuiteVisitor):
 
         return self.files
 
-    # Visit a parse tree produced by TestSuiteParser#test_case.
-    def visitTest_case(self, ctx: TestSuiteParser.Test_caseContext):
+    # Visit a parse tree produced by TestSuiteParser#testCase.
+    def visitTestCase(self, ctx: TestSuiteParser.TestCaseContext):
 
         # Update project path
         # TODO mv to suite
@@ -241,7 +241,7 @@ class CMakeFileGeneratorVisitor(TestSuiteVisitor):
         return sut
 
     # Save the source path to scan for existing variables
-    def visitSrc_path(self, ctx: TestSuiteParser.Src_pathContext):
+    def visitSrcPath(self, ctx: TestSuiteParser.SrcPathContext):
         # Strip string terminals
         user_path: str = ctx.path.text.strip("\'")
 

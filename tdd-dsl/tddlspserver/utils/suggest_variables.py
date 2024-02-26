@@ -29,7 +29,7 @@ from ..symboltable.symbol_table import MetricSymbol, ModuleSymbol, PathSymbol, R
 from .compute_token_index import TokenPosition
 from ..gen.python.TestSuite.TestSuiteParser import TestSuiteParser
 
-Top_levelContext = TestSuiteParser.Test_suiteContext
+Top_levelContext = TestSuiteParser.TestSuiteContext
 del TestSuiteParser
 
 P = ParamSpec("P")

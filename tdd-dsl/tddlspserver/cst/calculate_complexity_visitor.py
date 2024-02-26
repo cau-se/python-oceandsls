@@ -57,17 +57,17 @@ class CalculateComplexityVisitor(TestSuiteVisitor, Generic[T]):
     def work_path(self) -> str:
         return self._test_work_path
 
-    # Visit a parse tree produced by TestSuiteParser#test_suite.
-    def visitTest_suite(self, ctx: TestSuiteParser.Test_suiteContext):
+    # Visit a parse tree produced by TestSuiteParser#testSuite.
+    def visitTestSuite(self, ctx: TestSuiteParser.TestSuiteContext):
         self.visitChildren(ctx)
         return self._symbol_table
 
-    # Visit a parse tree produced by TestSuiteParser#test_case.
-    def visitTest_case(self, ctx: TestSuiteParser.Test_caseContext):
-        return self.with_scope(ctx, TestCaseSymbol, lambda: self.visitChildren(ctx), ctx.ID().getText())
+    # Visit a parse tree produced by TestSuiteParser#testCase.
+    def visitTestCase(self, ctx: TestSuiteParser.TestCaseContext):
+        return self.withScope( ctx, TestCaseSymbol, lambda: self.visitChildren( ctx ), ctx.ID( ).getText( ) )
 
     # Return subdirectories under working path or user entered path
-    def visitSrc_path(self, ctx: TestSuiteParser.Src_pathContext):
+    def visitSrcPath(self, ctx: TestSuiteParser.SrcPathContext):
         # Strip string terminals
         user_path: str = ctx.path.text.strip("\'") if ctx.path else ''
 
@@ -106,7 +106,16 @@ class CalculateComplexityVisitor(TestSuiteVisitor, Generic[T]):
                 if scope.is_testable:
                     self._symbol_table.add_new_symbol_of_type(MetricSymbol, self._scope, scope_name, scope)
 
-    def with_scope(self, tree: ParseTree, t: type, action: Callable, *my_args: P.args or None, **my_kwargs: P.kwargs or None) -> T:
+    def withScope( self, tree: ParseTree, t: type, action: Callable, *my_args: P.args or None, **my_kwargs: P.kwargs or None ) -> T:
+        """
+        Visit a scoped symbol and recursively visit all symbols inside with the scoped symbol as scope
+        :param tree: Context of the scoped symbol
+        :param t: Symbol type
+        :param action: Lambda function to add children symbols to symboltable
+        :param my_args: Arguments of symbol type
+        :param my_kwargs: named Arguments of symbol type
+        :return: Current scope
+        """
         scope = self._symbol_table.add_new_symbol_of_type(t, self._scope, *my_args, **my_kwargs)
         scope.context = tree
         self._scope = scope

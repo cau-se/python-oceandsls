@@ -61,7 +61,7 @@ class TDDLSPServer(LanguageServer):
 
     CONFIGURATION_SECTION = "ODsl-TDD-DSL-Server"
 
-    top_level_context = TestSuiteParser.Test_suiteContext
+    top_level_context = TestSuiteParser.TestSuiteContext
     parseTree: top_level_context
     # Recommendation metric option
     sort_metric: str
@@ -173,8 +173,8 @@ def _validate_format(server: TDDLSPServer, source: str):
 
     try:
         # Launch parser by invoking top-level rule
-        top_level_context = TestSuiteParser.Test_suiteContext
-        parse_tree: Optional[top_level_context] = server.parser.test_suite()
+        top_level_context = TestSuiteParser.TestSuiteContext
+        parse_tree: Optional[top_level_context] = server.parser.testSuite()
 
         if not tdd_server.token_stream.fetchedEOF:
             end: Position = Position(parse_tree.stop.line, parse_tree.stop.column)
@@ -214,14 +214,14 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     tdd_server.parser.setTokenStream(tdd_server.token_stream)
 
     # Launches parser by invoking top-level rule
-    top_level_context = TestSuiteParser.Test_suiteContext
+    top_level_context = TestSuiteParser.TestSuiteContext
     parse_tree: Optional[top_level_context] = None
 
     token_index: Optional[TokenPosition] = None
 
     # Parse until fetched
     while not tdd_server.token_stream.fetchedEOF:
-        parse_tree = tdd_server.parser.test_suite()
+        parse_tree = tdd_server.parser.testSuite()
 
         # Get token index under caret position
         # params.position.line + 1 as lsp line counts from 0 and antlr4 line counts from 1
@@ -244,7 +244,7 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     core: CodeCompletionCore = CodeCompletionCore(tdd_server.parser)
 
     core.ignoredTokens = {Token.EPSILON}
-    core.preferredRules = {TestSuiteParser.RULE_reference, TestSuiteParser.RULE_src_path, TestSuiteParser.RULE_test_module}
+    core.preferredRules = {TestSuiteParser.RULE_reference, TestSuiteParser.RULE_srcPath, TestSuiteParser.RULE_testModule}
 
     # Get completion candidates
     candidates: CandidatesCollection = core.collectCandidates(token_index.index)
@@ -261,13 +261,13 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
             # FunctionSymbol is derived from RoutineSymbol
             symbol_types.extend([VariableSymbol, RoutineSymbol])
 
-        elif any(rule in candidates.rules for rule in [TestSuiteParser.RULE_test_module]):
+        elif any(rule in candidates.rules for rule in [TestSuiteParser.RULE_testModule]):
 
             symbol_table_visitor: SymbolTableVisitor = SymbolTableVisitor("completions", os.getcwd(), tdd_server.fxtran_path)
             symbol_table = symbol_table_visitor.visit(parse_tree)
             symbol_types.append(ModuleSymbol)
 
-        elif any(rule in candidates.rules for rule in [TestSuiteParser.RULE_src_path]):
+        elif any(rule in candidates.rules for rule in [TestSuiteParser.RULE_srcPath]):
 
             symbol_table_visitor: SystemFileVisitor = SystemFileVisitor("paths", os.getcwd())
             symbol_table = symbol_table_visitor.visit(parse_tree)
@@ -405,7 +405,7 @@ def get_text_document(params) -> Document:
     return tdd_server.workspace.get_text_document(params.text_document.uri)
 
 
-def parse_stream(input_stream: InputStream) -> TestSuiteParser.Test_suiteContext:
+def parse_stream(input_stream: InputStream) -> TestSuiteParser.TestSuiteContext:
     """Parse input stream."""
     # Reset the lexer/parser
     tdd_server.error_listener.reset()
@@ -414,7 +414,7 @@ def parse_stream(input_stream: InputStream) -> TestSuiteParser.Test_suiteContext
     tdd_server.parser.setInputStream(tdd_server.token_stream)
 
     # Return launched parser by invoking top-level rule
-    return tdd_server.parser.test_suite()
+    return tdd_server.parser.testSuite()
 
 
 @tdd_server.feature(
@@ -427,7 +427,7 @@ def semantic_tokens(server: TDDLSPServer, params: SemanticTokensParams):
     TOKENS = re.compile("\".*\"(?=:)")
 
     uri = params.text_document.uri
-    doc = server.workspace.get_document(uri)
+    doc = server.workspace.get_text_document(uri)
 
     last_line = 0
     last_start = 0

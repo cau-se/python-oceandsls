@@ -35,7 +35,7 @@ f90StdKey       : keyword  = 'ALLOCATABLE'              # arraySpec
                 ;
 
 /** Parser rules start with lowercase letters */
-test_directive  : ppDirective  = 'NotAssociated'        /** @assertNotAssociated(xPtr) */
+testDirective   : ppDirective  = 'NotAssociated'        /** @assertNotAssociated(xPtr) */
                 | ppDirective  = 'Associated'           /** @assertAssociated(xPtr) */
                 | ppDirective  = 'Fail'                 /** @assertfail(message='0') */
                 | ppDirective  = 'ExceptionRaised'      /** @assertExceptionRaised(new_line('a')//'Expected: is <2>' // new_line('a') // '     but: was <1>') */

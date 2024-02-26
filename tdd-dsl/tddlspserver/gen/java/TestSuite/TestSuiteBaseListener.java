@@ -17,37 +17,37 @@ public class TestSuiteBaseListener implements TestSuiteListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterTest_suite(TestSuiteParser.Test_suiteContext ctx) { }
+	@Override public void enterTestSuite(TestSuiteParser.TestSuiteContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitTest_suite(TestSuiteParser.Test_suiteContext ctx) { }
+	@Override public void exitTestSuite(TestSuiteParser.TestSuiteContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterTest_case(TestSuiteParser.Test_caseContext ctx) { }
+	@Override public void enterTestCase(TestSuiteParser.TestCaseContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitTest_case(TestSuiteParser.Test_caseContext ctx) { }
+	@Override public void exitTestCase(TestSuiteParser.TestCaseContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterTest_flag(TestSuiteParser.Test_flagContext ctx) { }
+	@Override public void enterTestFlag(TestSuiteParser.TestFlagContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitTest_flag(TestSuiteParser.Test_flagContext ctx) { }
+	@Override public void exitTestFlag(TestSuiteParser.TestFlagContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -89,37 +89,37 @@ public class TestSuiteBaseListener implements TestSuiteListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterSrc_path(TestSuiteParser.Src_pathContext ctx) { }
+	@Override public void enterSrcPath(TestSuiteParser.SrcPathContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitSrc_path(TestSuiteParser.Src_pathContext ctx) { }
+	@Override public void exitSrcPath(TestSuiteParser.SrcPathContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterTest_vars(TestSuiteParser.Test_varsContext ctx) { }
+	@Override public void enterTestVars(TestSuiteParser.TestVarsContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitTest_vars(TestSuiteParser.Test_varsContext ctx) { }
+	@Override public void exitTestVars(TestSuiteParser.TestVarsContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterTest_var(TestSuiteParser.Test_varContext ctx) { }
+	@Override public void enterTestVar(TestSuiteParser.TestVarContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitTest_var(TestSuiteParser.Test_varContext ctx) { }
+	@Override public void exitTestVar(TestSuiteParser.TestVarContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -137,37 +137,37 @@ public class TestSuiteBaseListener implements TestSuiteListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterUse_modules(TestSuiteParser.Use_modulesContext ctx) { }
+	@Override public void enterUseModules(TestSuiteParser.UseModulesContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitUse_modules(TestSuiteParser.Use_modulesContext ctx) { }
+	@Override public void exitUseModules(TestSuiteParser.UseModulesContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterTest_module(TestSuiteParser.Test_moduleContext ctx) { }
+	@Override public void enterTestModule(TestSuiteParser.TestModuleContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitTest_module(TestSuiteParser.Test_moduleContext ctx) { }
+	@Override public void exitTestModule(TestSuiteParser.TestModuleContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterTest_assertion(TestSuiteParser.Test_assertionContext ctx) { }
+	@Override public void enterTestAssertion(TestSuiteParser.TestAssertionContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitTest_assertion(TestSuiteParser.Test_assertionContext ctx) { }
+	@Override public void exitTestAssertion(TestSuiteParser.TestAssertionContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -185,13 +185,13 @@ public class TestSuiteBaseListener implements TestSuiteListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterTest_parameter(TestSuiteParser.Test_parameterContext ctx) { }
+	@Override public void enterTestParameter(TestSuiteParser.TestParameterContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitTest_parameter(TestSuiteParser.Test_parameterContext ctx) { }
+	@Override public void exitTestParameter(TestSuiteParser.TestParameterContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -353,13 +353,13 @@ public class TestSuiteBaseListener implements TestSuiteListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterTest_directive(TestSuiteParser.Test_directiveContext ctx) { }
+	@Override public void enterTestDirective(TestSuiteParser.TestDirectiveContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitTest_directive(TestSuiteParser.Test_directiveContext ctx) { }
+	@Override public void exitTestDirective(TestSuiteParser.TestDirectiveContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -600,6 +600,18 @@ public class TestSuiteBaseListener implements TestSuiteListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitFunRef(TestSuiteParser.FunRefContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterSuRRef(TestSuiteParser.SuRRefContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitSuRRef(TestSuiteParser.SuRRefContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
