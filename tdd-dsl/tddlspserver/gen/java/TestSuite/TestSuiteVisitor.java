@@ -98,6 +98,12 @@ public interface TestSuiteVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitPubAttributes(TestSuiteParser.PubAttributesContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link TestSuiteParser#extendedTestParameter}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitExtendedTestParameter(TestSuiteParser.ExtendedTestParameterContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link TestSuiteParser#testParameter}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -335,19 +341,19 @@ public interface TestSuiteVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitFunRef(TestSuiteParser.FunRefContext ctx);
 	/**
-	 * Visit a parse tree produced by the {@code suRRef}
-	 * labeled alternative in {@link TestSuiteParser#reference}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitSuRRef(TestSuiteParser.SuRRefContext ctx);
-	/**
 	 * Visit a parse tree produced by the {@code varRef}
 	 * labeled alternative in {@link TestSuiteParser#reference}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	T visitVarRef(TestSuiteParser.VarRefContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code prcRef}
+	 * labeled alternative in {@link TestSuiteParser#procedure}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitPrcRef(TestSuiteParser.PrcRefContext ctx);
 	/**
 	 * Visit a parse tree produced by the {@code parensUnit}
 	 * labeled alternative in {@link TestSuiteParser#unitSpec}.

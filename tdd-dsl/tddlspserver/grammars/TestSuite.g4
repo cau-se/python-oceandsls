@@ -77,7 +77,7 @@ testModule              : name=ID NEWLINE
 
 /** Test assertion; ends on newline */
 testAssertion           : 'assert' directive=testDirective ':' NEWLINE
-                          'in' ':' NEWLINE input=testParameter         /** ends on newline */
+                          'in' ':' NEWLINE input=extendedTestParameter /** ends on newline */
                           'out' ':' NEWLINE output=testParameter       /** ends on newline */
                           attr=pubAttributes (comment=COMMENT)?        /** ends on newline */
                         ;
@@ -86,6 +86,12 @@ testAssertion           : 'assert' directive=testDirective ':' NEWLINE
 pubAttributes           : ('tolerance' ':' tol=expr NEWLINE)?
                           ('failmessage' ':' msg=STRING NEWLINE)?
                           ('whitespace' '=' ign='IGNORE_DIFFERENCES' NEWLINE)?       /** Option for assertEqual */
+                        ;
+
+
+
+/** Input for optional subroutine call; ends on newline */
+extendedTestParameter   : ('call :' proc=procedure)? testParameter  /** Ends on newline */
                         ;
 
 /** IO parameter; ends on newline */

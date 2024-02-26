@@ -185,6 +185,18 @@ public class TestSuiteBaseListener implements TestSuiteListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterExtendedTestParameter(TestSuiteParser.ExtendedTestParameterContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitExtendedTestParameter(TestSuiteParser.ExtendedTestParameterContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterTestParameter(TestSuiteParser.TestParameterContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -605,18 +617,6 @@ public class TestSuiteBaseListener implements TestSuiteListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterSuRRef(TestSuiteParser.SuRRefContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitSuRRef(TestSuiteParser.SuRRefContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
 	@Override public void enterVarRef(TestSuiteParser.VarRefContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -624,6 +624,18 @@ public class TestSuiteBaseListener implements TestSuiteListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitVarRef(TestSuiteParser.VarRefContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterPrcRef(TestSuiteParser.PrcRefContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitPrcRef(TestSuiteParser.PrcRefContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

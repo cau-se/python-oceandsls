@@ -134,6 +134,15 @@ class TestSuiteListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by TestSuiteParser#extendedTestParameter.
+    def enterExtendedTestParameter(self, ctx:TestSuiteParser.ExtendedTestParameterContext):
+        pass
+
+    # Exit a parse tree produced by TestSuiteParser#extendedTestParameter.
+    def exitExtendedTestParameter(self, ctx:TestSuiteParser.ExtendedTestParameterContext):
+        pass
+
+
     # Enter a parse tree produced by TestSuiteParser#testParameter.
     def enterTestParameter(self, ctx:TestSuiteParser.TestParameterContext):
         pass
@@ -449,21 +458,21 @@ class TestSuiteListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by TestSuiteParser#suRRef.
-    def enterSuRRef(self, ctx:TestSuiteParser.SuRRefContext):
-        pass
-
-    # Exit a parse tree produced by TestSuiteParser#suRRef.
-    def exitSuRRef(self, ctx:TestSuiteParser.SuRRefContext):
-        pass
-
-
     # Enter a parse tree produced by TestSuiteParser#varRef.
     def enterVarRef(self, ctx:TestSuiteParser.VarRefContext):
         pass
 
     # Exit a parse tree produced by TestSuiteParser#varRef.
     def exitVarRef(self, ctx:TestSuiteParser.VarRefContext):
+        pass
+
+
+    # Enter a parse tree produced by TestSuiteParser#prcRef.
+    def enterPrcRef(self, ctx:TestSuiteParser.PrcRefContext):
+        pass
+
+    # Exit a parse tree produced by TestSuiteParser#prcRef.
+    def exitPrcRef(self, ctx:TestSuiteParser.PrcRefContext):
         pass
 
 

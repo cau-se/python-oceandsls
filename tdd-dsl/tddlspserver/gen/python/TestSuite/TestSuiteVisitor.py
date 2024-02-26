@@ -79,6 +79,11 @@ class TestSuiteVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by TestSuiteParser#extendedTestParameter.
+    def visitExtendedTestParameter(self, ctx:TestSuiteParser.ExtendedTestParameterContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by TestSuiteParser#testParameter.
     def visitTestParameter(self, ctx:TestSuiteParser.TestParameterContext):
         return self.visitChildren(ctx)
@@ -254,13 +259,13 @@ class TestSuiteVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by TestSuiteParser#suRRef.
-    def visitSuRRef(self, ctx:TestSuiteParser.SuRRefContext):
+    # Visit a parse tree produced by TestSuiteParser#varRef.
+    def visitVarRef(self, ctx:TestSuiteParser.VarRefContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by TestSuiteParser#varRef.
-    def visitVarRef(self, ctx:TestSuiteParser.VarRefContext):
+    # Visit a parse tree produced by TestSuiteParser#prcRef.
+    def visitPrcRef(self, ctx:TestSuiteParser.PrcRefContext):
         return self.visitChildren(ctx)
 
 

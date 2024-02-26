@@ -154,6 +154,16 @@ public interface TestSuiteListener extends ParseTreeListener {
 	 */
 	void exitPubAttributes(TestSuiteParser.PubAttributesContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link TestSuiteParser#extendedTestParameter}.
+	 * @param ctx the parse tree
+	 */
+	void enterExtendedTestParameter(TestSuiteParser.ExtendedTestParameterContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link TestSuiteParser#extendedTestParameter}.
+	 * @param ctx the parse tree
+	 */
+	void exitExtendedTestParameter(TestSuiteParser.ExtendedTestParameterContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link TestSuiteParser#testParameter}.
 	 * @param ctx the parse tree
 	 */
@@ -558,18 +568,6 @@ public interface TestSuiteListener extends ParseTreeListener {
 	 */
 	void exitFunRef(TestSuiteParser.FunRefContext ctx);
 	/**
-	 * Enter a parse tree produced by the {@code suRRef}
-	 * labeled alternative in {@link TestSuiteParser#reference}.
-	 * @param ctx the parse tree
-	 */
-	void enterSuRRef(TestSuiteParser.SuRRefContext ctx);
-	/**
-	 * Exit a parse tree produced by the {@code suRRef}
-	 * labeled alternative in {@link TestSuiteParser#reference}.
-	 * @param ctx the parse tree
-	 */
-	void exitSuRRef(TestSuiteParser.SuRRefContext ctx);
-	/**
 	 * Enter a parse tree produced by the {@code varRef}
 	 * labeled alternative in {@link TestSuiteParser#reference}.
 	 * @param ctx the parse tree
@@ -581,6 +579,18 @@ public interface TestSuiteListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitVarRef(TestSuiteParser.VarRefContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code prcRef}
+	 * labeled alternative in {@link TestSuiteParser#procedure}.
+	 * @param ctx the parse tree
+	 */
+	void enterPrcRef(TestSuiteParser.PrcRefContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code prcRef}
+	 * labeled alternative in {@link TestSuiteParser#procedure}.
+	 * @param ctx the parse tree
+	 */
+	void exitPrcRef(TestSuiteParser.PrcRefContext ctx);
 	/**
 	 * Enter a parse tree produced by the {@code parensUnit}
 	 * labeled alternative in {@link TestSuiteParser#unitSpec}.
