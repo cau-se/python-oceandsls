@@ -22,7 +22,7 @@ import hashlib
 import logging
 import re
 import os
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 # Debug
 logger = logging.getLogger(__name__)
@@ -229,9 +229,8 @@ def write_file(file_path: str = "", content: str | Dict = "", file_attr: tuple[f
 
     :param file_path: system path to file
     :param content: test-case content
-    :param fileHash: hash if file should exist
-    :param mtime: modification time if file should exist
-    :param content_org: original content
+    :param file_attr: file attributes such as file hash and modification time
+    :param insert: flag if content should be merged or overwritten
     :return: hast and modification time of file
     """
 

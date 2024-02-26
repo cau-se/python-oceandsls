@@ -310,6 +310,7 @@ def stripTerminals(elements: List[str] = None, terminal: str = "\'") -> List[str
      Strip string terminals from list elements.
 
     :param elements: List of elements
+    :param terminal: Elements to remove
     :return: List of striped elements
     """
     return [e.strip(terminal) for e in elements]
@@ -317,7 +318,7 @@ def stripTerminals(elements: List[str] = None, terminal: str = "\'") -> List[str
 
 @tdd_server.feature(TEXT_DOCUMENT_DID_CHANGE)
 def did_change(server: TDDLSPServer, params: DidChangeTextDocumentParams):
-    """Valdiate input and return text document did change notification."""
+    """Validate input and return text document did change notification."""
 
     # Set input stream of characters for lexer
     text_doc: Document = get_text_document(params)

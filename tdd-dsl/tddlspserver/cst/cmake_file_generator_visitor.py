@@ -76,8 +76,6 @@ class CMakeFileGeneratorVisitor(TestSuiteVisitor):
     def visitTest_suite(self, ctx: TestSuiteParser.Test_suiteContext):
 
         suts = {}
-        sut_names = []
-        sut: Tuple = ()
         test_dirs = []
         # Initialize test suite overwrite flag as default
         overwrite = self.overwrite
