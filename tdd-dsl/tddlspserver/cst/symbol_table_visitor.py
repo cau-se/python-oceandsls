@@ -126,7 +126,7 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
     def visitRef(self, ctx: TestSuiteParser.RefContext):
         return self.visitChildren(ctx)
 
-    # Visit a parse tree produced by TestSuiteParser#funRef.
+    # Visit a parse tree produced by TestSuiteParser#prcRef.
     def visitPrcRef(self, ctx: TestSuiteParser.PrcRefContext):
         name = ctx.ID().getText()
         args = []
@@ -271,7 +271,6 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
         """
         Add a scoped symbol to the symboltable and recursively add all symbols inside this scope the symboltable
         :param tree: Context of the scoped symbol
-        :param sibling: Add scoped symbol as sibling of current scope
         :param t: Symbol type
         :param action: Lambda function to add children symbols to symboltable
         :param my_args: Arguments of symbol type

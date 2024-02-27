@@ -24,12 +24,11 @@ from typing import Dict, List, Optional, Tuple
 from jinja2 import Environment, FileSystemLoader
 
 # User relative imports
-from ..symboltable.symbol_table import FundamentalType, SymbolTable, ModuleSymbol, RoutineSymbol, Type, VariableSymbol
+from ..symboltable.symbol_table import FunctionSymbol, FundamentalType, SymbolTable, ModuleSymbol, RoutineSymbol, Type, VariableSymbol
 from ..filewriter.file_writer import write_file
 from ..gen.python.TestSuite.TestSuiteParser import TestSuiteParser
 from ..gen.python.TestSuite.TestSuiteVisitor import TestSuiteVisitor
 from ..utils.suggest_variables import get_scope
-
 
 class F90FileGeneratorVisitor(TestSuiteVisitor):
     file_templates: Dict[int, str]
@@ -306,7 +305,15 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
         return ctx.type_.value.text
 
     # Visit a parse tree produced by TestSuiteParser#funRef.
-    def visitPrcRef(self, ctx: TestSuiteParser.PrcRefContext):
+    def visitFunRef(self, ctx:TestSuiteParser.FunRefContext):
+        # TODO add FunctionSymbol
+        return self.addroutine(ctx,FunctionSymbol)
+
+    # Visit a parse tree produced by TestSuiteParser#prcRef.
+    def visitPrcRef(self, ctx:TestSuiteParser.PrcRefContext):
+        return self.addroutine(ctx,RoutineSymbol)
+
+    def addRoutine( self, ctx:TestSuiteParser.PrcRefContext, t: type ):
         # Get routine id
         name: str = ctx.ID().getText()
 

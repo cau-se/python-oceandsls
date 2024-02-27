@@ -1207,22 +1207,17 @@ class ReturnSymbol(VariableSymbol):
 
 class RoutineSymbol(ScopedSymbol):
     """
-    A standalone function/procedure/rule.
+    A standalone procedure rule.
     """
-    __return_type: Optional[Type]  # Can be null if result is void.
 
-    def __init__(self, name: str, return_type: Type = None, is_generated: bool = False):
+
+    def __init__(self, name: str,  is_generated: bool = False):
         super().__init__(name)
-        self.__return_type = return_type
         self.__is_generated = is_generated
 
     @property
     def is_generated(self) -> bool:
         return self.__is_generated
-
-    @property
-    def return_type(self) -> Type | None:
-        return self.__return_type
 
     def get_variables(self, local_only=True) -> Coroutine[List[T]]:
         return self.get_symbols_of_type(VariableSymbol, local_only)
@@ -1232,7 +1227,18 @@ class RoutineSymbol(ScopedSymbol):
 
 
 class FunctionSymbol(RoutineSymbol):
-    pass
+    """
+    A standalone function rule.
+    """
+    __return_type: Optional[Type]  # Can be null if result is void.
+
+    def __init__(self, name: str, return_type: Type = None, is_generated: bool = False):
+        super().__init__(name, is_generated)
+        self.__return_type = return_type
+
+    @property
+    def return_type(self) -> Type | None:
+        return self.__return_type
 
 
 @dataclass

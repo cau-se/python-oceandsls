@@ -88,8 +88,6 @@ pubAttributes           : ('tolerance' ':' tol=expr NEWLINE)?
                           ('whitespace' '=' ign='IGNORE_DIFFERENCES' NEWLINE)?       /** Option for assertEqual */
                         ;
 
-
-
 /** Input for optional subroutine call; ends on newline */
 extendedTestParameter   : ('call' ':' proc=procedure)? testParameter  /** Ends on newline */
                         ;

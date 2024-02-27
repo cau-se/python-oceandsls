@@ -42,5 +42,5 @@ reference               : procedure                                         # fu
                         ;
 
 /** Procedure to lookup in the symboltable and for direct call */
-procedure               : name=ID '(' (args+=expr(',' args+=expr)*)? ')'    # prcRef
+procedure               : name=ID '(' (args+=expr(',' args+=expr)*)? ')'    # prcRef        /** Procedure call like f(), f(x), f(1,2) */
                         ;

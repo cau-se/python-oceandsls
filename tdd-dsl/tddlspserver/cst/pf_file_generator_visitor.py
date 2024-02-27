@@ -224,6 +224,11 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
         return template.render(name=name, type=type, keys=keys)
 
     # Visit a parse tree produced by TestSuiteParser#funRef.
+    def visitFunRef(self, ctx:TestSuiteParser.FunRefContext):
+        # TODO prc fun
+        return self.visitChildren(ctx)
+
+    # Visit a parse tree produced by TestSuiteParser#prcRef.
     def visitPrcRef(self, ctx: TestSuiteParser.PrcRefContext):
         self.found_ref = True
         template = self.environment.get_template(self.file_templates[ctx.getRuleIndex()])
