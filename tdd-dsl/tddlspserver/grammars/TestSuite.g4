@@ -91,7 +91,7 @@ pubAttributes           : ('tolerance' ':' tol=expr NEWLINE)?
 
 
 /** Input for optional subroutine call; ends on newline */
-extendedTestParameter   : ('call :' proc=procedure)? testParameter  /** Ends on newline */
+extendedTestParameter   : ('call' ':' proc=procedure)? testParameter  /** Ends on newline */
                         ;
 
 /** IO parameter; ends on newline */

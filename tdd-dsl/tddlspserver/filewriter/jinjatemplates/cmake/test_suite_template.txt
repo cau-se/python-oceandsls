@@ -1,0 +1,7 @@
+{% if RENDER_TEMPLATE == "new" %}
+{% include "test_suite_template_new.txt" %}
+{% elif RENDER_TEMPLATE == "add_library" %}
+{% include "test_suite_template_add_library.txt" %}
+{% elif RENDER_TEMPLATE ==  "target_include" %}
+{% include "test_suite_template_target_include.txt" %}
+{% endif %}

@@ -1,0 +1,4 @@
+{% if RENDER_TEMPLATE == "new" %}
+# pFUnit test source files
+{% endif %}
+{% include "test_case_template_add_pfunit.txt" %}

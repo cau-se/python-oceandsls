@@ -1,0 +1,5 @@
+add_library({{ SUTNAME }}
+{% for SUTFILENAME in SUTFILENAMES %}
+  {{ SUTFILENAME }}
+{% endfor %}
+  )

@@ -1,0 +1,1 @@
+target_include_directories({{ SUTNAME }} PUBLIC ${CMAKE_CURRENT_BINARY_DIR})

@@ -1,0 +1,7 @@
+{% if tag %}
+ ! {{ tag }}
+{% endif %}
+{% if comment %}
+ ! {{ comment }}
+{% endif %}
+ @assert{{ directive }}( {{ output }}, {{ input_ }}{% if pub_attributes %}, {{ pub_attributes }}{% endif %})
