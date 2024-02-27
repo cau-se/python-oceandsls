@@ -1,5 +1,0 @@
-{% if parm %} {{ parm|join("\n ") }}
-
-{% endif %}{% if decl %} {{ decl|join("\n ") }}
-
-{% endif %} {{ vars|join("\n ") }}

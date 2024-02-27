@@ -1,8 +1,0 @@
-@test
-SUBROUTINE {{ name }}()
-{{ scope }}
-
-{{ vars_ }}
-
-{{ assertions|join("\n") }}
-END SUBROUTINE {{ name }}

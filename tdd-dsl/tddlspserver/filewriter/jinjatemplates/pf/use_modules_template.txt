@@ -1,2 +1,0 @@
-{% for mod in modules %} use {{ mod.name.text }}
-{% endfor %} use funit
