@@ -77,9 +77,9 @@ testModule              : name=ID NEWLINE
 
 /** Test assertion; ends on newline */
 testAssertion           : 'assert' directive=testDirective ':' NEWLINE
-                          'in' ':' NEWLINE input=extendedTestParameter /** ends on newline */
-                          'out' ':' NEWLINE output=testParameter       /** ends on newline */
-                          attr=pubAttributes (comment=COMMENT)?        /** ends on newline */
+                          'in' ':' NEWLINE input=extendedTestParameter /** Ends on newline */
+                          'out' ':' NEWLINE output=testParameter       /** Ends on newline */
+                          attr=pubAttributes (comment=COMMENT)?        /** Ends on newline */
                         ;
 
 /** Arguments of pfUnit prepparser rules start with lowercase letters */
@@ -89,7 +89,9 @@ pubAttributes           : ('tolerance' ':' tol=expr NEWLINE)?
                         ;
 
 /** Input for optional subroutine call; ends on newline */
-extendedTestParameter   : ('call' ':' proc=procedure)? testParameter  /** Ends on newline */
+extendedTestParameter   : ('call' ':' procedure NEWLINE                                  /** Ends on newline */
+                          (procedure NEWLINE)*)?                                  /** Ends on newline */
+                          testParameter                                                    /** Ends on newline */
                         ;
 
 /** IO parameter; ends on newline */
