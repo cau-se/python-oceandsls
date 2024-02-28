@@ -307,11 +307,11 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
     # Visit a parse tree produced by TestSuiteParser#funRef.
     def visitFunRef(self, ctx:TestSuiteParser.FunRefContext):
         # TODO add FunctionSymbol
-        return self.addroutine(ctx,FunctionSymbol)
+        return self.addRoutine(ctx.procedure(),FunctionSymbol)
 
     # Visit a parse tree produced by TestSuiteParser#prcRef.
     def visitPrcRef(self, ctx:TestSuiteParser.PrcRefContext):
-        return self.addroutine(ctx,RoutineSymbol)
+        return self.addRoutine(ctx,RoutineSymbol)
 
     def addRoutine( self, ctx:TestSuiteParser.PrcRefContext, t: type ):
         # Get routine id
@@ -324,7 +324,7 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
 
         # Lookup if routine exists in symboltable
         scope = get_scope(ctx, self.symbol_table)
-        routine_symbol = scope.get_symbols_of_type_and_name_sync(RoutineSymbol, name, False)
+        routine_symbol = scope.get_symbols_of_type_and_name_sync(t, name, False)
         if routine_symbol:
             # Operation exists return return_type
             return_type: Optional[Type] = routine_symbol[0].return_type
