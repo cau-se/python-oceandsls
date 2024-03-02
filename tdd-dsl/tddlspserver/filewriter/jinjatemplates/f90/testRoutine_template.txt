@@ -1,0 +1,21 @@
+{% if tag %}
+  ! {{ tag }}
+{% endif %}
+  {{ routineType }} {{ name }} ({% if argNames %}{{ argNames |list |join(", ") }}{% endif %})
+    IMPLICIT NONE
+    {% if argsDecl %}
+    {{ argsDecl|join("\n    ") }}
+    {% endif %}
+    {% if unit %}
+
+    character(len = *),optional :: unit
+    if(present(unit))then
+        if ( unit /= "{{unit}}" ) then
+          print *, "{{ name }}: Expected {{ unit }} as input unit but got ", unit
+        endif
+    endif
+    {%- endif %}
+
+
+    ! <<Add {{ routineType }} body here>>
+  END {{ routineType }} {{ name }}

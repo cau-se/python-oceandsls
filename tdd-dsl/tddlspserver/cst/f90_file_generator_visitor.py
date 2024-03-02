@@ -23,6 +23,7 @@ from typing import Dict, List, Optional, Tuple
 # Jinja2
 from jinja2 import Environment, FileSystemLoader
 
+from symboltable import symbol_table
 # User relative imports
 from ..symboltable.symbol_table import FunctionSymbol, FundamentalType, SymbolTable, ModuleSymbol, RoutineSymbol, Type, VariableSymbol
 from ..filewriter.file_writer import write_file
@@ -121,11 +122,12 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
 
             # If operations does not exist or was added before, add to newly generated ops
             if not routine_symbols:
+                # Add with first found implementation
                 ops_names.append(key)
-                ops_impl.append(value_list[3])
+                ops_impl.append(value_list[4])
 
         # Write content to module if module is set
-        for module_symbol in module_symbols:
+        for idx, module_symbol in enumerate(module_symbols):
 
             # Check test flags. E.g. overwrite flag
             self.overwrite = False
@@ -152,7 +154,11 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
                 module_file = module_symbol.file
 
                 if ops_names or ops_impl:
-                    content = {module_symbol.name: [", ".join(ops_names), "\n\n".join(ops_impl)]}
+                    if idx == 0:
+                    # Write content only to main module and only if operations are added
+                        content = {module_symbol.name: [", ".join(ops_names), "\n\n".join(ops_impl)]}
+                    else :
+                        content = {module_symbol.name: ["", ""]}
                 else:
                     content = {}
 
@@ -166,7 +172,10 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
                 module_symbol.file = module_file
 
                 # Render template with new operations
-                content = template.render(name=module_name, opsNames=ops_names, ops=ops_impl)
+                if idx == 0:
+                    content = template.render(name=module_name, opsNames=ops_names, ops=ops_impl)
+                else :
+                    content = template.render(name=module_name)
 
             # Get absolute file path
             self.visit(ctx.srcpath)
@@ -223,7 +232,7 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
         tag_source: str = ", ".join([self.rel_file_path, start_stop]) if self.rel_file_path is not None and start_stop is not None else None
         tag: str = "auto-generated, src: " + tag_source if tag_source is not None else "auto-generated, src: unknown"
 
-        # Extract id and optional arguments
+        # Extract id, optional arguments and inner ops
         self.visit(ctx.input_)
 
         # Update return type of last new operation if no function expression was in between
@@ -240,6 +249,10 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
 
         # Generate fortran implementations for operations
         for key, value_list in self.ops.items():
+            # Skip already implemented operations
+            if len(value_list) == 5:
+                continue
+
             # Get name, arguments, unit and returnType
             name = key
             # Arguments
@@ -257,9 +270,18 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
             # ReturnType
             return_type = value_list[2].name if value_list[2] is not None else None
 
-            # TODO subroutine
+            #RoutineSymbol
+            #isinstance(value_list[3],RoutineSymbol)
+            #issubclass(foo, FunctionSymbol)
+
+            routine_type: str = None
+            if value_list[3] is FunctionSymbol:
+                routine_type = "FUNCTION"
+            elif value_list[3] is RoutineSymbol:
+                routine_type = "SUBROUTINE"
+
             # Fortran implementation
-            value_list.append(template.render(tag=tag, name=name, argNames=arg_names, unit=unit, argsDecl=args_decl, returnType=return_type))
+            value_list.append(template.render(routineType=routine_type, tag=tag, name=name, argNames=arg_names, unit=unit, argsDecl=args_decl, returnType=return_type))
             # Update operation list
             self.ops[key] = value_list
 
@@ -325,7 +347,7 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
         # Lookup if routine exists in symboltable
         scope = get_scope(ctx, self.symbol_table)
         routine_symbol = scope.get_symbols_of_type_and_name_sync(t, name, False)
-        if routine_symbol:
+        if routine_symbol and isinstance(routine_symbol[0], FunctionSymbol):
             # Operation exists return return_type
             return_type: Optional[Type] = routine_symbol[0].return_type
         else:
@@ -334,7 +356,7 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
 
         if not name.isupper():
             # Add operation to list of ops
-            self.ops[name] = self.ops.get(name, [args, None, return_type])
+            self.ops[name] = self.ops.get(name, [args, None, return_type, t])
             self.last_op_id = name
         else:
             # Uppercase written operations are ignored as general fortran operations

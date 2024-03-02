@@ -1,0 +1,26 @@
+{% if tag %}
+  ! {{ tag }}
+{% endif %}
+  {{ routineType }} {{ name }} ({% if argNames %}{{ argNames |list |join(", ") }}{% endif %}) RESULT (out)
+    IMPLICIT NONE
+    {% if argsDecl %}
+    {{ argsDecl|join("\n    ") }}
+    {% endif %}
+    {% if returnType%}
+    {{ returnType }}
+    {%- else %}
+    ! <<Add return type here>>
+    {%- endif %} :: out
+    {% if unit %}
+
+    character(len = *),optional :: unit
+    if(present(unit))then
+        if ( unit /= "{{unit}}" ) then
+          print *, "{{ name }}: Expected {{ unit }} as input unit but got ", unit
+        endif
+    endif
+    {%- endif %}
+
+
+    out = ! <<Add return expression here>>
+  END {{ routineType }} {{ name }}

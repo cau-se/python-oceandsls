@@ -137,6 +137,10 @@ def fortran_merge(insert_content: Dict[str, List[str]], file_content):
         ops_names: str = ops[0]
         ops_impls: str = ops[1]
 
+        if ops_names == "" or ops_impls == "":
+            # Filter out empty operations
+            continue
+
         public_pattern = r"\n(( *)public(?: *\:\:.*)?\n)+"
         private_pattern = r"\n(( *)private(?: *\:\:.*)?\n)+"
         implicit_pattern = r"\n( *)implicit none *\n"
@@ -172,6 +176,7 @@ def fortran_merge(insert_content: Dict[str, List[str]], file_content):
             raise ValueError(f"Private/Public, Module or \"Implicit\" statement not found. Module: {module_name}")
 
         # Insert public statement with line insertion
+        #TODO one Public statement
         file_content = (file_content[:insert_position] + file_content[line_insertion[0]:line_insertion[1]] + f"PUBLIC :: {ops_names}" + "\n" + file_content[
             insert_position:])
 
