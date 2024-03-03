@@ -355,7 +355,7 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
         # Lookup if routine exists in symboltable
         scope = get_scope(ctx, self.symbol_table)
         routine_symbol = scope.get_symbols_of_type_and_name_sync(t, name, False)
-        is_generated: bool;
+        is_generated: bool
         if routine_symbol:
             is_generated = routine_symbol[0].is_generated
             if isinstance(routine_symbol[0], FunctionSymbol):
@@ -366,7 +366,7 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
                 return_type: Optional[Type] = None
         else:
             # Operation is new, return_type is unknown
-            is_generated = True;
+            is_generated = True
             return_type: Optional[Type] = None
 
         if not name.isupper():
