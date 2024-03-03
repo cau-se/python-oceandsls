@@ -122,10 +122,10 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
             routine_symbols = scope.get_symbols_of_type_and_name_sync(RoutineSymbol, key, False)
 
             # If operations does not exist or was added before, add to newly generated ops
-            if not routine_symbols:
+            if not routine_symbols or value_list[4]:
                 # Add with first found implementation
                 ops_names.append(key)
-                ops_impl.append(value_list[4])
+                ops_impl.append(value_list[-1])
 
         # Write content to module if module is set
         for idx, module_symbol in enumerate(module_symbols):
@@ -251,7 +251,7 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
         # Generate fortran implementations for operations
         for key, value_list in self.ops.items():
             # Skip already implemented operations
-            if len(value_list) == 5:
+            if len(value_list) == 6:
                 continue
 
             # Get name, arguments, unit and returnType
@@ -337,7 +337,6 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
 
     # Visit a parse tree produced by TestSuiteParser#funRef.
     def visitFunRef(self, ctx: TestSuiteParser.FunRefContext):
-        # TODO add FunctionSymbol
         return self.addRoutine(ctx.procedure(), FunctionSymbol)
 
     # Visit a parse tree produced by TestSuiteParser#prcRef.
@@ -356,16 +355,23 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
         # Lookup if routine exists in symboltable
         scope = get_scope(ctx, self.symbol_table)
         routine_symbol = scope.get_symbols_of_type_and_name_sync(t, name, False)
-        if routine_symbol and isinstance(routine_symbol[0], FunctionSymbol):
-            # Operation exists return return_type
-            return_type: Optional[Type] = routine_symbol[0].return_type
+        is_generated: bool;
+        if routine_symbol:
+            is_generated = routine_symbol[0].is_generated
+            if isinstance(routine_symbol[0], FunctionSymbol):
+                # Operation exists return return_type
+                return_type: Optional[Type] = routine_symbol[0].return_type
+            else:
+                # Operation is new, return_type is unknown
+                return_type: Optional[Type] = None
         else:
             # Operation is new, return_type is unknown
+            is_generated = True;
             return_type: Optional[Type] = None
 
         if not name.isupper():
             # Add operation to list of ops
-            self.ops[name] = self.ops.get(name, [args, None, return_type, t])
+            self.ops[name] = self.ops.get(name, [args, None, return_type, t, is_generated])
             self.last_op_id = name
         else:
             # Uppercase written operations are ignored as general fortran operations

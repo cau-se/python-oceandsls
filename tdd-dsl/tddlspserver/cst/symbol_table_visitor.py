@@ -226,7 +226,7 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
                         current_scope = self._scope
                         self._scope = scope_sym
                         # Insert Subroutine symbol with current scope name
-                        self.withScope(None, RoutineSymbol, lambda: list(map(lambda arg: self.addRoutineParams(arg), scope_args)), scope_name)
+                        self.withScope(None, RoutineSymbol, lambda: list(map(lambda arg: self.addRoutineParams(arg), scope_args)), scope_name, is_generated)
                         self._scope = current_scope
                     case "function":
                         current_scope = self._scope
