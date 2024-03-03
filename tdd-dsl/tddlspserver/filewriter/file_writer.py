@@ -141,7 +141,7 @@ def fortran_merge(insert_content: Dict[str, List[str]], file_content):
             # Filter out empty operations
             continue
 
-        public_pattern = r"\n(( *)public(?: *\:\:.*)?\n)+"
+        public_pattern = r"(?:(\n *public(?: *\:\:.*)?)\n)+"
         private_pattern = r"\n(( *)private(?: *\:\:.*)?\n)+"
         implicit_pattern = r"\n( *)implicit none *\n"
 
@@ -175,10 +175,12 @@ def fortran_merge(insert_content: Dict[str, List[str]], file_content):
             # If neither "contains" nor the function/subroutine is found, raise an error
             raise ValueError(f"Private/Public, Module or \"Implicit\" statement not found. Module: {module_name}")
 
-        # Insert public statement with line insertion
-        #TODO one Public statement
-        file_content = (file_content[:insert_position] + file_content[line_insertion[0]:line_insertion[1]] + f"PUBLIC :: {ops_names}" + "\n" + file_content[
-            insert_position:])
+        if match_public:
+            # Add to last public statement
+            file_content = (file_content[:line_insertion[1]] + f", {ops_names}" + "\n" + file_content[insert_position:])
+        else:
+            # Insert public statement with line insertion
+            file_content = (file_content[:insert_position] + file_content[line_insertion[0]:line_insertion[1]] + f"PUBLIC :: {ops_names}" + "\n" + file_content[insert_position:])
 
         match_module_end = re.search(module_end_pattern, file_content, flags=re.IGNORECASE)
 
