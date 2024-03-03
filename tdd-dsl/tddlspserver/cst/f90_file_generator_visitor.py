@@ -31,6 +31,7 @@ from ..gen.python.TestSuite.TestSuiteParser import TestSuiteParser
 from ..gen.python.TestSuite.TestSuiteVisitor import TestSuiteVisitor
 from ..utils.suggest_variables import get_scope
 
+
 class F90FileGeneratorVisitor(TestSuiteVisitor):
     file_templates: Dict[int, str]
     template_path: str
@@ -155,9 +156,9 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
 
                 if ops_names or ops_impl:
                     if idx == 0:
-                    # Write content only to main module and only if operations are added
+                        # Write content only to main module and only if operations are added
                         content = {module_symbol.name: [", ".join(ops_names), "\n\n".join(ops_impl)]}
-                    else :
+                    else:
                         content = {module_symbol.name: ["", ""]}
                 else:
                     content = {}
@@ -174,7 +175,7 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
                 # Render template with new operations
                 if idx == 0:
                     content = template.render(name=module_name, opsNames=ops_names, ops=ops_impl)
-                else :
+                else:
                     content = template.render(name=module_name)
 
             # Get absolute file path
@@ -270,9 +271,9 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
             # ReturnType
             return_type = value_list[2].name if value_list[2] is not None else None
 
-            #RoutineSymbol
-            #isinstance(value_list[3],RoutineSymbol)
-            #issubclass(foo, FunctionSymbol)
+            # RoutineSymbol
+            # isinstance(value_list[3],RoutineSymbol)
+            # issubclass(foo, FunctionSymbol)
 
             routine_type: str = None
             if value_list[3] is FunctionSymbol:
@@ -281,7 +282,15 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
                 routine_type = "SUBROUTINE"
 
             # Fortran implementation
-            value_list.append(template.render(routineType=routine_type, tag=tag, name=name, argNames=arg_names, unit=unit, argsDecl=args_decl, returnType=return_type))
+            value_list.append(
+                template.render(
+                    routineType=routine_type,
+                    tag=tag,
+                    name=name,
+                    argNames=arg_names,
+                    unit=unit,
+                    argsDecl=args_decl,
+                    returnType=return_type))
             # Update operation list
             self.ops[key] = value_list
 
@@ -327,15 +336,15 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
         return ctx.type_.value.text
 
     # Visit a parse tree produced by TestSuiteParser#funRef.
-    def visitFunRef(self, ctx:TestSuiteParser.FunRefContext):
+    def visitFunRef(self, ctx: TestSuiteParser.FunRefContext):
         # TODO add FunctionSymbol
-        return self.addRoutine(ctx.procedure(),FunctionSymbol)
+        return self.addRoutine(ctx.procedure(), FunctionSymbol)
 
     # Visit a parse tree produced by TestSuiteParser#prcRef.
-    def visitPrcRef(self, ctx:TestSuiteParser.PrcRefContext):
-        return self.addRoutine(ctx,RoutineSymbol)
+    def visitPrcRef(self, ctx: TestSuiteParser.PrcRefContext):
+        return self.addRoutine(ctx, RoutineSymbol)
 
-    def addRoutine( self, ctx:TestSuiteParser.PrcRefContext, t: type ):
+    def addRoutine(self, ctx: TestSuiteParser.PrcRefContext, t: type):
         # Get routine id
         name: str = ctx.ID().getText()
 

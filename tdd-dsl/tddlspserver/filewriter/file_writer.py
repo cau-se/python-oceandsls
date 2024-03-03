@@ -180,7 +180,8 @@ def fortran_merge(insert_content: Dict[str, List[str]], file_content):
             file_content = (file_content[:line_insertion[1]] + f", {ops_names}" + "\n" + file_content[insert_position:])
         else:
             # Insert public statement with line insertion
-            file_content = (file_content[:insert_position] + file_content[line_insertion[0]:line_insertion[1]] + f"PUBLIC :: {ops_names}" + "\n" + file_content[insert_position:])
+            file_content = (file_content[:insert_position] + file_content[line_insertion[0]:line_insertion[1]] +
+                            f"PUBLIC :: {ops_names}" + "\n" + file_content[insert_position:])
 
         match_module_end = re.search(module_end_pattern, file_content, flags=re.IGNORECASE)
 

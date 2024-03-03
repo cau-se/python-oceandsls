@@ -1210,8 +1210,7 @@ class RoutineSymbol(ScopedSymbol):
     A standalone procedure rule.
     """
 
-
-    def __init__(self, name: str,  is_generated: bool = False):
+    def __init__(self, name: str, is_generated: bool = False):
         super().__init__(name)
         self.__is_generated = is_generated
 

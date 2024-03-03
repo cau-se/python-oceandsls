@@ -30,6 +30,7 @@ from symboltable.symbol_table import ModuleSymbol
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class PublicObj:
     """
@@ -282,7 +283,7 @@ def filter_xml(
                                 # No type found
                                 variable_type = ""
                         else:
-                            intrinsic_element:  ET.Element = element.find(".//fx:intrinsic-T-spec", ns)
+                            intrinsic_element: ET.Element = element.find(".//fx:intrinsic-T-spec", ns)
                             if intrinsic_element is not None:
                                 intrinsic_element_type = intrinsic_element[0].find(".//fx:c", ns)
                                 intrinsic_type: str = intrinsic_element_type.text

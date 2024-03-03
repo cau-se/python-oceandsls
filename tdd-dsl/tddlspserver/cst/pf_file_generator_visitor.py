@@ -224,7 +224,7 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
         return template.render(name=name, type=type, keys=keys)
 
     # Visit a parse tree produced by TestSuiteParser#funRef.
-    def visitFunRef(self, ctx:TestSuiteParser.FunRefContext):
+    def visitFunRef(self, ctx: TestSuiteParser.FunRefContext):
         # TODO prc fun
         return self.visitChildren(ctx)
 
@@ -383,7 +383,7 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
     def visitOverwritePF(self, ctx: TestSuiteParser.OverwritePFContext):
         self.overwrite = True
 
-    def writeFile( self, path=None, filename=None ):
+    def writeFile(self, path=None, filename=None):
         path = os.path.join(os.getcwd(), path, filename)
         if not os.path.exists(path):
             # Write rendered and optional merged content to file

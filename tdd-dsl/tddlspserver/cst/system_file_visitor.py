@@ -52,7 +52,7 @@ class SystemFileVisitor(TestSuiteVisitor, Generic[T]):
 
     # Visit a parse tree produced by TestSuiteParser#testCase.
     def visitTestCase(self, ctx: TestSuiteParser.TestCaseContext):
-        return self.withScope( ctx, TestCaseSymbol, lambda: self.visitChildren( ctx ), ctx.ID( ).getText( ) )
+        return self.withScope(ctx, TestCaseSymbol, lambda: self.visitChildren(ctx), ctx.ID().getText())
 
     # Return subdirectories under working path or user entered path
     def visitSrcPath(self, ctx: TestSuiteParser.SrcPathContext):
@@ -83,7 +83,7 @@ class SystemFileVisitor(TestSuiteVisitor, Generic[T]):
         else:
             self._symbol_table.add_new_symbol_of_type(PathSymbol, self._scope, "user_path", self._test_path)
 
-    def withScope( self, tree: ParseTree, t: type, action: Callable, *my_args: P.args or None, **my_kwargs: P.kwargs or None ) -> T:
+    def withScope(self, tree: ParseTree, t: type, action: Callable, *my_args: P.args or None, **my_kwargs: P.kwargs or None) -> T:
         """
         Visit a scoped symbol and recursively visit all symbols inside with the scoped symbol as scope
         :param tree: Context of the scoped symbol
