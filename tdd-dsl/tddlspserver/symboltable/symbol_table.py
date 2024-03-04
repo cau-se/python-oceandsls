@@ -408,7 +408,7 @@ class Symbol:
         """
 
         if isinstance(self.__the_parent, ScopedSymbol):
-            return await self.__the_parent.resolve(name, local_only)
+            return await self.__the_parent.resolve(name,t, type_only,, local_only)
 
         return None
 
@@ -423,7 +423,7 @@ class Symbol:
         scopes (conditionally).
         """
         if isinstance(self.__the_parent, ScopedSymbol):
-            return self.__the_parent.resolve_sync(name, local_only)
+            return self.__the_parent.resolve_sync(name,t, type_only,, local_only)
 
         return None
 
@@ -568,13 +568,11 @@ class ScopedSymbol(Symbol):
         :param symbol: The symbol to add as a child.
         :return:
         """
-        symbol.remove_from_parent()
-
-        # Check for duplicates first.
+        # Filter duplicates by type and name.
         symbol_table = self.symbol_table()
         if symbol_table is None or not symbol_table.options.allow_duplicate_symbols:
             for child in self.children():
-                if child is symbol or (len(symbol.name) > 0 and child.name == symbol.name) and isinstance(child, type(symbol)):
+                if child is symbol or ( type(symbol) == type(child) and child.name == symbol.name) and isinstance(child, type(symbol)):
                     symbol_name = symbol.name if symbol.name else "<anonymous>"
                     scope_name = self.name if self.name else "<anonymous>"
                     msg: str = f"Attempt to add duplicate symbol \"{symbol_name}\" to \"{scope_name}\""
@@ -899,35 +897,40 @@ class ScopedSymbol(Symbol):
 
         return result
 
-    async def resolve(self, name: str, local_only: bool = False, callers: List[T] = []) -> Optional[Symbol]:
+    async def resolve(self, name: str, t: type= None, type_only: bool = False, local_only: bool = False, callers: List[T] = []) -> Optional[Symbol]:
         """
-        :param callers: List of visited scopes, that should not be visited again
         :param name: The name of the symbol to resolve.
+        :param type_only: no subtype
+        :param t: parmater type
         :param local_only: If true only child symbols are returned, otherwise also symbols from the parent of this symbol
         (recursively) or scopes that are included.
+        :param callers: List of visited scopes, that should not be visited again
         :return: A promise resolving to the first symbol with a given name, in the order of appearance in this scope or
         any of the parent scopes (conditionally) or any scope included.
         """
         for child in self.children():
             if child.name == name:
-                return child
+                if not t or (not type_only and isinstance(child, t)) or (type_only and type(child) == t):
+                    return child
 
         # Nothing found locally. Let the parent continue.
         if not local_only:
             # Call parent scope
             if isinstance(self.parent(), ScopedSymbol) and self.parent() not in callers:
-                return await self.parent().resolve(name, local_only, callers + [self])
+                return await self.parent().resolve(name,t, type_only, local_only, callers + [self])
 
             # Call scopes that are included
             for include_scope in self._include_scopes:
                 if isinstance(include_scope, ScopedSymbol) and include_scope not in callers:
-                    return await include_scope.resolve(name, local_only, callers + [self])
+                    return await include_scope.resolve(name, t, type_only, local_only, callers + [self])
 
         return None
 
-    def resolve_sync(self, name: str, local_only: bool = False, callers: List[T] = []) -> Optional[Symbol]:
+    def resolve_sync(self, name: str, t: type= None, type_only: bool = False, local_only: bool = False, callers: List[T] = []) -> Optional[Symbol]:
         """
         :param name: The name of the symbol to resolve.
+        :param type_only: no subtype
+        :param t: parmater type
         :param local_only: If true only child symbols are returned, otherwise also symbols from the parent of this symbol
         (recursively) or scopes that are included.
         :param callers: List of visited scopes, that should not be visited again
@@ -936,18 +939,19 @@ class ScopedSymbol(Symbol):
         """
         for child in self.children():
             if child.name == name:
-                return child
+                if not t or (not type_only and isinstance(child, t)) or (type_only and type(child) == t):
+                    return child
 
         # Nothing found locally. the parent continues.
         if not local_only:
             # Call parent scope
             if isinstance(self.parent(), ScopedSymbol) and self.parent() not in callers:
-                return self.parent().resolve_sync(name, local_only, callers + [self])
+                return self.parent().resolve_sync(name, t, type_only, local_only, callers + [self])
 
             # Call scopes that are included
             for include_scope in self._include_scopes:
                 if isinstance(include_scope, ScopedSymbol) and include_scope not in callers:
-                    return include_scope.resolve_sync(name, local_only, callers + [self])
+                    return include_scope.resolve_sync(name, t, type_only, local_only, callers + [self])
 
         return None
 
