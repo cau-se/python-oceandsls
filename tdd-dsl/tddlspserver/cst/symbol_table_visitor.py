@@ -216,7 +216,7 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
                 parent_scopes: List[str] = parent_scopes.split(".") if parent_scopes else []
                 scope_sym: ScopedSymbol = self._scope
                 for scope in parent_scopes:
-                    scope_sym = scope_sym.resolve_sync(scope)
+                    scope_sym = scope_sym.resolve_sync(scope, ScopedSymbol)
 
                 match scope_type:
                     case "module":
@@ -246,7 +246,7 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
                 variableScope: List[str] = variableScope.split(".")
                 scope_sym = self._scope
                 for scope in variableScope:
-                    scope_sym = scope_sym.resolve_sync(scope)
+                    scope_sym = scope_sym.resolve_sync(scope, ScopedSymbol)
 
                 # Map type to symboltable
                 variable_type = get_fundamental_type(variable_type)

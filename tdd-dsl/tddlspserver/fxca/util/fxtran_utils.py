@@ -49,6 +49,7 @@ class PublicObj:
     def is_public(self, name: str) -> bool:
         # Entity is considered public if public is not needed or entities are public by default and entity is not specifically marked as private or
         # entity is specifically marked as public
+        # TODO 'DVODE_F90_M.GDUMMY.T'.startswith(self.pr_elements)
         if not self.need_public or not self.default_private and name not in self.pr_elements or name in self.pub_elements:
             return True
         else:
@@ -228,7 +229,9 @@ def filter_xml(
             pub_ids = list(map((lambda itm: itm.text), element.findall(".//fx:n", ns)))
             for item in pub_ids:
                 item_id = ".".join([current_scope, item])
-                pub_element.pub_elements[item_id] = pub_element.pub_elements.get(item_id, [])
+                if not item_id in pub_elements:
+                    pub_elements.append(item_id)
+                #pub_element.pub_elements[item_id] = pub_element.pub_elements.get(item_id, [])
 
         # Store private available ids
         elif tag == "private-stmt":

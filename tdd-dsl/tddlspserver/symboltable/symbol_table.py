@@ -396,11 +396,13 @@ class Symbol:
             self.__the_parent.remove_symbol(self)
             self.__the_parent = None
 
-    async def resolve(self, name: str, local_only: bool = False) -> Optional[Symbol]:
+    async def resolve(self, name: str, t: type= None, type_only: bool = False , local_only: bool = False) -> Optional[Symbol]:
         """
         Asynchronously looks up a symbol with a given name, in a bottom-up manner.
 
         :param name: The name of the symbol to find.
+        :param type_only: no subtype
+        :param t: parameter type
         :param local_only: If true only child symbols are returned, otherwise also symbols from the parent of this symbol
         (recursively).
         :return: A promise resolving to the first symbol with a given name, in the order of appearance in this scope or
@@ -408,22 +410,24 @@ class Symbol:
         """
 
         if isinstance(self.__the_parent, ScopedSymbol):
-            return await self.__the_parent.resolve(name,t, type_only,, local_only)
+            return await self.__the_parent.resolve(name,t, type_only, local_only)
 
         return None
 
-    def resolve_sync(self, name: str, local_only: bool = False) -> Optional[Symbol]:
+    def resolve_sync(self, name: str, t: type= None, type_only: bool = False , local_only: bool = False) -> Optional[Symbol]:
         """
         Synchronously looks up a symbol with a given name, in a bottom-up manner.
 
         :param name: The name of the symbol to find.
+        :param type_only: no subtype
+        :param t: parameter type
         :param local_only: If true only child symbols are returned, otherwise also symbols from the parent of this symbol
         (recursively).
         :return: the first symbol with a given name, in the order of appearance in this scope or any of the parent
         scopes (conditionally).
         """
         if isinstance(self.__the_parent, ScopedSymbol):
-            return self.__the_parent.resolve_sync(name,t, type_only,, local_only)
+            return self.__the_parent.resolve_sync(name,t, type_only, local_only)
 
         return None
 
@@ -901,7 +905,7 @@ class ScopedSymbol(Symbol):
         """
         :param name: The name of the symbol to resolve.
         :param type_only: no subtype
-        :param t: parmater type
+        :param t: parameter type
         :param local_only: If true only child symbols are returned, otherwise also symbols from the parent of this symbol
         (recursively) or scopes that are included.
         :param callers: List of visited scopes, that should not be visited again
@@ -930,7 +934,7 @@ class ScopedSymbol(Symbol):
         """
         :param name: The name of the symbol to resolve.
         :param type_only: no subtype
-        :param t: parmater type
+        :param t: parameter type
         :param local_only: If true only child symbols are returned, otherwise also symbols from the parent of this symbol
         (recursively) or scopes that are included.
         :param callers: List of visited scopes, that should not be visited again
@@ -1410,35 +1414,39 @@ class SymbolTable(ScopedSymbol):
 
         return None
 
-    async def resolve(self, name: str, local_only: bool = False) -> Optional[Symbol]:
+    async def resolve(self, name: str, t: type= None, type_only: bool = False, local_only: bool = False) -> Optional[Symbol]:
         """
         Asynchronously resolves a name to a symbol.
 
         :param name: The name of the symbol to find.
+        :param type_only: no subtype
+        :param t: parameter type
         :param local_only: A flag indicating if only this symbol table should be used or also its dependencies.
         :return: A promise resolving to the found symbol or undefined.
         """
-        result = await super().resolve(name, local_only)
+        result = await super().resolve(name,t, type_only, local_only)
         if result is None and not local_only:
             for dependency in self.dependencies:
-                result = await dependency.resolve(name, False)
+                result = await dependency.resolve(name,t, type_only, False)
                 if result is not None:
                     return result
 
         return result
 
-    def resolve_sync(self, name: str, local_only: bool = False) -> Optional[Symbol]:
+    def resolve_sync(self, name: str, t: type= None, type_only: bool = False, local_only: bool = False) -> Optional[Symbol]:
         """
         Synchronously resolves a name to a symbol.
 
         :param name: The name of the symbol to find.
+        :param type_only: no subtype
+        :param t: parameter type
         :param local_only: A flag indicating if only this symbol table should be used or also its dependencies.
         :return: The found symbol or undefined.
         """
-        result = super().resolve_sync(name, local_only)
+        result = super().resolve_sync(name,t, type_only, local_only)
         if result is None and not local_only:
             for dependency in self.dependencies:
-                result = dependency.resolve_sync(name, False)
+                result = dependency.resolve_sync(name,t, type_only, False)
                 if result is not None:
                     return result
 
