@@ -227,9 +227,7 @@ def filter_xml(
             pub_ids = list(map((lambda itm: itm.text), element.findall(".//fx:n", ns)))
             for item in pub_ids:
                 item_id = ".".join([current_scope, item])
-                if not item_id in pub_elements:
-                    pub_elements.append(item_id)
-                #pub_element.pub_elements[item_id] = pub_element.pub_elements.get(item_id, [])
+                pub_element.pub_elements[item_id] = pub_element.pub_elements.get(item_id, [])
 
         # Store private available ids
         elif tag == "private-stmt":
