@@ -42,15 +42,13 @@ class PublicObj:
     # By default, entities are public unless general private statement
     default_private: bool = False
     # Entities specifically mentioned as public optionally with attributes
-    # pub_elements: Dict[str, List[str]] = field(default_factory=dict)
-    pub_elements: List[str] = field(default_factory=list)
+    pub_elements: Dict[str, List[str]] = field(default_factory=dict)
     # Entities specifically mentioned as private optionally with attributes
-    # pr_elements: Dict[str, List[str]] = field(default_factory=dict)
-    pr_elements: List[str] = field(default_factory=list)
+    pr_elements: Dict[str, List[str]] = field(default_factory=dict)
 
     def is_public(self, name: str) -> bool:
         # Entity is considered public if public is not needed or entities are public by default and entity is not specifically marked as private (also not in a private context) or entity is specifically marked as public
-        if not self.need_public or not self.default_private and not name.startswith(tuple(self.pr_elements)) or name in self.pub_elements:
+        if not self.need_public or not self.default_private and not name.startswith(tuple(self.pr_elements.keys())) or name in self.pub_elements:
             return True
         else:
             return False
@@ -229,9 +227,7 @@ def filter_xml(
             pub_ids = list(map((lambda itm: itm.text), element.findall(".//fx:n", ns)))
             for item in pub_ids:
                 item_id = ".".join([current_scope, item])
-                if item_id not in pub_element.pub_elements:
-                    pub_element.pub_elements.append(item_id)
-                #pub_element.pub_elements[item_id] = pub_element.pub_elements.get(item_id, [])
+                pub_element.pub_elements[item_id] = pub_element.pub_elements.get(item_id, [])
 
         # Store private available ids
         elif tag == "private-stmt":
@@ -243,9 +239,7 @@ def filter_xml(
             else:
                 for item in pr_ids:
                     item_id = ".".join([current_scope, item])
-                    if item_id not in pub_element.pr_elements:
-                        pub_element.pr_elements.append(item_id)
-                    #pub_element.pr_elements[item_id] = pub_element.pr_elements.get(item_id, [])
+                    pub_element.pr_elements[item_id] = pub_element.pr_elements.get(item_id, [])
 
         # Extract variables, public only, if needed
         elif tag == "contains-stmt":
@@ -320,11 +314,8 @@ def filter_xml(
 
                     # Add element to public object if Public attribute is found or extend attributes if element is already public
                     variable_id = ".".join([current_scope, variable_name])
-                    # pub_element_entry = pub_element.pub_elements.get(".".join(variable_id))
-                    # if pub_element_entry or "PUBLIC" in attributes:
-                    #     pub_element.pub_elements[variable_id] = pub_element_entry
                     if "PUBLIC" in attributes:
-                        pub_element.pub_elements.append(variable_id)
+                        pub_element.pub_elements[variable_id] = pub_element.pub_elements.get(variable_id, [])
 
                     # Save name for return type of functions
                     variable = (variable_name, variable_type, current_scope)
@@ -403,11 +394,11 @@ def write_decorate_src_xml(src_dir: str = "", out_dir: str = "out", fxtran_path:
 
     # Define the fxtran command
     fxtran_cmd_ops = " ".join(
-        [fxtran_path,  # "-line-length 200",
-         "-no-cpp", "-name-attr", "-code-tag",  # "-strip-comments",
-         # "-no-include",
-         # "-construct-tag",
-         "-o"]
+            [fxtran_path,  # "-line-length 200",
+             "-no-cpp", "-name-attr", "-code-tag",  # "-strip-comments",
+             # "-no-include",
+             # "-construct-tag",
+             "-o"]
     )
 
     # Get Fortran files
