@@ -1305,7 +1305,7 @@ class SymbolTable(ScopedSymbol):
 
         return result
 
-    async def addNewNamespaceFromPath(
+    async def add_new_namespace_from_path(
             self, parent: Optional[ScopedSymbol], path: str,
             delimiter="."
     ) -> NamespaceSymbol:
