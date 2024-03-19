@@ -15,7 +15,7 @@
 import jinja2 as j
 import os
 
-from conflspserver.symboltable.symbol_table import SymbolTable
+from ..symboltable.symbol_table import SymbolTable
 
 __author__ = 'stu222808'
 
@@ -97,7 +97,7 @@ class UvicCodeGenerator(StandartCodeGenerator):
         mkPath = os.path.join(self.outputPath, "mk.in")
         mk = open(mkPath, "w")
         mk.write(templatemk.render(general=generalObj, source=sourceObj,
-                 features=self._symbolTable.getNestedSymbolsOfTypeSync(FeatureSymbol), isinstance=isinstance, tuple=tuple))
+                 features=self._symbolTable.get_nested_symbols_of_type_sync(FeatureSymbol), isinstance=isinstance, tuple=tuple))
         mk.close()
 
 
@@ -122,7 +122,7 @@ class mitGcmCodeGenerator(StandartCodeGenerator):
         Returns:
             bool: if one parameter was configurated
         """
-        groupSymbol = elem.getNestedSymbolsOfTypeSync(GroupSymbol)
+        groupSymbol = elem.get_nested_symbols_of_type_sync(GroupSymbol)
         for param in groupSymbol:
             if len(param.configuration) > 0:
                 return True
@@ -139,7 +139,7 @@ class mitGcmCodeGenerator(StandartCodeGenerator):
             int: returns the index of last element
         """
         index = 0
-        for param in elem.getNestedSymbolsOfTypeSync(type):
+        for param in elem.get_nested_symbols_of_type_sync(type):
             if param.value is None:
                 index += 1
             else:
