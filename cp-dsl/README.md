@@ -1,5 +1,11 @@
 # CP-DSL - Parameter Declaration and Configuration DSL
 
+## Name
+
+cp-dsl
+
+## Description
+
 The CP-DSL allows to declare parameter and features for the configuration of
 the build and setup of models.
 

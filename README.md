@@ -23,28 +23,31 @@ Apache 2.0
 ### Install Python
 
 The OceanDSL languages are based on python3.
+
 Install Python in Ubuntu with:
-- `sudo apt install python3 python3-pip`
+
+`sudo apt install python3 python3-pip`
 
 In some distributions *python3* uses the executable name *python3* leaving
-python for *python2*. As the following instructions use *python*, you have
-either substitute the names accordingly or in Ubuntu install the following
-packages:
+*python* for *python2*. As the following instructions use *python*, you have
+either to substitute the names accordingly or in Ubuntu install the following
+package:
 
-- `sudo apt install python-is-python3`
+`sudo apt install python-is-python3`
 
 Install the virtual environment. This helps to keep your distribution
 Python setup and the setup for the DSLs separate.
 
-- `sudo apt install python3-virtualenv`
+`sudo apt install python3-virtualenv`
 
 Alternatively, you can install the packages via *pip*. Howver, this does
 not work in Ubuntu, as it manages its packages via apt/dpkg.
-- `python -m pip install --upgrade pip setuptools wheel`
+
+`python -m pip install --upgrade pip setuptools wheel`
 
 Check whether *virtualenv* is installed:
 
-- `python -m pip show virtualenv`
+`python -m pip show virtualenv`
 
 This should result in
 ```
