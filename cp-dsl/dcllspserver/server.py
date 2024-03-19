@@ -222,8 +222,6 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     # get completion candidates
     candidates: CandidatesCollection = core.collectCandidates(token_index.index)
 
-    # TODO missing return, code completion code must be called
-
     def calcLitAndSymbNames(literalNames):
         literalNames = []
         symbolic_names = []

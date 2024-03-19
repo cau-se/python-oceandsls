@@ -1,16 +1,11 @@
 {% if tag %}
   ! {{ tag }}
 {% endif %}
-  FUNCTION {{ name }} ({% if argNames %}{{ argNames |list |join(", ") }}{% endif %}) RESULT (out)
+  {{ routineType }} {{ name }} ({% if argNames %}{{ argNames |list |join(", ") }}{% endif %})
     IMPLICIT NONE
     {% if argsDecl %}
     {{ argsDecl|join("\n    ") }}
     {% endif %}
-    {% if returnType%}
-    {{ returnType }}
-    {%- else %}
-    ! <<Add return type here>>
-    {%- endif %} :: out
     {% if unit %}
 
     character(len = *),optional :: unit
@@ -22,5 +17,5 @@
     {%- endif %}
 
 
-    out = ! <<Add return expression here>>
-  END FUNCTION {{ name }}
+    ! <<Add {{ routineType }} body here>>
+  END {{ routineType }} {{ name }}

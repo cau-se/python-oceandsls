@@ -23,8 +23,9 @@ from typing import Dict, List, Optional, Tuple
 # Jinja2
 from jinja2 import Environment, FileSystemLoader
 
+from symboltable import symbol_table
 # User relative imports
-from ..symboltable.symbol_table import FundamentalType, SymbolTable, ModuleSymbol, RoutineSymbol, Type, VariableSymbol
+from ..symboltable.symbol_table import FunctionSymbol, FundamentalType, SymbolTable, ModuleSymbol, RoutineSymbol, Type, VariableSymbol
 from ..filewriter.file_writer import write_file
 from ..gen.python.TestSuite.TestSuiteParser import TestSuiteParser
 from ..gen.python.TestSuite.TestSuiteVisitor import TestSuiteVisitor
@@ -93,13 +94,13 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
     def symbol_table(self) -> SymbolTable:
         return self._symbol_table
 
-    # Visit a parse tree produced by TestSuiteParser#test_suite.
-    def visitTest_suite(self, ctx: TestSuiteParser.Test_suiteContext):
+    # Visit a parse tree produced by TestSuiteParser#testSuite.
+    def visitTestSuite(self, ctx: TestSuiteParser.TestSuiteContext):
         self.visitChildren(ctx)
         return self.files
 
-    # Visit a parse tree produced by TestSuiteParser#test_case.
-    def visitTest_case(self, ctx: TestSuiteParser.Test_caseContext) -> dict[str, Tuple[float, str, str]]:
+    # Visit a parse tree produced by TestSuiteParser#testCase.
+    def visitTestCase(self, ctx: TestSuiteParser.TestCaseContext) -> dict[str, Tuple[float, str, str]]:
         # Load Jinja2 template
         template = self.environment.get_template(self.file_templates[ctx.getRuleIndex()])
 
@@ -121,12 +122,13 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
             routine_symbols = scope.get_symbols_of_type_and_name_sync(RoutineSymbol, key, False)
 
             # If operations does not exist or was added before, add to newly generated ops
-            if not routine_symbols:
+            if not routine_symbols or value_list[4]:
+                # Add with first found implementation
                 ops_names.append(key)
-                ops_impl.append(value_list[3])
+                ops_impl.append(value_list[-1])
 
         # Write content to module if module is set
-        if module_symbols:
+        for idx, module_symbol in enumerate(module_symbols):
 
             # Check test flags. E.g. overwrite flag
             self.overwrite = False
@@ -137,7 +139,7 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
                 # Merge all files that should overwrite other files
 
                 # Set module file
-                module_name = module_symbols[0].name
+                module_name = module_symbol.name
                 module_file = ".".join([module_name, self.file_suffix])
                 abs_path: str = os.path.join(self.work_path, module_file)
 
@@ -146,14 +148,18 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
                 else:
                     self.overwrite_files.append(abs_path)
 
-            if module_symbols[0].file and not self.overwrite:
+            if module_symbol.file and not self.overwrite:
                 # Module exists
 
                 insert = True
-                module_file = module_symbols[0].file
+                module_file = module_symbol.file
 
                 if ops_names or ops_impl:
-                    content = {module_symbols[0].name: [", ".join(ops_names), "\n\n".join(ops_impl)]}
+                    if idx == 0:
+                        # Write content only to main module and only if operations are added
+                        content = {module_symbol.name: [", ".join(ops_names), "\n\n".join(ops_impl)]}
+                    else:
+                        content = {module_symbol.name: ["", ""]}
                 else:
                     content = {}
 
@@ -162,12 +168,15 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
                 insert = False
 
                 # Set module file
-                module_name = module_symbols[0].name
+                module_name = module_symbol.name
                 module_file = ".".join([module_name, self.file_suffix])
-                module_symbols[0].file = module_file
+                module_symbol.file = module_file
 
                 # Render template with new operations
-                content = template.render(name=module_name, opsNames=ops_names, ops=ops_impl)
+                if idx == 0:
+                    content = template.render(name=module_name, opsNames=ops_names, ops=ops_impl)
+                else:
+                    content = template.render(name=module_name)
 
             # Get absolute file path
             self.visit(ctx.srcpath)
@@ -183,7 +192,7 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
         return self.files
 
     # Save the source path to scan for existing variables
-    def visitSrc_path(self, ctx: TestSuiteParser.Src_pathContext):
+    def visitSrcPath(self, ctx: TestSuiteParser.SrcPathContext):
         # Strip string terminals
         user_path: str = ctx.path.text.strip("\'")
 
@@ -193,7 +202,7 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
         self.work_path = os.path.join(self.cwd, user_path)
 
     # Get list of used module symbols
-    def visitUse_modules(self, ctx: TestSuiteParser.Use_modulesContext):
+    def visitUseModules(self, ctx: TestSuiteParser.UseModulesContext):
 
         # Accumulate module names
         module_symbols: List[ModuleSymbol] = []
@@ -203,12 +212,12 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
         return module_symbols
 
     # Find corresponding module symbol
-    def visitTest_module(self, ctx: TestSuiteParser.Test_moduleContext):
+    def visitTestModule(self, ctx: TestSuiteParser.TestModuleContext):
         # Return corresponding module symbol, optionally with implementing file and contain functions flag
         return get_scope(ctx, self.symbol_table)
 
-    # Visit a parse tree produced by TestSuiteParser#test_assertion.
-    def visitTest_assertion(self, ctx: TestSuiteParser.Test_assertionContext):
+    # Visit a parse tree produced by TestSuiteParser#testAssertion.
+    def visitTestAssertion(self, ctx: TestSuiteParser.TestAssertionContext):
         # Load operation template
         template = self.environment.get_template(self.file_templates[ctx.getRuleIndex()])
 
@@ -224,7 +233,7 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
         tag_source: str = ", ".join([self.rel_file_path, start_stop]) if self.rel_file_path is not None and start_stop is not None else None
         tag: str = "auto-generated, src: " + tag_source if tag_source is not None else "auto-generated, src: unknown"
 
-        # Extract id and optional arguments
+        # Extract id, optional arguments and inner ops
         self.visit(ctx.input_)
 
         # Update return type of last new operation if no function expression was in between
@@ -241,7 +250,11 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
 
         # Generate fortran implementations for operations
         for key, value_list in self.ops.items():
-            # Get name, arguments, unit and return_type
+            # Skip already implemented operations
+            if len(value_list) == 6:
+                continue
+
+            # Get name, arguments, unit and returnType
             name = key
             # Arguments
             arg_names: List[str] = []
@@ -258,18 +271,35 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
             # ReturnType
             return_type = value_list[2].name if value_list[2] is not None else None
 
-            # TODO subroutine
+            # RoutineSymbol
+            # isinstance(value_list[3],RoutineSymbol)
+            # issubclass(foo, FunctionSymbol)
+
+            routine_type: str = None
+            if value_list[3] is FunctionSymbol:
+                routine_type = "FUNCTION"
+            elif value_list[3] is RoutineSymbol:
+                routine_type = "SUBROUTINE"
+
             # Fortran implementation
-            value_list.append(template.render(tag=tag, name=name, argNames=arg_names, unit=unit, argsDecl=args_decl, returnType=return_type))
+            value_list.append(
+                template.render(
+                    routineType=routine_type,
+                    tag=tag,
+                    name=name,
+                    argNames=arg_names,
+                    unit=unit,
+                    argsDecl=args_decl,
+                    returnType=return_type))
             # Update operation list
             self.ops[key] = value_list
 
-    # Visit a parse tree produced by TestSuiteParser#test_var.
-    def visitTest_var(self, ctx: TestSuiteParser.Test_varContext):
+    # Visit a parse tree produced by TestSuiteParser#testVar.
+    def visitTestVar(self, ctx: TestSuiteParser.TestVarContext):
         return self.visit(ctx.value)
 
-    # Visit a parse tree produced by TestSuiteParser#test_parameter.
-    def visitTest_parameter(self, ctx: TestSuiteParser.Test_parameterContext):
+    # Visit a parse tree produced by TestSuiteParser#testParameter.
+    def visitTestParameter(self, ctx: TestSuiteParser.TestParameterContext):
         # Get value name and optional argument types
         parameter_type = self.visit(ctx.value)
 
@@ -307,6 +337,13 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
 
     # Visit a parse tree produced by TestSuiteParser#funRef.
     def visitFunRef(self, ctx: TestSuiteParser.FunRefContext):
+        return self.addRoutine(ctx.procedure(), FunctionSymbol)
+
+    # Visit a parse tree produced by TestSuiteParser#prcRef.
+    def visitPrcRef(self, ctx: TestSuiteParser.PrcRefContext):
+        return self.addRoutine(ctx, RoutineSymbol)
+
+    def addRoutine(self, ctx: TestSuiteParser.PrcRefContext, t: type):
         # Get routine id
         name: str = ctx.ID().getText()
 
@@ -317,17 +354,24 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
 
         # Lookup if routine exists in symboltable
         scope = get_scope(ctx, self.symbol_table)
-        routine_symbol = scope.get_symbols_of_type_and_name_sync(RoutineSymbol, name, False)
+        routine_symbol = scope.get_symbols_of_type_and_name_sync(t, name, False)
+        is_generated: bool
         if routine_symbol:
-            # Operation exists return return_type
-            return_type: Optional[Type] = routine_symbol[0].return_type
+            is_generated = routine_symbol[0].is_generated
+            if isinstance(routine_symbol[0], FunctionSymbol):
+                # Operation exists return return_type
+                return_type: Optional[Type] = routine_symbol[0].return_type
+            else:
+                # Operation is new, return_type is unknown
+                return_type: Optional[Type] = None
         else:
             # Operation is new, return_type is unknown
+            is_generated = True
             return_type: Optional[Type] = None
 
         if not name.isupper():
             # Add operation to list of ops
-            self.ops[name] = self.ops.get(name, [args, None, return_type])
+            self.ops[name] = self.ops.get(name, [args, None, return_type, t, is_generated])
             self.last_op_id = name
         else:
             # Uppercase written operations are ignored as general fortran operations

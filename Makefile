@@ -1,5 +1,5 @@
 # enable ANTLR support
-antlr4 := java -jar /usr/local/lib/antlr-4.13.0-complete.jar
+antlr4 := java -jar /usr/local/lib/antlr-4.13.1-complete.jar
 
 #########################################################
 #                    example DSL
@@ -94,7 +94,7 @@ release_BGC: $(BGCGRAMMAR).tar.gz
 CPPKGTARGETS = Terminals Expression Configuration
 
 # Release version used by release targets
-CPPACKAGE = cp-dsl/confLSPServer
+CPPACKAGE = cp-dsl/conflspserver
 CPVER = $(strip $(shell cat version))
 CPPYCPVERDIR = $(CPPACKAGE)-$(CPVER)
 CPPYBUILDDIR = $(CPPACKAGE)/../build/$(CPPYCPVERDIR)
@@ -137,7 +137,7 @@ release_CP: $(CPGRAMMAR).tar.gz
 DCLPKGTARGETS = Declaration
 
 # Release version used by release targets
-DCLPACKAGE = cp-dsl/dclLSPServer
+DCLPACKAGE = cp-dsl/dcllspserver
 DCLVER = $(strip $(shell cat version))
 DCLPYCPVERDIR = $(DCLPACKAGE)-$(DCLVER)
 DCLPYBUILDDIR = $(DCLPACKAGE)/../build/$(DCLPYCPVERDIR)

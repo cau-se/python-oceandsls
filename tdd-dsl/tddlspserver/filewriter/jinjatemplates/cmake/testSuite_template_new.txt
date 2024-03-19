@@ -15,11 +15,11 @@ find_package(PFUNIT REQUIRED)
 
 # system under test source files
 {% for SUTNAME, SUTFILENAMES in SUTS | items %}
-{% include "test_suite_template_add_library.txt" %}
+{% include "testSuite_template_add_library.txt" %}
 {% endfor %}
 
 {% for SUTNAME in SUTS.keys() %}
-{% include "test_suite_template_target_include.txt" %}
+{% include "testSuite_template_target_include.txt" %}
 {% endfor %}
 
 set_target_properties ({{ SUTS.keys()|join(" ") }} PROPERTIES

@@ -26,40 +26,40 @@ grammar TestSuite;
 import Keyword, Typing, Reference, PhysicalUnits, CommonLexerRules;
 
 /** Test_suite ; top-level rule; begin parsing here */
-test_suite              : 'suite' name=ID ':' NEWLINE
-                          (cases+=test_case)?           /** Ends on newline */
-                          (cases+=test_case)*           /** Ends on newline */
+testSuite               : 'suite' name=ID ':' NEWLINE
+                          (cases+=testCase)?           /** Ends on newline */
+                          (cases+=testCase)*           /** Ends on newline */
                         ;
 
 /** Test case ends on newline */
-test_case               : 'test' name=ID ':' NEWLINE
-                          (test_flags=test_flag)?               /** Ends on newline */
-                          ()'srcpath' ':' srcpath=src_path      /** Ends on newline */
-                          (modules=use_modules)?                /** Ends on newline */
-                          (vars=test_vars)?                     /** Ends on newline */
-                          (assertions+=test_assertion)?         /** Ends on newline */
-                          (assertions+=test_assertion)*         /** Ends on newline */
+testCase                : 'test' name=ID ':' NEWLINE
+                          (test_flags=testFlag)?               /** Ends on newline */
+                          ()'srcpath' ':' srcpath=srcPath      /** Ends on newline */
+                          (modules=useModules)?                /** Ends on newline */
+                          (vars=testVars)?                     /** Ends on newline */
+                          (assertions+=testAssertion)?         /** Ends on newline */
+                          (assertions+=testAssertion)*         /** Ends on newline */
                         ;
 
-test_flag               : 'overwrite' ':' overwrite_flag (',' overwrite_flag)* NEWLINE
+testFlag                : 'overwrite' ':' overwriteFlag (',' overwriteFlag)* NEWLINE
                         ;
 
-overwrite_flag          : 'pf'                                               # overwritePF
+overwriteFlag           : 'pf'                                               # overwritePF
                         | 'cmake'                                            # overwriteCMake
                         | 'f90'                                              # overwriteF90
                         ;
 
 /** Placeholder for code completion of system path to source code files; ends on newline */
-src_path                : path=STRING NEWLINE
+srcPath                 : path=STRING NEWLINE
                         ;
 
 /** Variables used in test case; ends on newline*/
-test_vars               : 'var' ':' NEWLINE
-                          vars+=test_var+
+testVars                : 'var' ':' NEWLINE
+                          vars+=testVar+
                         ;
 
 /** Variables used in test case*/
-test_var                : decl=varDeclaration ('=' value=expr)? comment=optionalDesc  /** Ends on newline */
+testVar                : decl=varDeclaration ('=' value=expr)? comment=optionalDesc  /** Ends on newline */
                         ;
 
 /** Declaration of variables used in test cases  */
@@ -67,19 +67,19 @@ varDeclaration          : name=ID ':' type=paramType (',' keys+=f90StdKey (',' k
                         ;
 
 /** Modules used in the test; ends on newline*/
-use_modules            : 'modules' ':'  NEWLINE
-                          modules+=test_module+
+useModules              : 'modules' ':'  NEWLINE
+                          modules+=testModule+
                         ;
 
 /** Modules names; ends on newline*/
-test_module             : name=ID NEWLINE
+testModule              : name=ID NEWLINE
                         ;
 
 /** Test assertion; ends on newline */
-test_assertion          : 'assert' directive=test_directive ':' NEWLINE
-                          'in' ':' NEWLINE input=test_parameter     /** ends on newline */
-                          'out' ':' NEWLINE output=test_parameter   /** ends on newline */
-                          attr=pubAttributes (comment=COMMENT)?     /** ends on newline */
+testAssertion           : 'assert' directive=testDirective ':' NEWLINE
+                          'in' ':' NEWLINE input=extendedTestParameter /** Ends on newline */
+                          'out' ':' NEWLINE output=testParameter       /** Ends on newline */
+                          attr=pubAttributes (comment=COMMENT)?        /** Ends on newline */
                         ;
 
 /** Arguments of pfUnit prepparser rules start with lowercase letters */
@@ -88,8 +88,14 @@ pubAttributes           : ('tolerance' ':' tol=expr NEWLINE)?
                           ('whitespace' '=' ign='IGNORE_DIFFERENCES' NEWLINE)?       /** Option for assertEqual */
                         ;
 
+/** Input for optional subroutine call; ends on newline */
+extendedTestParameter   : ('call' ':' procedure NEWLINE                                  /** Ends on newline */
+                          (procedure NEWLINE)*)?                                  /** Ends on newline */
+                          testParameter                                                    /** Ends on newline */
+                        ;
+
 /** IO parameter; ends on newline */
-test_parameter          : (decl=parameterDeclaration '=')? value=expr comment=optionalDesc  /** Ends on newline */
+testParameter          : (decl=parameterDeclaration '=')? value=expr comment=optionalDesc  /** Ends on newline */
                         ;
 
 /** Optional description for declarations; ensures non description to be newline */

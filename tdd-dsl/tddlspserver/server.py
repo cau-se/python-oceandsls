@@ -61,13 +61,46 @@ class TDDLSPServer(LanguageServer):
 
     CONFIGURATION_SECTION = "ODsl-TDD-DSL-Server"
 
-    top_level_context = TestSuiteParser.Test_suiteContext
+    top_level_context = TestSuiteParser.TestSuiteContext
     parseTree: top_level_context
     # Recommendation metric option
     sort_metric: str
 
     # Debug flag
     show_debug_output: bool = True
+    debug_output_seperator: str = "\t"
+    debug_header: str = debug_output_seperator.join(["Scope",
+                                                     "Source",
+                                                     "Cyclomatic Complexity",
+                                                     "Depth",
+                                                     "LOC",
+                                                     "Parameters",
+                                                     "Conditionals",
+                                                     "Loops",
+                                                     "Branches",
+                                                     "Variables",
+                                                     "Returns",
+                                                     "Calls",
+                                                     "Decision Points",
+                                                     "Halstead Complexity",
+                                                     "(d)Operators η1",
+                                                     "(d)Operands η2",
+                                                     "(t)Operators N1",
+                                                     "(t)Operands N2",
+                                                     "Vocabulary (η1 + η2)",
+                                                     "Program Length (N1 + N2)",
+                                                     "Calculated Length",
+                                                     "Volume",
+                                                     "Difficulty",
+                                                     "Effort",
+                                                     "Time to program",
+                                                     "delivered bugs",
+                                                     "Test Index",
+                                                     "Weighted Metrics Sum",
+                                                     "Testability Index",
+                                                     "Normalized Test Score",
+                                                     "Aggregated Test Score",
+                                                     "Test Factor"])
 
     # Debug Log
     logger = logging.getLogger(__name__)
@@ -140,8 +173,8 @@ def _validate_format(server: TDDLSPServer, source: str):
 
     try:
         # Launch parser by invoking top-level rule
-        top_level_context = TestSuiteParser.Test_suiteContext
-        parse_tree: Optional[top_level_context] = server.parser.test_suite()
+        top_level_context = TestSuiteParser.TestSuiteContext
+        parse_tree: Optional[top_level_context] = server.parser.testSuite()
 
         if not tdd_server.token_stream.fetchedEOF:
             end: Position = Position(parse_tree.stop.line, parse_tree.stop.column)
@@ -181,14 +214,14 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     tdd_server.parser.setTokenStream(tdd_server.token_stream)
 
     # Launches parser by invoking top-level rule
-    top_level_context = TestSuiteParser.Test_suiteContext
+    top_level_context = TestSuiteParser.TestSuiteContext
     parse_tree: Optional[top_level_context] = None
 
     token_index: Optional[TokenPosition] = None
 
     # Parse until fetched
     while not tdd_server.token_stream.fetchedEOF:
-        parse_tree = tdd_server.parser.test_suite()
+        parse_tree = tdd_server.parser.testSuite()
 
         # Get token index under caret position
         # params.position.line + 1 as lsp line counts from 0 and antlr4 line counts from 1
@@ -211,7 +244,7 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     core: CodeCompletionCore = CodeCompletionCore(tdd_server.parser)
 
     core.ignoredTokens = {Token.EPSILON}
-    core.preferredRules = {TestSuiteParser.RULE_reference, TestSuiteParser.RULE_src_path, TestSuiteParser.RULE_test_module}
+    core.preferredRules = {TestSuiteParser.RULE_reference, TestSuiteParser.RULE_srcPath, TestSuiteParser.RULE_testModule}
 
     # Get completion candidates
     candidates: CandidatesCollection = core.collectCandidates(token_index.index)
@@ -228,13 +261,13 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
             # FunctionSymbol is derived from RoutineSymbol
             symbol_types.extend([VariableSymbol, RoutineSymbol])
 
-        elif any(rule in candidates.rules for rule in [TestSuiteParser.RULE_test_module]):
+        elif any(rule in candidates.rules for rule in [TestSuiteParser.RULE_testModule]):
 
             symbol_table_visitor: SymbolTableVisitor = SymbolTableVisitor("completions", os.getcwd(), tdd_server.fxtran_path)
             symbol_table = symbol_table_visitor.visit(parse_tree)
             symbol_types.append(ModuleSymbol)
 
-        elif any(rule in candidates.rules for rule in [TestSuiteParser.RULE_src_path]):
+        elif any(rule in candidates.rules for rule in [TestSuiteParser.RULE_srcPath]):
 
             symbol_table_visitor: SystemFileVisitor = SystemFileVisitor("paths", os.getcwd())
             symbol_table = symbol_table_visitor.visit(parse_tree)
@@ -277,6 +310,7 @@ def stripTerminals(elements: List[str] = None, terminal: str = "\'") -> List[str
      Strip string terminals from list elements.
 
     :param elements: List of elements
+    :param terminal: Elements to remove
     :return: List of striped elements
     """
     return [e.strip(terminal) for e in elements]
@@ -284,13 +318,13 @@ def stripTerminals(elements: List[str] = None, terminal: str = "\'") -> List[str
 
 @tdd_server.feature(TEXT_DOCUMENT_DID_CHANGE)
 def did_change(server: TDDLSPServer, params: DidChangeTextDocumentParams):
-    """Valdiate input and return text document did change notification."""
+    """Validate input and return text document did change notification."""
 
     # Set input stream of characters for lexer
     text_doc: Document = get_text_document(params)
     input_stream: InputStream = InputStream(text_doc.source)
 
-    server.parseTree = parse_stream( input_stream )
+    server.parseTree = parse_stream(input_stream)
     _validate(text_doc)
 
 
@@ -322,7 +356,7 @@ def did_save(server: TDDLSPServer, params: DidSaveTextDocumentParams):
     # Get relative input path for file generation
     rel_file_path: str = os.path.relpath(file_path, os.getcwd())
     # Launch parser
-    server.parseTree = parse_stream( input_stream )
+    server.parseTree = parse_stream(input_stream)
 
     # Get symboltable for f90 generator
     symbol_table_visitor: SymbolTableVisitor = SymbolTableVisitor("variables", os.getcwd(), tdd_server.fxtran_path)
@@ -351,6 +385,7 @@ def did_save(server: TDDLSPServer, params: DidSaveTextDocumentParams):
 
     server.show_message("Text Document Did Save")
 
+
 @tdd_server.feature(TEXT_DOCUMENT_DID_OPEN)
 async def did_open(server: TDDLSPServer, params: DidOpenTextDocumentParams):
     """Validate input and return text document did open notification."""
@@ -361,14 +396,16 @@ async def did_open(server: TDDLSPServer, params: DidOpenTextDocumentParams):
     text_doc: Document = get_text_document(params)
     input_stream: InputStream = InputStream(text_doc.source)
 
-    server.parseTree = parse_stream( input_stream )
+    server.parseTree = parse_stream(input_stream)
     _validate(text_doc)
 
-def get_text_document( params ) -> Document:
+
+def get_text_document(params) -> Document:
     """Return managed document."""
     return tdd_server.workspace.get_text_document(params.text_document.uri)
 
-def parse_stream( input_stream: InputStream ) -> TestSuiteParser.Test_suiteContext:
+
+def parse_stream(input_stream: InputStream) -> TestSuiteParser.TestSuiteContext:
     """Parse input stream."""
     # Reset the lexer/parser
     tdd_server.error_listener.reset()
@@ -377,7 +414,7 @@ def parse_stream( input_stream: InputStream ) -> TestSuiteParser.Test_suiteConte
     tdd_server.parser.setInputStream(tdd_server.token_stream)
 
     # Return launched parser by invoking top-level rule
-    return tdd_server.parser.test_suite()
+    return tdd_server.parser.testSuite()
 
 
 @tdd_server.feature(
@@ -390,7 +427,7 @@ def semantic_tokens(server: TDDLSPServer, params: SemanticTokensParams):
     TOKENS = re.compile("\".*\"(?=:)")
 
     uri = params.text_document.uri
-    doc = server.workspace.get_document(uri)
+    doc = server.workspace.get_text_document(uri)
 
     last_line = 0
     last_start = 0
@@ -416,7 +453,7 @@ def recommend_SUT(server: TDDLSPServer, *args):
 
     calculate_complexity_visitor: CalculateComplexityVisitor = CalculateComplexityVisitor(
         name="paths", test_work_path=os.getcwd(), fxtran_path=tdd_server.fxtran_path,
-            sort_metric=tdd_server.sort_metric, debug = tdd_server.show_debug_output
+        sort_metric=tdd_server.sort_metric, debug=tdd_server.show_debug_output, debug_seperator=tdd_server.debug_output_seperator
     )
     symbol_table = calculate_complexity_visitor.visit(server.parseTree)
 
@@ -426,6 +463,7 @@ def recommend_SUT(server: TDDLSPServer, *args):
         server.show_message(metric)
 
     if tdd_server.show_debug_output:
+        metric_list.insert(0, server.debug_header)
         debug_file_write(os.path.join(os.getcwd(), tdd_server.sort_metric), "\n".join(metric_list))
 
     server.show_message(f"Recommend SuT by {tdd_server.sort_metric}...")

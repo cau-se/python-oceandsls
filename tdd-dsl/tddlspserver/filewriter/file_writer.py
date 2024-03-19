@@ -22,7 +22,7 @@ import hashlib
 import logging
 import re
 import os
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 # Debug
 logger = logging.getLogger(__name__)
@@ -137,7 +137,11 @@ def fortran_merge(insert_content: Dict[str, List[str]], file_content):
         ops_names: str = ops[0]
         ops_impls: str = ops[1]
 
-        public_pattern = r"\n(( *)public(?: *\:\:.*)?\n)+"
+        if ops_names == "" or ops_impls == "":
+            # Filter out empty operations
+            continue
+
+        public_pattern = r"(?:(\n *public(?: *\:\:.*)?)\n)+"
         private_pattern = r"\n(( *)private(?: *\:\:.*)?\n)+"
         implicit_pattern = r"\n( *)implicit none *\n"
 
@@ -171,9 +175,13 @@ def fortran_merge(insert_content: Dict[str, List[str]], file_content):
             # If neither "contains" nor the function/subroutine is found, raise an error
             raise ValueError(f"Private/Public, Module or \"Implicit\" statement not found. Module: {module_name}")
 
-        # Insert public statement with line insertion
-        file_content = (file_content[:insert_position] + file_content[line_insertion[0]:line_insertion[1]] + f"PUBLIC :: {ops_names}" + "\n" + file_content[
-            insert_position:])
+        if match_public:
+            # Add to last public statement
+            file_content = (file_content[:line_insertion[1]] + f", {ops_names}" + "\n" + file_content[insert_position:])
+        else:
+            # Insert public statement with line insertion
+            file_content = (file_content[:insert_position] + file_content[line_insertion[0]:line_insertion[1]] +
+                            f"PUBLIC :: {ops_names}" + "\n" + file_content[insert_position:])
 
         match_module_end = re.search(module_end_pattern, file_content, flags=re.IGNORECASE)
 
@@ -229,9 +237,8 @@ def write_file(file_path: str = "", content: str | Dict = "", file_attr: tuple[f
 
     :param file_path: system path to file
     :param content: test-case content
-    :param fileHash: hash if file should exist
-    :param mtime: modification time if file should exist
-    :param content_org: original content
+    :param file_attr: file attributes such as file hash and modification time
+    :param insert: flag if content should be merged or overwritten
     :return: hast and modification time of file
     """
 

@@ -17,6 +17,7 @@ __author__ = "sgu"
 #  limitations under the License.
 
 import os
+import stat
 # Util
 from typing import Dict, List, Tuple
 
@@ -71,12 +72,10 @@ class CMakeFileGeneratorVisitor(TestSuiteVisitor):
             self.file_templates[i] = f"{rule}_template.txt"
             i += 1
 
-    # Visit a parse tree produced by TestSuiteParser#test_suite.
-    def visitTest_suite(self, ctx: TestSuiteParser.Test_suiteContext):
+    # Visit a parse tree produced by TestSuiteParser#testSuite.
+    def visitTestSuite(self, ctx: TestSuiteParser.TestSuiteContext):
 
         suts = {}
-        sut_names = []
-        sut: Tuple = ()
         test_dirs = []
         # Initialize test suite overwrite flag as default
         overwrite = self.overwrite
@@ -111,6 +110,11 @@ class CMakeFileGeneratorVisitor(TestSuiteVisitor):
             driver_template = self.template_env.get_template("driver.txt")
             with open(driver_path, mode="w", encoding="utf-8") as f:
                 f.write(driver_template.render())
+
+            # Add executable permission if running on a Unix system
+            if os.name == "posix":
+                st = os.stat(driver_path)
+                os.chmod(driver_path, st.st_mode | stat.S_IEXEC)
 
         # Check if file exists and need to be merged
         if os.path.exists(abs_path) and not overwrite:
@@ -163,8 +167,8 @@ class CMakeFileGeneratorVisitor(TestSuiteVisitor):
 
         return self.files
 
-    # Visit a parse tree produced by TestSuiteParser#test_case.
-    def visitTest_case(self, ctx: TestSuiteParser.Test_caseContext):
+    # Visit a parse tree produced by TestSuiteParser#testCase.
+    def visitTestCase(self, ctx: TestSuiteParser.TestCaseContext):
 
         # Update project path
         # TODO mv to suite
@@ -237,7 +241,7 @@ class CMakeFileGeneratorVisitor(TestSuiteVisitor):
         return sut
 
     # Save the source path to scan for existing variables
-    def visitSrc_path(self, ctx: TestSuiteParser.Src_pathContext):
+    def visitSrcPath(self, ctx: TestSuiteParser.SrcPathContext):
         # Strip string terminals
         user_path: str = ctx.path.text.strip("\'")
 

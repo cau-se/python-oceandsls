@@ -34,6 +34,7 @@ from ..utils.suggest_variables import get_scope
 # Debug Log
 logger = logging.getLogger(__name__)
 
+
 class PFFileGeneratorVisitor(TestSuiteVisitor):
     file_templates: Dict[int, str]
     template_path: str
@@ -89,13 +90,13 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
             self.file_templates[i] = f"{rule}_template.txt"
             i += 1
 
-    # Visit a parse tree produced by TestSuiteParser#test_suite.
-    def visitTest_suite(self, ctx: TestSuiteParser.Test_suiteContext):
+    # Visit a parse tree produced by TestSuiteParser#testSuite.
+    def visitTestSuite(self, ctx: TestSuiteParser.TestSuiteContext):
         self.visitChildren(ctx)
         return self.files
 
-    # Visit a parse tree produced by TestSuiteParser#test_case.
-    def visitTest_case(self, ctx: TestSuiteParser.Test_caseContext) -> dict[str, Tuple[float, str, str]]:
+    # Visit a parse tree produced by TestSuiteParser#testCase.
+    def visitTestCase(self, ctx: TestSuiteParser.TestCaseContext) -> dict[str, Tuple[float, str, str]]:
 
         # Load Jinja2 template
         template = self.environment.get_template(self.file_templates[ctx.getRuleIndex()])
@@ -113,7 +114,7 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
         if ctx.test_flags:
             self.visit(ctx.test_flags)
         # Get user path
-        self.visit(ctx.src_path())
+        self.visit(ctx.srcPath())
         # Write pf file
         abs_path: str = os.path.join(self.work_path, self.test_folder, f"{name}.{self.file_suffix}")
         file_attr = self.files.get(abs_path)  # TODO None
@@ -133,8 +134,8 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
         # Return list of generated files
         return self.files
 
-    # Visit a parse tree produced by TestSuiteParser#src_path.
-    def visitSrc_path(self, ctx: TestSuiteParser.Src_pathContext):
+    # Visit a parse tree produced by TestSuiteParser#srcPath.
+    def visitSrcPath(self, ctx: TestSuiteParser.SrcPathContext):
         # Strip string terminals
         user_path: str = ctx.path.text.strip("\'")
         # TODO document
@@ -142,12 +143,12 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
         self.work_path = os.path.join(self.cwd, user_path)
 
     # Get rendered list of used modules
-    def visitUse_modules(self, ctx: TestSuiteParser.Use_modulesContext):
+    def visitUseModules(self, ctx: TestSuiteParser.UseModulesContext):
         template = self.environment.get_template(self.file_templates[ctx.getRuleIndex()])
         return template.render(modules=ctx.modules)
 
-    # Visit a parse tree produced by TestSuiteParser#test_vars.
-    def visitTest_vars(self, ctx: TestSuiteParser.Test_varsContext):
+    # Visit a parse tree produced by TestSuiteParser#testVars.
+    def visitTestVars(self, ctx: TestSuiteParser.TestVarsContext):
         template = self.environment.get_template(self.file_templates[ctx.getRuleIndex()])
 
         parm = []
@@ -179,8 +180,8 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
 
         return template.render(parm=parm, decl=decl, vars=vars)
 
-    # Visit a parse tree produced by TestSuiteParser#test_vars.
-    def visitTest_var(self, ctx: TestSuiteParser.Test_varContext):
+    # Visit a parse tree produced by TestSuiteParser#testVars.
+    def visitTestVar(self, ctx: TestSuiteParser.TestVarContext):
         template = self.environment.get_template(self.file_templates[ctx.getRuleIndex()])
         comment = self.visit(ctx.optionalDesc())
 
@@ -194,7 +195,6 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
         value = self.visit(ctx.expr())
 
         templates: List[str] = []
-
 
         match (self.found_par, self.found_ref):
             case [True, _] | [_, False]:
@@ -225,6 +225,11 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
 
     # Visit a parse tree produced by TestSuiteParser#funRef.
     def visitFunRef(self, ctx: TestSuiteParser.FunRefContext):
+        # TODO prc fun
+        return self.visitChildren(ctx)
+
+    # Visit a parse tree produced by TestSuiteParser#prcRef.
+    def visitPrcRef(self, ctx: TestSuiteParser.PrcRefContext):
         self.found_ref = True
         template = self.environment.get_template(self.file_templates[ctx.getRuleIndex()])
         name = ctx.ID().getText()
@@ -322,8 +327,8 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
         comment = ctx.comment.text
         return template.render(comment=comment)
 
-    # Visit a parse tree produced by TestSuiteParser#test_assertion.
-    def visitTest_assertion(self, ctx: TestSuiteParser.Test_assertionContext):
+    # Visit a parse tree produced by TestSuiteParser#testAssertion.
+    def visitTestAssertion(self, ctx: TestSuiteParser.TestAssertionContext):
         template = self.environment.get_template(self.file_templates[ctx.getRuleIndex()])
         directive = self.visit(ctx.directive)
         input_ = self.visit(ctx.input_)
@@ -347,14 +352,14 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
         # Render template
         return template.render(directive=directive, input_=input_, output=output, pub_attributes=pub_attributes, comment=comment, tag=tag)
 
-    # Visit a parse tree produced by TestSuiteParser#test_directive.
-    def visitTest_directive(self, ctx: TestSuiteParser.Test_directiveContext):
+    # Visit a parse tree produced by TestSuiteParser#testDirective.
+    def visitTestDirective(self, ctx: TestSuiteParser.TestDirectiveContext):
         template = self.environment.get_template(self.file_templates[ctx.getRuleIndex()])
         pp_directive = ctx.ppDirective.text
         return template.render(ppDirective=pp_directive)
 
-    # Visit a parse tree produced by TestSuiteParser#test_parameter.
-    def visitTest_parameter(self, ctx: TestSuiteParser.Test_parameterContext):
+    # Visit a parse tree produced by TestSuiteParser#testParameter.
+    def visitTestParameter(self, ctx: TestSuiteParser.TestParameterContext):
         template = self.environment.get_template(self.file_templates[ctx.getRuleIndex()])
         value = self.visit(ctx.value)
         return template.render(value=value)
@@ -378,7 +383,7 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
     def visitOverwritePF(self, ctx: TestSuiteParser.OverwritePFContext):
         self.overwrite = True
 
-    def writefile(self, path=None, filename=None):
+    def writeFile(self, path=None, filename=None):
         path = os.path.join(os.getcwd(), path, filename)
         if not os.path.exists(path):
             # Write rendered and optional merged content to file
