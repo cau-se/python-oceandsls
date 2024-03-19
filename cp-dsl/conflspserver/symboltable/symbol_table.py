@@ -183,7 +183,7 @@ class UnitSpecification():
     def add(self, unit: ComposedUnit):
         self.composedUnitList.append(unit)
 
-    def getUnits(self):
+    def get_units(self):
         return self.composedUnitList
 
 
@@ -1070,7 +1070,7 @@ class ArraySymbol(VariableSymbol):
 
     @property
     def value(self):
-        return self.toNormalizedArray()
+        return self.to_normalized_array()
 
     # !!!!EXPERIMENTAL!!!!
     def add(self, vector, val) -> None:
@@ -1176,24 +1176,24 @@ class ArraySymbol(VariableSymbol):
                 returnVal.append(None)
         return returnVal
 
-    def toNormalizedArray(self, recursive=True) -> list:
+    def to_normalized_array(self, recursive=True) -> list:
         """
         converts the array in a pyton list without nones
         :recursive: convert also arrays in arrays
         :return: the generated python list
         """
-        returnVal = []
+        return_value = []
         for i in range(len(self)):
             if i in self.vectors:
                 if not recursive:
-                    returnVal.append(self.get(i[0])) if isinstance(self.get(i), tuple) else returnVal.append(self.get(i))
+                    return_value.append(self.get(i[0])) if isinstance(self.get(i), tuple) else return_value.append(self.get(i))
                 else:
                     elem = self.get(i)
                     if isinstance(elem, ArraySymbol):
-                        returnVal.append(elem.toNormalizedArray())
+                        return_value.append(elem.to_normalized_array())
                     else:
-                        returnVal.append(elem[0]) if isinstance(elem, tuple) else returnVal.append(elem)
-        return returnVal
+                        return_value.append(elem[0]) if isinstance(elem, tuple) else return_value.append(elem)
+        return return_value
 
     def clear(self) -> None:
         '''
@@ -1216,15 +1216,15 @@ class GroupSymbol(ScopedSymbol):
     A Class for Group Declarations
     """
     description: Optional[str]
-    groupType: Optional[T]
+    group_type: Optional[T]
 
     def __init__(self, name: str, groupType: T, description: str = ""):
         super().__init__(name)
         self.description = description
-        self.groupType = groupType
+        self.group_type = groupType
 
-    def getGroupVars(self, localOnly=True) -> Coroutine[List[T]]:
-        return self.getSymbolsOfType(self.groupType)
+    def get_group_variables(self, localOnly=True) -> Coroutine[List[T]]:
+        return self.get_symbols_of_type(self.group_type)
 
 
 class NamespaceSymbol(ScopedSymbol):
@@ -1235,25 +1235,25 @@ class FeatureSymbol(ScopedSymbol):
     """
     A standalone function/procedure/rule.
     """
-    returnType: Optional[Type]  # Can be null if result is void.
+    return_type: Optional[Type]  # Can be null if result is void.
     is_activated: bool = False  # set if the feature is activated
 
     def __init__(self, name: str, description: str = "", returnType: Type = None):
         super().__init__(name)
-        self.returnType = returnType
+        self.return_type = returnType
         self.is_activated = False
         self.description = description
 
-    def getVariables(self, localOnly=True) -> Coroutine[List[T]]:
+    def get_variables(self, localOnly=True) -> Coroutine[List[T]]:
         return self.getNestedSymbolsOfTypeSync(VariableSymbol)
 
-    def getParameters(self, localOnly=True) -> Coroutine[List[T]]:
+    def get_parameters(self, localOnly=True) -> Coroutine[List[T]]:
         return self.getNestedSymbolsOfTypeSync(VariableSymbol)
 
-    def getUnits(self, localOnly=True) -> Coroutine[List[T]]:
+    def get_units(self, localOnly=True) -> Coroutine[List[T]]:
         return self.getNestedSymbolsOfTypeSync(UnitSymbol)
 
-    def getFeatures(self, localOnly=True) -> Coroutine[List[T]]:
+    def get_features(self, localOnly=True) -> Coroutine[List[T]]:
         return self.getNestedSymbolsOfTypeSync(FeatureSymbol)
 
 
@@ -1326,14 +1326,14 @@ class SymbolTable(ScopedSymbol):
         while i < len(parts) - 1:
             namespace: NamespaceSymbol = await currentParent.resolve(parts[i], True)
             if namespace is None:
-                namespace = self.addNewSymbolOfType(NamespaceSymbol, currentParent, parts[i])
+                namespace = self.add_new_symbol_of_type(NamespaceSymbol, currentParent, parts[i])
 
             currentParent = namespace
             i += 1
 
         return self.addNewSymbolOfType(NamespaceSymbol, currentParent, parts[len(parts) - 1])
 
-    def addNewNamespaceFromPathSync(self, parent: Optional[ScopedSymbol], path: str, delimiter=".") -> NamespaceSymbol:
+    def add_new_namespace_from_path_sync(self, parent: Optional[ScopedSymbol], path: str, delimiter=".") -> NamespaceSymbol:
         """
         Synchronously adds a new namespace to the symbol table or the given parent. The path parameter specifies a
         single namespace name or a chain of namespaces (which can be e.g. "outer.intermittent.inner.final"). If any of
