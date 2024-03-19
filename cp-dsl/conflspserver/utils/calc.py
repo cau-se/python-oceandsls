@@ -20,8 +20,8 @@ import operator as op
 
 # Relative Imports
 from ..symboltable.symbol_table import SymbolTable, VariableSymbol, ArraySymbol, ScopedSymbol, EnumSymbol
-from ..gen.python.Configuration.ConfigurationParser import ConfigurationParser
-from ..gen.python.Declaration.DeclarationParser import DeclarationParser
+from conflspserver.gen.python.Configuration.ConfigurationParser import ConfigurationParser
+from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
 from ..symboltable.symbol_table import ArraySymbol, SymbolTable
 
 
@@ -233,7 +233,7 @@ class DeclarationCalculator():
             return True
 
     def calculate(self) -> SymbolTable:
-        '''writes the calculated values in the value parameter of every paremeter found in symbol_table'''
+        '''writes the calculated values in the value parameter of every parameter found in symbol_table'''
 
         def recursion_helper(element):
             if isinstance(element, VariableSymbol):

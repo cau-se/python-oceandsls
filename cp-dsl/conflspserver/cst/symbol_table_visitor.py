@@ -24,8 +24,8 @@ from antlr4.tree.Tree import ParseTree
 from antlr4 import InputStream, CommonTokenStream
 
 from ..gen.python.Configuration.ConfigurationParser import ConfigurationParser
-from ..gen.python.Declaration.DeclarationParser import DeclarationParser
-from ..gen.python.Declaration.DeclarationLexer import DeclarationLexer
+from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
+from dcllspserver.gen.python.Declaration.DeclarationLexer import DeclarationLexer
 # user relative imports
 from .symbol_table_visitor_dcl import SymbolTableVisitorDcl as DeclSymbolTableVisitor
 from ..symboltable.symbol_table import SymbolTable, P, T, GroupSymbol, FeatureSymbol, SymbolTableOptions, VariableSymbol, FundamentalUnit, UnitPrefix, \
@@ -37,44 +37,53 @@ from ..gen.python.Configuration.ConfigurationParser import ConfigurationParser
 
 import os
 
+# NOTE: Method names starting with visit are required to look like this, as parts of the grammar
+# are named in that way
 
 class SymbolTableVisitor(ConfigurationVisitor, Generic[T]):
-    _symbolTable: SymbolTable
+    _symbol_table: SymbolTable
+    
+    _generator_selector: str
 
     def __init__(self, name: str = '', cwd: str = "."):
         super().__init__()
         # creates a new symboltable with no duplicate symbols
-        self._symbolTable = SymbolTable(name, SymbolTableOptions(False))
+        self._symbol_table = SymbolTable(name, SymbolTableOptions(False))
         # TODO scope marker
-        # self._scope = self._symbolTable.addNewSymbolOfType( ScopedSymbol, None )
-        self._scope = self._symbolTable
+        # self._scope = self._symbol_table.addNewSymbolOfType( ScopedSymbol, None )
+        self._scope = self._symbol_table
         self.cwd = cwd
-        self.configurationList = []
+        self.configuration_list = []
 
     @property
-    def symbolTable(self) -> SymbolTable:
-        return self._symbolTable
+    def symbol_table(self) -> SymbolTable:
+        return self._symbol_table
+    
+    @property
+    def generator_selector(self) -> str:
+        return self._generator_selector
 
-    def defaultResult(self) -> SymbolTable:
-        return self._symbolTable
+    def default_result(self) -> SymbolTable:
+        return self._symbol_table
 
     def visitConfigurationModel(self, ctx: ConfigurationParser.ConfigurationModelContext):
         # Symboltable has to be filled with Declaration Defaults
         table = self.visitDeclarationTable(ctx.declarationModel.text)
         # add all symbols to symboltable
-        self._symbolTable = table
+        self._symbol_table = table
         return super().visitConfigurationModel(ctx)
 
     def visitDeclarationTable(self, declarationName: str):
-        declVisitor = DeclSymbolTableVisitor(declarationName + "_ConfDeclVisit")
+        declaration_visitor = DeclSymbolTableVisitor(declarationName + "_ConfDeclVisit")
+        self._generator_selector = declarationName
         with open(os.path.join(self.cwd, declarationName + ".decl")) as dcl_file:
             data = dcl_file.read()
             input_stream = InputStream(data)
             lexer = DeclarationLexer(input_stream)
             stream = CommonTokenStream(lexer)
             dcl_parsed = DeclarationParser(stream).declarationModel()
-            declVisitor.visit(dcl_parsed)
-        return declVisitor.symbolTable
+            declaration_visitor.visit(dcl_parsed)
+        return declaration_visitor.symbol_table
 
     def visitParameterAssignment(self, ctx: ConfigurationParser.ParameterAssignmentContext):
         # define the given Parameter
@@ -85,7 +94,7 @@ class SymbolTableVisitor(ConfigurationVisitor, Generic[T]):
         if prefix != UnitPrefix.NoP:
             symbol.unit.prefix = prefix
         symbol.configuration.append(ctx)
-        self.configurationList.append((symbol, len(symbol.configuration) - 1))
+        self.configuration_list.append((symbol, len(symbol.configuration) - 1))
 
     def visitParameterGroup(self, ctx: ConfigurationParser.ParameterGroupContext):
         self.withScope(GroupSymbol, ctx, ctx.declaration.text, lambda: self.visitChildren(ctx))
@@ -128,12 +137,12 @@ class SymbolTableVisitor(ConfigurationVisitor, Generic[T]):
             stream = CommonTokenStream(lexer)
             dcl_parsed = ConfigurationParser(stream).configurationModel()
             confVisitor.visit(dcl_parsed)
-            table = confVisitor._symbolTable
+            table = confVisitor._symbol_table
         scope = None
         # go through all symbols
         for i in range(1, len(info)):
             scope = table.get_all_nested_symbols_sync(info[i])[0]
-        self._symbolTable.addSymbol(scope)
+        self._symbol_table.addSymbol(scope)
 
     def stringToPrefix(self, input: str):
         for prefix in UnitPrefix:
@@ -142,7 +151,7 @@ class SymbolTableVisitor(ConfigurationVisitor, Generic[T]):
         return UnitPrefix.NoP
 
     def withScope(self, type: T, tree: ParseTree, name: str, action: Callable) -> T:
-        scope = self._symbolTable.get_all_nested_symbols_sync(name)
+        scope = self._symbol_table.get_all_nested_symbols_sync(name)
         if len(scope) < 1:
             print("Symbol with name " + str(name) + " could not be found")
             return

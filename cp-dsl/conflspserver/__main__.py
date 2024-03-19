@@ -25,7 +25,7 @@ logging.basicConfig(filename="confDSL_pygls.log", level=logging.DEBUG, filemode=
 
 
 def add_arguments(parser):
-    parser.prog = "CONF-Language-Server",
+    parser.prog = "Configuration-Language-Server",
     parser.description = "A program for a language server based on the configuration ocean-dsl",
     parser.epilog = "ConfigurationDSL Language Server"
 

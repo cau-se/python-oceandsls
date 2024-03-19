@@ -204,25 +204,9 @@ O_Units
 #O_save_time_endper
 
 
-Code_Extension(0) = f90
-Code_Extension(1) = f
-Code_Extension(2) = f
-Code_Extension(3) = f
-Code_Extension(4) = f
-Code_Extension(5) = f
-Code_Extension(6) = f
-Code_Extension(7) = f
 
 
 ### source code directories (if excluded, exclude equivalent option)
-Source_Directory(0) = updates/f90
-Source_Directory(1) = source/common
-Source_Directory(2) = source/netcdf
-Source_Directory(3) = source/embm
-Source_Directory(4) = source/ice
-Source_Directory(5) = source/mtlm
-Source_Directory(6) = source/mom
-Source_Directory(7) = source/sed
 
 ### data source directories
 Data_Source(1) = data.100.100.19

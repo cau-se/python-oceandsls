@@ -17,11 +17,12 @@ import argparse
 import os
 
 # relative imports
-from .conflspserver.gen.python.Configuration.ConfigurationLexer import ConfigurationLexer
-from .conflspserver.gen.python.Configuration.ConfigurationParser import ConfigurationParser
-from .conflspserver.cst.symbol_table_visitor import SymbolTableVisitor
-from .conflspserver.utils.calc import DeclarationCalculator, ConfigurationCalculator
-from .conflspserver.filewriter.code_generator import UvicCodeGenerator, mitGcmCodeGenerator
+from conflspserver.gen.python.Configuration.ConfigurationLexer import ConfigurationLexer
+from conflspserver.gen.python.Configuration.ConfigurationParser import ConfigurationParser
+from conflspserver.cst.symbol_table_visitor import SymbolTableVisitor
+from conflspserver.utils.calc import DeclarationCalculator, ConfigurationCalculator
+from conflspserver.generators.uvic.code_generator import UvicCodeGenerator
+from conflspserver.generators.mitgcm.code_generator import MitGcmCodeGenerator
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -35,57 +36,60 @@ if __name__ == '__main__':
     parser.add_argument(
         "-o", "--out", dest="out", help="path to generated files"
     )
-    parser.add_argument(
-        "-u", "--uvic", dest="uvic", action="store_true", help="flag to generate for uvic"
-    )
-    parser.add_argument(
-        "-m", "--mitgcm", dest="mitgcm", action="store_true", help="flag to generate for mitgcm"
-    )
     args = parser.parse_args()
     if not args.path:
         print("ERROR: Please give a configuration file as argument!")
         parser.print_help()
     else:
-        currPath = args.path if os.path.isabs(args.path) else os.path.join(os.getcwd(), args.path)
-        if not os.path.exists(currPath) and os.path.isfile(currPath):
-            print("ERROR: wether no file or no correct path given!")
-        estimatedcwd = ""
-        for i in currPath.split(os.sep):
+        current_path = args.path if os.path.isabs(args.path) else os.path.join(os.getcwd(), args.path)
+        if not os.path.exists(current_path) and os.path.isfile(current_path):
+            print("ERROR: whether no file or no correct path given!")
+        estimated_working_directory = ""
+        for i in current_path.split(os.sep):
             if i and not i.endswith(".oconf"):
-                estimatedcwd += os.sep
-                estimatedcwd += i
-        tableVisitor = SymbolTableVisitor("user_conf_1", estimatedcwd)
-        outputPath = args.out if args.out else os.path.join(estimatedcwd, "gen")
-        if not os.path.isdir(outputPath):
-            os.mkdir(outputPath)
-        with open(currPath) as conf_file:
+                estimated_working_directory += os.sep
+                estimated_working_directory += i
+        configuration_visitor = SymbolTableVisitor("user_conf_1", estimated_working_directory)
+        output_path = args.out if args.out else os.path.join(estimated_working_directory, "gen")
+        if not os.path.isdir(output_path):
+            os.mkdir(output_path)
+        with open(current_path) as conf_file:
             data = conf_file.read()
             input_stream = InputStream(data)
             lexer = ConfigurationLexer(input_stream)
             stream = CommonTokenStream(lexer)
             dcl_parsed = ConfigurationParser(stream).configurationModel()
-            tableVisitor.visit(dcl_parsed)
+            configuration_visitor.visit(dcl_parsed)
             try:
-                tableCalc = DeclarationCalculator(tableVisitor.symbolTable)
+                declaration_calculator = DeclarationCalculator(configuration_visitor.symbol_table)
             except AttributeError as e:
                 print("ERROR: Could not parse Declaration-File correctly")
                 print(e)
             # try:
-            table = ConfigurationCalculator(tableCalc.calculate(), tableVisitor.configurationList).calculate()
+            declaration_result = declaration_calculator.calculate()
+            #declaration_result.
+            table = ConfigurationCalculator(declaration_result, configuration_visitor.configuration_list).calculate()
             # except AttributeError as e:
             #     print("ERROR: Could not parse Configuration-File")
             #     print(e)
-            if args.uvic:
+            if configuration_visitor.generator_selector == 'uvic':
                 try:
-                    generator = UvicCodeGenerator(table, outputPath)
+                    generator = UvicCodeGenerator(table, output_path)
                     generator.generate()
                 except AttributeError as e:
                     print("ERROR: Could not generate uvic files")
                     print(e)
-            if args.mitgcm:
+            elif configuration_visitor.generator_selector == 'mitgcm':
                 try:
-                    generator = mitGcmCodeGenerator(table, outputPath)
+                    generator = MitGcmCodeGenerator(table, output_path)
                     generator.generate()
                 except AttributeError as e:
                     print("ERROR: could not generate mitgcm files")
+                    print(e)
+            elif configuration_visitor.generator_selector == 'eval':
+                try:
+                    generator = EvalCodeGenerator(table, output_path)
+                    generator.generate()
+                except AttributeError as e:
+                    print("ERROR: could not generate eval files")
                     print(e)

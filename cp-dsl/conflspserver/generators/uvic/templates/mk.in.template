@@ -1,7 +1,7 @@
-{%- macro codeExtensionsTemplate(elem, count) -%}
+{%- macro code_extensions_template(elem, count) -%}
     Code_Extension({{ count }}) = {% if isinstance(elem, tuple) %}{{ elem[0] }}{% else %}{{ elem }}{% endif %}
 {%- endmacro -%}
-{%- macro printSourceDirectory(elem, count) -%}
+{%- macro print_source_directory(elem, count) -%}
     Source_Directory({{ count }}) = {{ elem }}
 {%- endmacro -%}
 for uvic
@@ -17,11 +17,11 @@ Model_Options =
 {% for feature in features %}{% if feature.is_activated %}O_{{feature.name}}{% else %}#O_{{feature.name}}{% endif %}
 {% endfor %}
 
-{% for i in range(source["code_extensions"].__len__()) %}{{ codeExtensionsTemplate(source["code_extensions"][i], i) }}
+{% for i in range(source["code_extensions"].__len__()) %}{{ code_extensions_template(source["code_extensions"][i], i) }}
 {% endfor %}
 
 ### source code directories (if excluded, exclude equivalent option)
-{% for i in range(source["directories"].__len__()) %}{{ printSourceDirectory(source["directories"][i], i) }}
+{% for i in range(source["directories"].__len__()) %}{{ print_source_directory(source["directories"][i], i) }}
 {% endfor %}
 ### data source directories
 Data_Source(1) = data.100.100.19
