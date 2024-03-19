@@ -1,4 +1,4 @@
-// Generated from TestSuite.g4 by ANTLR 4.13.0
+// Generated from TestSuite.g4 by ANTLR 4.13.1
 package TestSuite;
 import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
 
@@ -18,21 +18,21 @@ public class TestSuiteBaseVisitor<T> extends AbstractParseTreeVisitor<T> impleme
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitTest_suite(TestSuiteParser.Test_suiteContext ctx) { return visitChildren(ctx); }
+	@Override public T visitTestSuite(TestSuiteParser.TestSuiteContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitTest_case(TestSuiteParser.Test_caseContext ctx) { return visitChildren(ctx); }
+	@Override public T visitTestCase(TestSuiteParser.TestCaseContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitTest_flag(TestSuiteParser.Test_flagContext ctx) { return visitChildren(ctx); }
+	@Override public T visitTestFlag(TestSuiteParser.TestFlagContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -60,21 +60,21 @@ public class TestSuiteBaseVisitor<T> extends AbstractParseTreeVisitor<T> impleme
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitSrc_path(TestSuiteParser.Src_pathContext ctx) { return visitChildren(ctx); }
+	@Override public T visitSrcPath(TestSuiteParser.SrcPathContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitTest_vars(TestSuiteParser.Test_varsContext ctx) { return visitChildren(ctx); }
+	@Override public T visitTestVars(TestSuiteParser.TestVarsContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitTest_var(TestSuiteParser.Test_varContext ctx) { return visitChildren(ctx); }
+	@Override public T visitTestVar(TestSuiteParser.TestVarContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -88,21 +88,21 @@ public class TestSuiteBaseVisitor<T> extends AbstractParseTreeVisitor<T> impleme
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitUse_modules(TestSuiteParser.Use_modulesContext ctx) { return visitChildren(ctx); }
+	@Override public T visitUseModules(TestSuiteParser.UseModulesContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitTest_module(TestSuiteParser.Test_moduleContext ctx) { return visitChildren(ctx); }
+	@Override public T visitTestModule(TestSuiteParser.TestModuleContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitTest_assertion(TestSuiteParser.Test_assertionContext ctx) { return visitChildren(ctx); }
+	@Override public T visitTestAssertion(TestSuiteParser.TestAssertionContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -116,7 +116,14 @@ public class TestSuiteBaseVisitor<T> extends AbstractParseTreeVisitor<T> impleme
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitTest_parameter(TestSuiteParser.Test_parameterContext ctx) { return visitChildren(ctx); }
+	@Override public T visitExtendedTestParameter(TestSuiteParser.ExtendedTestParameterContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
+	@Override public T visitTestParameter(TestSuiteParser.TestParameterContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -214,7 +221,7 @@ public class TestSuiteBaseVisitor<T> extends AbstractParseTreeVisitor<T> impleme
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitTest_directive(TestSuiteParser.Test_directiveContext ctx) { return visitChildren(ctx); }
+	@Override public T visitTestDirective(TestSuiteParser.TestDirectiveContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -362,6 +369,13 @@ public class TestSuiteBaseVisitor<T> extends AbstractParseTreeVisitor<T> impleme
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
 	@Override public T visitVarRef(TestSuiteParser.VarRefContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
+	@Override public T visitPrcRef(TestSuiteParser.PrcRefContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *

@@ -35,6 +35,7 @@ from ..symboltable.symbol_table import FunctionSymbol, ModuleSymbol, ParameterSy
 # Debug Log
 logger = logging.getLogger(__name__)
 
+
 class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
     _symbol_table: SymbolTable
     _test_path: str
@@ -55,18 +56,18 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
     def work_path(self) -> str:
         return self._test_work_path
 
-    # Visit a parse tree produced by TestSuiteParser#test_suite.
-    def visitTest_suite(self, ctx: TestSuiteParser.Test_suiteContext):
+    # Visit a parse tree produced by TestSuiteParser#testSuite.
+    def visitTestSuite(self, ctx: TestSuiteParser.TestSuiteContext):
         self.visitChildren(ctx)
         return self.symbol_table
 
-    # Visit a parse tree produced by TestSuiteParser#test_case.
-    def visitTest_case(self, ctx: TestSuiteParser.Test_caseContext):
+    # Visit a parse tree produced by TestSuiteParser#testCase.
+    def visitTestCase(self, ctx: TestSuiteParser.TestCaseContext):
         # Extract symbols from path, scope and variables
-        return self.with_scope(ctx, TestCaseSymbol, lambda: self.visitChildren(ctx), ctx.ID().getText())
+        return self.withScope(ctx, TestCaseSymbol, lambda: self.visitChildren(ctx), ctx.ID().getText())
 
-    # Visit a parse tree produced by TestSuiteParser#test_var.
-    def visitTest_var(self, ctx: TestSuiteParser.Test_varContext):
+    # Visit a parse tree produced by TestSuiteParser#testVar.
+    def visitTestVar(self, ctx: TestSuiteParser.TestVarContext):
         decl = self.visit(ctx.varDeclaration())
         return self._symbol_table.add_new_symbol_of_type(VariableSymbol, self._scope, decl[0], ctx.value, decl[1], decl[2])
 
@@ -125,8 +126,8 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
     def visitRef(self, ctx: TestSuiteParser.RefContext):
         return self.visitChildren(ctx)
 
-    # Visit a parse tree produced by TestSuiteParser#funRef.
-    def visitFunRef(self, ctx: TestSuiteParser.FunRefContext):
+    # Visit a parse tree produced by TestSuiteParser#prcRef.
+    def visitPrcRef(self, ctx: TestSuiteParser.PrcRefContext):
         name = ctx.ID().getText()
         args = []
         for arg in ctx.args:
@@ -180,7 +181,7 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
         return ctx.lowerBound + ":" + ctx.upperBound
 
     # Save the source path to scan for existing variables
-    def visitSrc_path(self, ctx: TestSuiteParser.Src_pathContext):
+    def visitSrcPath(self, ctx: TestSuiteParser.SrcPathContext):
         # Strip string terminals
         user_path: str = ctx.path.text.strip("\'")
 
@@ -190,7 +191,7 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
         self._test_path: str = os.path.join(self._test_work_path, user_path)
 
     # Get rendered list of used modules
-    def visitUse_modules(self, ctx: TestSuiteParser.Use_modulesContext):
+    def visitUseModules(self, ctx: TestSuiteParser.UseModulesContext):
 
         # Add module symbols to symboltable for XML scope filter
         module_symbols: List[ModuleSymbol] = []
@@ -215,7 +216,7 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
                 parent_scopes: List[str] = parent_scopes.split(".") if parent_scopes else []
                 scope_sym: ScopedSymbol = self._scope
                 for scope in parent_scopes:
-                    scope_sym = scope_sym.resolve_sync(scope)
+                    scope_sym = scope_sym.resolve_sync(scope, ScopedSymbol)
 
                 match scope_type:
                     case "module":
@@ -225,7 +226,7 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
                         current_scope = self._scope
                         self._scope = scope_sym
                         # Insert Subroutine symbol with current scope name
-                        self.with_scope(None, RoutineSymbol, lambda: list(map(lambda arg: self.addRoutineParams(arg), scope_args)), scope_name)
+                        self.withScope(None, RoutineSymbol, lambda: list(map(lambda arg: self.addRoutineParams(arg), scope_args)), scope_name, is_generated)
                         self._scope = current_scope
                     case "function":
                         current_scope = self._scope
@@ -233,7 +234,7 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
                         return_type = get_fundamental_type(return_type)
                         self._scope = scope_sym
                         # Insert Function symbol with scope name, parameters and return type
-                        self.with_scope(None, FunctionSymbol, lambda: list(
+                        self.withScope(None, FunctionSymbol, lambda: list(
                             map(lambda arg: self.addRoutineParams(arg), scope_args)), scope_name, return_type, is_generated)
                         self._scope = current_scope
                     case _:
@@ -245,7 +246,7 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
                 variableScope: List[str] = variableScope.split(".")
                 scope_sym = self._scope
                 for scope in variableScope:
-                    scope_sym = scope_sym.resolve_sync(scope)
+                    scope_sym = scope_sym.resolve_sync(scope, ScopedSymbol)
 
                 # Map type to symboltable
                 variable_type = get_fundamental_type(variable_type)
@@ -258,23 +259,22 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
         except OSError as e:
             logger.error("Error deleting temporary xml directory : %s - %s." % (e.filename, e.strerror))
 
-    # Visit a parse tree produced by TestSuiteParser#test_module.
-    def visitTest_module(self, ctx: TestSuiteParser.Test_moduleContext):
+    # Visit a parse tree produced by TestSuiteParser#testModule.
+    def visitTestModule(self, ctx: TestSuiteParser.TestModuleContext):
         # Add module to symboltable and return module symbol to included modules of testcase
-        return self.with_scope(ctx, ModuleSymbol, lambda: self._scope, ctx.name.text, None, self._scope)
+        return self.withScope(ctx, ModuleSymbol, lambda: self._scope, ctx.name.text, None, self._scope)
 
     def addRoutineParams(self, paramName: str = None):
         self._symbol_table.add_new_symbol_of_type(ParameterSymbol, self._scope, paramName)
 
-    def with_scope(self, tree: ParseTree, t: type, action: Callable, *my_args: P.args or None, **my_kwargs: P.kwargs or None) -> T:
+    def withScope(self, tree: ParseTree, t: type, action: Callable, *my_args: P.args or None, **my_kwargs: P.kwargs or None) -> T:
         """
         Add a scoped symbol to the symboltable and recursively add all symbols inside this scope the symboltable
         :param tree: Context of the scoped symbol
-        :param sibling: Add scoped symbol as sibling of current scope
         :param t: Symbol type
         :param action: Lambda function to add children symbols to symboltable
         :param my_args: Arguments of symbol type
-        :param my_kwargs: k_arguments of symbol type
+        :param my_kwargs: named Arguments of symbol type
         :return: Current scope
         """
         # Add scoped symbol to symboltable

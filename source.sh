@@ -1,13 +1,13 @@
 # enable ANTLR support
 # example
-if [ -f /usr/local/lib/antlr-4.13.0-complete.jar ] && [ -f /usr/local/lib/antlrworks-1.5.2-complete.jar ]; then
-    export CLASSPATH=".:/usr/local/lib/antlr-4.13.0-complete.jar:/usr/local/lib/antlrworks-1.5.2-complete.jar:$CLASSPATH"
-    alias antlr4='java -jar /usr/local/lib/antlr-4.13.0-complete.jar'
+if [ -f /usr/local/lib/antlr-4.13.1-complete.jar ] && [ -f /usr/local/lib/antlrworks-1.5.2-complete.jar ]; then
+    export CLASSPATH=".:/usr/local/lib/antlr-4.13.1-complete.jar:/usr/local/lib/antlrworks-1.5.2-complete.jar:$CLASSPATH"
+    alias antlr4='java -jar /usr/local/lib/antlr-4.13.1-complete.jar'
     alias antlrworks='java -jar /usr/local/lib/antlrworks-1.5.2-complete.jar'
     alias grun='java org.antlr.v4.gui.TestRig'
 
     #export GRUN_CMD='java -cp ../:$CLASSPATH org.antlr.v4.gui.TestRig'
-    export GRUN_CMD='java -cp .:../:/usr/local/lib/antlr-4.13.0-complete.jar:/usr/local/lib/antlrworks-1.5.2-complete.jar: org.antlr.v4.gui.TestRig'
+    export GRUN_CMD='java -cp .:../:/usr/local/lib/antlr-4.13.1-complete.jar:/usr/local/lib/antlrworks-1.5.2-complete.jar: org.antlr.v4.gui.TestRig'
 
 
     #Shows diagnostic output from lexer and parser if any

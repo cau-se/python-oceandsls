@@ -1,4 +1,4 @@
-# Generated from TestSuite.g4 by ANTLR 4.13.0
+# Generated from TestSuite.g4 by ANTLR 4.13.1
 from antlr4 import *
 if "." in __name__:
     from .TestSuiteParser import TestSuiteParser
@@ -9,18 +9,18 @@ else:
 
 class TestSuiteVisitor(ParseTreeVisitor):
 
-    # Visit a parse tree produced by TestSuiteParser#test_suite.
-    def visitTest_suite(self, ctx:TestSuiteParser.Test_suiteContext):
+    # Visit a parse tree produced by TestSuiteParser#testSuite.
+    def visitTestSuite(self, ctx:TestSuiteParser.TestSuiteContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by TestSuiteParser#test_case.
-    def visitTest_case(self, ctx:TestSuiteParser.Test_caseContext):
+    # Visit a parse tree produced by TestSuiteParser#testCase.
+    def visitTestCase(self, ctx:TestSuiteParser.TestCaseContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by TestSuiteParser#test_flag.
-    def visitTest_flag(self, ctx:TestSuiteParser.Test_flagContext):
+    # Visit a parse tree produced by TestSuiteParser#testFlag.
+    def visitTestFlag(self, ctx:TestSuiteParser.TestFlagContext):
         return self.visitChildren(ctx)
 
 
@@ -39,18 +39,18 @@ class TestSuiteVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by TestSuiteParser#src_path.
-    def visitSrc_path(self, ctx:TestSuiteParser.Src_pathContext):
+    # Visit a parse tree produced by TestSuiteParser#srcPath.
+    def visitSrcPath(self, ctx:TestSuiteParser.SrcPathContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by TestSuiteParser#test_vars.
-    def visitTest_vars(self, ctx:TestSuiteParser.Test_varsContext):
+    # Visit a parse tree produced by TestSuiteParser#testVars.
+    def visitTestVars(self, ctx:TestSuiteParser.TestVarsContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by TestSuiteParser#test_var.
-    def visitTest_var(self, ctx:TestSuiteParser.Test_varContext):
+    # Visit a parse tree produced by TestSuiteParser#testVar.
+    def visitTestVar(self, ctx:TestSuiteParser.TestVarContext):
         return self.visitChildren(ctx)
 
 
@@ -59,18 +59,18 @@ class TestSuiteVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by TestSuiteParser#use_modules.
-    def visitUse_modules(self, ctx:TestSuiteParser.Use_modulesContext):
+    # Visit a parse tree produced by TestSuiteParser#useModules.
+    def visitUseModules(self, ctx:TestSuiteParser.UseModulesContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by TestSuiteParser#test_module.
-    def visitTest_module(self, ctx:TestSuiteParser.Test_moduleContext):
+    # Visit a parse tree produced by TestSuiteParser#testModule.
+    def visitTestModule(self, ctx:TestSuiteParser.TestModuleContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by TestSuiteParser#test_assertion.
-    def visitTest_assertion(self, ctx:TestSuiteParser.Test_assertionContext):
+    # Visit a parse tree produced by TestSuiteParser#testAssertion.
+    def visitTestAssertion(self, ctx:TestSuiteParser.TestAssertionContext):
         return self.visitChildren(ctx)
 
 
@@ -79,8 +79,13 @@ class TestSuiteVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by TestSuiteParser#test_parameter.
-    def visitTest_parameter(self, ctx:TestSuiteParser.Test_parameterContext):
+    # Visit a parse tree produced by TestSuiteParser#extendedTestParameter.
+    def visitExtendedTestParameter(self, ctx:TestSuiteParser.ExtendedTestParameterContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by TestSuiteParser#testParameter.
+    def visitTestParameter(self, ctx:TestSuiteParser.TestParameterContext):
         return self.visitChildren(ctx)
 
 
@@ -149,8 +154,8 @@ class TestSuiteVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by TestSuiteParser#test_directive.
-    def visitTest_directive(self, ctx:TestSuiteParser.Test_directiveContext):
+    # Visit a parse tree produced by TestSuiteParser#testDirective.
+    def visitTestDirective(self, ctx:TestSuiteParser.TestDirectiveContext):
         return self.visitChildren(ctx)
 
 
@@ -256,6 +261,11 @@ class TestSuiteVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by TestSuiteParser#varRef.
     def visitVarRef(self, ctx:TestSuiteParser.VarRefContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by TestSuiteParser#prcRef.
+    def visitPrcRef(self, ctx:TestSuiteParser.PrcRefContext):
         return self.visitChildren(ctx)
 
 

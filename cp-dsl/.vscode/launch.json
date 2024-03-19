@@ -25,7 +25,7 @@
       "name": "Launch DCL Server",
       "type": "python",
       "request": "launch",
-      "module": "dcllspserver",
+      "module": "dclLSPServer",
       "args": [
         "--tcp"
       ],

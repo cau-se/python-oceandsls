@@ -1,0 +1,5 @@
+{% if routineType == "SUBROUTINE" %}
+{% include "testRoutine_template.txt" %}
+{% elif routineType == "FUNCTION" %}
+{% include "testFunction_template.txt" %}
+{% endif %}

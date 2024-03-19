@@ -12,7 +12,7 @@ This project contains multiple DSLs for ocean and earth system models.
 - TDD-DSL testing DSL for test-driven development
 - BGC-DSL language to specify biogeochemical models
 
-Documentation including the languages and architecture can be found in the `doc`.
+Documentation can be found in the `doc`.
 
 ## License
 
@@ -124,21 +124,22 @@ Check `npm` version
 
 `npm --version`
 
-Outputs, e.g., 10.4.0 or a later version
+### Run Example using VSCode
 
 In case the package is not up-to-date, install latest `npm` version globally
 (`-g` or `--global`)
 
 sudo npm install -g npm@latest`
 
-Output:
-```
-changed 14 packages in 1s
+### Troubleshooting
 
-24 packages are looking for funding
-  run `npm fund` for details
-```
-Depending on your installation, the numbers may differ.
+- If VS Code doesn`t automatically locate the interpreter of the virtual environment. [Set it manually](https://code.visualstudio.com/docs/python/environments#_manually-specify-an-interpreter)
+  - Open Command prompt
+  `Ctrl/Cmd+Shift+P`
+    - Run select interpreter command
+  `Python: Select Interpreter`
+  - Alternative create `.vscode/settings.json` file in `python-oceandsls/cp-dsl` directory and set `python.defaultInterpreterPath` to point to the virtual environment
+    - settings.json
 
 Install latest `node` version
 
@@ -156,14 +157,11 @@ Install the dependencies to the global mode (`-g` or `--global`)
 
 `sudo npm update -g`
 
-Output:
-```
-removed 25 packages, and changed 47 packages in 1s
+              // Object with environment variables that will be added to the VS Code process to be used by the terminal on OS X
+              "terminal.integrated.env.osx": {"PYTHONPATH": "${workspaceFolder}/.."},
 
-24 packages are looking for funding
-  run `npm fund` for details
-```
-The version numbers may differ in your installation.
+              // Object with environment variables that will be added to the VS Code process to be used by the terminal on Linux
+              "terminal.integrated.env.linux": {"PYTHONPATH": "${workspaceFolder}/.."},
 
 ### Install and setup VScode
 
@@ -188,4 +186,3 @@ Search for the Python plugin as depicted in the screenshot below.
 You can either browse the list or type the name in the search field at the top.
 
 ![vscode install python](images/vscode-install-python.png)
-
