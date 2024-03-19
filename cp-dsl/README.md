@@ -35,7 +35,7 @@ Instructions are in the main README.md
 After installing the dependencies and setting up the virutal environment,
 go to the extension directory `python-oceandsls/cp-dsl`
 
-### Include LSPs in VSCode
+# Setup VSCode
 
 We first install the LSP for the Declaration DSL.
 Therefore, open `python-oceandsls/cp-dsl` in VSCode
@@ -78,7 +78,7 @@ Start Debugging via **F5**
 
 This opens a new VSCode instance with support for the Configuration DSL.
 
-# Troubleshooting
+## Troubleshooting VSCode
 
 - If VS Code doesn`t automatically locate the interpreter of the virtual environment. [Set it manually](https://code.visualstudio.com/docs/python/environments#_manually-specify-an-interpreter)
   - Open Command prompt
@@ -116,7 +116,7 @@ This opens a new VSCode instance with support for the Configuration DSL.
   - E.g. reset npm version to 9.2.0
     - `sudo npm install -g npm@9.2.0`
 
-## Setup Vi
+# Setup Vi
 
 # Setup Emacs
 
@@ -144,10 +144,7 @@ And run the generator as follows.
 `python -m cp-dsl [-u|-m] -f <path-to-oconf-file>`
 
 We provide 2 different models to test and experiment with, which can be found in
-`python-oceandsls/cp-dsl/input`:
-- mitgcm: to generate for mitgcm, use flag `-m`
-- uvic: to generate for uvic, use flag `-u`
-
+`python-oceandsls/cp-dsl/input`.
 The compiler writes the generated files in the `gen` folder in your current
 folder. With flag `-o <path-to-your-output-folder>` it is possible to define a
 sepcific output folder.
@@ -162,11 +159,11 @@ The compiler can throw different errors and warnings while compiling the files:
 
 To try it out, we generate files for UVic with:
 
-`python -m cp-dsl -u -f input/UVic/configuration.oconf`
+`python -m cp-dsl -f input/UVic/configuration.oconf`
 
 The results will appear in `input/UVic/gen`
 
-## Using language-server
+# Using language-server
 not yet supported
 
 # Change or add templates
