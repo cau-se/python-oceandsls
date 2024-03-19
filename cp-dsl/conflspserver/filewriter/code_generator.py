@@ -84,14 +84,14 @@ class UvicCodeGenerator(StandartCodeGenerator):
             if elem.name == "general":
                 for i in elem.children():
                     if i.is_array:
-                        generalObj[i.name] = i.toNormalizedArray()
+                        generalObj[i.name] = i.to_normalized_array()
                     else:
                         # could be an enum so we need the string here
                         generalObj[i.name] = i.value[0] if isinstance(i.value, tuple) else i.value
             if elem.name == "source":
                 for i in elem.children():
                     if i.is_array:
-                        sourceObj[i.name] = i.toNormalizedArray()
+                        sourceObj[i.name] = i.to_normalized_array()
                     else:
                         generalObj[i.name] = i.value[0] if isinstance(i.value, tuple) else i.value
         mkPath = os.path.join(self.outputPath, "mk.in")

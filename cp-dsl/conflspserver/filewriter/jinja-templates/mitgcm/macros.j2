@@ -6,7 +6,7 @@
 	&
 {% endmacro -%}
 {%- macro parameterTemplate(param) -%}
-	{{ param.name }}={% if param.is_array %}{{ param.toNormalizedArray().__str__().replace("[", "").replace("]", "") }}{% else %}{{ valueTemplate(param.value) }}{% endif -%}
+	{{ param.name }}={% if param.is_array %}{{ param.to_normalized_array().__str__().replace("[", "").replace("]", "") }}{% else %}{{ valueTemplate(param.value) }}{% endif -%}
 {%- endmacro -%}
 {%- macro valueTemplate(val) -%}
 	{%- if isinstance(val, float) -%}{{val}}

@@ -1075,7 +1075,7 @@ class ArraySymbol(VariableSymbol):
 
     @property
     def value(self):
-        return self.toNormalizedArray()
+        return self.to_normalized_array()
 
     # !!!!EXPERIMENTAL!!!!
     def add(self, vector, val) -> None:
@@ -1181,7 +1181,7 @@ class ArraySymbol(VariableSymbol):
                 returnVal.append(None)
         return returnVal
 
-    def toNormalizedArray(self, recursive=True) -> list:
+    def to_normalized_array(self, recursive=True) -> list:
         """
         converts the array in a pyton list without nones
         :recursive: convert also arrays in arrays
@@ -1195,7 +1195,7 @@ class ArraySymbol(VariableSymbol):
                 else:
                     elem = self.get(i)
                     if isinstance(elem, ArraySymbol):
-                        returnVal.append(elem.toNormalizedArray())
+                        returnVal.append(elem.to_normalized_array())
                     else:
                         returnVal.append(elem[0]) if isinstance(elem, tuple) else returnVal.append(elem)
         return returnVal

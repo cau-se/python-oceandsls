@@ -12,7 +12,7 @@
     {{ parameter.name }}={% if not parameter.is_array -%}
                                 {% if isinstance(parameter.value, bool) %}.{{ parameter.value.__str__().lower() }}.{% else %}{{parameter.value}}{% endif %}
                            {%- else -%}
-                                {{ parameter.toNormalizedArray().__str__().replace("[", "").replace("]", "") }}
+                                {{ parameter.to_normalized_array().__str__().replace("[", "").replace("]", "") }}
                             {%- endif -%}
     {%- if not lastSymbol %},{% endif -%}
 {%- endmacro -%}

@@ -2,7 +2,7 @@
       {%- for parameter in group.getNestedSymbolsOfTypeSync(variableSymbol) -%}{{parameter.name}} {% endfor -%}
 {%- endmacro -%}
 {%- macro assignmentTemplate(group) -%}
-      {%- for parameter in group.getNestedSymbolsOfTypeSync(variableSymbol) %}      PARAMETER( {{ parameter.name }} = {% if parameter.is_array -%}{{ parameter.toNormalizedArray().__str__().replace("[", "").replace("]", "") }}{%- else -%}{{ parameter.value}}{%- endif %} )
+      {%- for parameter in group.getNestedSymbolsOfTypeSync(variableSymbol) %}      PARAMETER( {{ parameter.name }} = {% if parameter.is_array -%}{{ parameter.to_normalized_array().__str__().replace("[", "").replace("]", "") }}{%- else -%}{{ parameter.value}}{%- endif %} )
 {% endfor -%}
 {%- endmacro -%}
 for mitgcm
