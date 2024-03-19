@@ -81,7 +81,7 @@ class SymbolTableVisitor(ConfigurationVisitor, Generic[T]):
         varName = ctx.declaration.getText()  # set and get the variable name here
         prefix = self.visit(ctx.unit) if ctx.unit is not None else UnitPrefix.NoP
         # isArray = True if len(ctx.selectors) > 0 else False
-        symbol = self._scope.getAllNestedSymbolsSync(varName)[0]
+        symbol = self._scope.get_all_nested_symbols_sync(varName)[0]
         if prefix != UnitPrefix.NoP:
             symbol.unit.prefix = prefix
         symbol.configuration.append(ctx)
@@ -108,7 +108,7 @@ class SymbolTableVisitor(ConfigurationVisitor, Generic[T]):
         self.withScope(FeatureSymbol, ctx, ctx.declaration.text, lambda: self.visitChildren(ctx))
 
     def visitFeatureActivation(self, ctx: ConfigurationParser.FeatureActivationContext):
-        for feature in self._scope.getNestedSymbolsOfTypeSync(FeatureSymbol):
+        for feature in self._scope.get_nested_symbols_of_type_sync(FeatureSymbol):
             if feature.name == ctx.declaration.text:
                 try:
                     # if is_activated is set to false it is not none
@@ -132,7 +132,7 @@ class SymbolTableVisitor(ConfigurationVisitor, Generic[T]):
         scope = None
         # go through all symbols
         for i in range(1, len(info)):
-            scope = table.getAllNestedSymbolsSync(info[i])[0]
+            scope = table.get_all_nested_symbols_sync(info[i])[0]
         self._symbolTable.addSymbol(scope)
 
     def stringToPrefix(self, input: str):
@@ -142,7 +142,7 @@ class SymbolTableVisitor(ConfigurationVisitor, Generic[T]):
         return UnitPrefix.NoP
 
     def withScope(self, type: T, tree: ParseTree, name: str, action: Callable) -> T:
-        scope = self._symbolTable.getAllNestedSymbolsSync(name)
+        scope = self._symbolTable.get_all_nested_symbols_sync(name)
         if len(scope) < 1:
             print("Symbol with name " + str(name) + " could not be found")
             return

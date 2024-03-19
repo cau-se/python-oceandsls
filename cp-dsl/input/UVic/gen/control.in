@@ -3,7 +3,7 @@ for uvic
  &contrl init=.false., runlen=36500000.0, rununits=days, restrt=.true., runstep=73000  /
  &tsteps dtts=108000.0, dtuv=1125.0, dtsf=1125.0, dtatm=54000.0, namix=10, segtim=5.0  /
  &riglid mxscan=200, sor=1.6, tolrsf=500000000.0, tolrsp=0.0001, tolrfs=0.0001  /
- &mixing am=1500000000.0, ah=8000000.0, ahbkg=0.0, ambi=1e+23, ahbi=5e+22, kappa_m=10.0, kappa_h=12, aidif=0.5, nmix=16, eb=.false., ncon=1, cdbot=0.0013, acor=0.0, dampts=30.0,60.0, dampdz=5000.0,5000.0  /
+ &mixing am=1500000000.0, ah=8000000.0, ahbkg=0.0, ambi=1e+23, ahbi=5e+22, kappa_m=10.0, kappa_h=12, aidif=0.5, nmix=16, eb=.false., ncon=1, cdbot=0.0013, acor=0.0, dampts=30.0, 60.0, dampdz=5000.0, 5000.0  /
  &diagn tsiint=365.0, tsiper=365.0, timavgint=36500.0, timavgper=365.0, restint=36500.0, tavgint=-365000.0, itavg=.true., tmbint=-365000.0, itmb=.true., trmbint=-365000.0, itrmb=.true., tbtint=-365000.0, tbtper=-365.0, glenint=-365000.0, vmsfint=-365000.0, stabint=-365000.0, zmbcint=-365000.0, gyreint=-365000.0, extint=-365000.0, prxzint=-365000.0, dspint=-365000.0, xbtint=-365000.0  /
  &io iotavg=6, iotmb=6, iotrmb=6, iozmbc=6, ioglen=6, iovmsf=6, iogyre=6, ioprxz=6, ioext=6, iodsp=6, iotsi=-1, iotraj=6, ioxbt=6, mrot=1, jsot=65, jeot=90, ksot=3, keot=17  /
  &ictime eqyear=.true., eqmon=.false., refinit=.true., refrun=.false., init_time_in=.true., init_time_out=.false., year0=0, month0=1, day0=1, hour0=0, min0=0, sec0=0  /
@@ -20,4 +20,4 @@ for uvic
  &mtlm BF=0.5  /
  &npzd k1n=0.7, capr=0.03, abio=0.6, alpha=0.16, nup=0.03, nupt0=0.018, redctn=6.625, redotn=10.0, geZ=0.4, gbio=0.4, wd0=16.0, nuz=0.06, jdiar=0.4, nud0=0.087, kfe=6.6e-05, kfe_D=0.000132, zprefP=0.25, zprefZ=0.25, zprefDet=0.25, zprefD=0.25  /
  &cmo fF=1.0, A0=172.0, alpha=0.5, Q0N=0.067, Q0P=0.00271, ftp='orphy', ftNF='houlton'  /
- &cfo phi=118.0,232.0,94.0,118.0, Imax=1.75, regex=respire  /
+ &cfo phi=118.0, 232.0, 94.0, 118.0, Imax=1.75, regex=respire  /

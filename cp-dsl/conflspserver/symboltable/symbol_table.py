@@ -110,7 +110,7 @@ class UnitKind(Enum):
     ton = 10
 
 
-class UnitPrefix:
+class UnitPrefix(Enum):
     """
     Rough categorization of a unit from SI prefixes.
     """
@@ -602,7 +602,6 @@ class ScopedSymbol(Symbol):
         symbol_table = self.symbol_table()
         if symbol_table is None or not symbol_table.options.allow_duplicate_symbols:
             for child in self.children():
-                if child is symbol or (len(symbol.name) > 0 and child.name == symbol.name) and type(child) is type(symbol):
                 if child is symbol or (len(symbol.name) > 0 and child.name == symbol.name) and isinstance(child, type(symbol)):
                     symbol_name = symbol.name if symbol.name else "<anonymous>"
                     scope_name = self.name if self.name else "<anonymous>"
@@ -1011,10 +1010,10 @@ class VariableSymbol(Symbol):
         _type_: _description_
     """
 
-    def __init__(self, name: str, description: str = "", value=None, unitSpecification: UnitSpecification = None, type=None):
+    def __init__(self, name: str, description: str = "", value=None, unit_specification: UnitSpecification = None, type=None):
         super().__init__(name)
         self.description = description
-        self.unit = unitSpecification
+        self.unit = unit_specification
         self.is_tree = isinstance(value, ParseTree)
         self.val = value if value else None
         if type == "float":
@@ -1061,13 +1060,13 @@ class ArraySymbol(VariableSymbol):
     => [5][ArraySymbol([9][8])]
     """
 
-    def __init__(self, name: str = "", upperBound=0, lowerBound=0):
+    def __init__(self, name: str = "", upper_bound=0, lower_bound=0):
         super().__init__(name)
-        self.upperBound = upperBound
-        self.lowerBound = lowerBound
+        self.upper_bound = upper_bound
+        self.lower_bound = lower_bound
         self.is_array = True
         self.vectors = []
-        self.arrVal = []
+        self.array_value = []
 
     @property
     def value(self):
@@ -1092,16 +1091,16 @@ class ArraySymbol(VariableSymbol):
             # check if vector already in array
             if vector[0] in self.vectors:
                 i = self.vectors.index(vector[0])
-                self.arrVal[i] = val
+                self.array_value[i] = val
                 return
-            if self.upperBound == 0 and self.lowerBound == 0:
+            if self.upper_bound == 0 and self.lower_bound == 0:
                 self.vectors.append(vector[0])
-                self.arrVal.append(val)
+                self.array_value.append(val)
             else:
                 # Check for the bounds
-                if self.lowerBound <= vector[0] and self.upperBound >= vector[0] or self.upperBound == 0:
+                if self.lower_bound <= vector[0] and self.upper_bound >= vector[0] or self.upper_bound == 0:
                     self.vectors.append(vector[0])
-                    self.arrVal.append(val)
+                    self.array_value.append(val)
                 else:
                     print("ERROR: Array", self.name, "out of bound error for index", vector)
 
@@ -1113,8 +1112,8 @@ class ArraySymbol(VariableSymbol):
         """
         try:
             if isinstance(index, list):
-                return self.arrVal[self.vectors.index(index[0])]
-            return self.arrVal[self.vectors.index(index)]
+                return self.array_value[self.vectors.index(index[0])]
+            return self.array_value[self.vectors.index(index)]
         except IndexError or ValueError:
             return None
 
@@ -1145,16 +1144,16 @@ class ArraySymbol(VariableSymbol):
         """
         i = self.vectors.index(index)
         self.vectors.pop(i)
-        return self.arrVal.pop(i)
+        return self.array_value.pop(i)
 
     def removeVal(self, val) -> None:
         """
         removes a given value from the array (first elem found)
         :val: the value to remove
         """
-        i = self.arrVal.index(val)
+        i = self.array_value.index(val)
         self.vectors.pop(i)
-        self.arrVal.pop(i)
+        self.array_value.pop(i)
 
     def toArray(self, recursive=True) -> list:
         """
@@ -1201,7 +1200,7 @@ class ArraySymbol(VariableSymbol):
         removes all values from the array
         '''
         self.vectors = []
-        self.arrVal = []
+        self.array_value = []
 
     def __len__(self):
         if len(self.vectors) == 0:
@@ -1306,7 +1305,7 @@ class SymbolTable(ScopedSymbol):
 
         return result
 
-    async def addNewNamespaceFromPath(
+    async def add_new_namespace_from_path(
             self, parent: Optional[ScopedSymbol], path: str,
             delimiter="."
     ) -> NamespaceSymbol:

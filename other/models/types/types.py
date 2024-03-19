@@ -130,18 +130,18 @@ class SizeDimension( Dimension ):
 
 class RangeDimension( Dimension ):
 
-    lowerBound = EAttribute( eType = ELongObject, unique = True, derived = False, changeable = True )
-    upperBound = EAttribute( eType = ELongObject, unique = True, derived = False, changeable = True )
+    lower_bound = EAttribute( eType = ELongObject, unique = True, derived = False, changeable = True )
+    upper_bound = EAttribute( eType = ELongObject, unique = True, derived = False, changeable = True )
 
-    def __init__( self, *, lowerBound = None, upperBound = None, **kwargs ):
+    def __init__( self, *, lower_bound = None, upper_bound = None, **kwargs ):
 
         super( ).__init__( **kwargs )
 
-        if lowerBound is not None:
-            self.lowerBound = lowerBound
+        if lower_bound is not None:
+            self.lower_bound = lower_bound
 
-        if upperBound is not None:
-            self.upperBound = upperBound
+        if upper_bound is not None:
+            self.upper_bound = upper_bound
 
 
 class EnumeralValue( Value ):

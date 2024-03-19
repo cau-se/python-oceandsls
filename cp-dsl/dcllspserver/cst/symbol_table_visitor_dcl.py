@@ -23,7 +23,7 @@ from typing import TypeVar, Generic, Dict, Optional, Callable, Any
 from antlr4.tree.Tree import ParseTree
 from antlr4.Token import CommonToken
 
-from conflspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
+from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
 
 # user relative imports
 from ..symboltable.symbol_table import (

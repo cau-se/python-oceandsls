@@ -20,49 +20,116 @@ Apache 2.0
 
 ## Install
 
-### Optional: check python packages
-- update package manager tools
-  - `python -m pip install --upgrade pip setuptools wheel`
-- check if python package `virtualenv` is installed if Python < 3.3 is used else a subset of it has been integrated into the standard library under `venv`
-  - `python -m pip show virtualenv`
-  - if not install package `virtualenv` into global system environment
-    - `python -m pip install virtualenv`
+The OceanDSL DSLs all are based on Python and the provided instructions in the 
+readmes uses VSCode. We will add instructions for Emacs and Vi at a later date.
 
-### Install Server Dependencies
-- generate virtual environment in directory `.venv` using the standard library `venv`
-  - `python -m venv .venv`
-  - alternative use `virtualenv`, see optional python packages
-- activate virtual environment `.venv`
-  - `source .venv/bin/activate`
-- install `antlr4-python3-runtime`, `Jinja2`, `mock`, `pygls` and `pytest` package into virtual environment `.venv`
-  - `python -m pip install antlr4-python3-runtime Jinja2 mock pygls pytest`
+In case you do not want to use VSCode, you can skip *npm*, *node* and *VSCode* 
+installation instructions.
 
-## Optional: update npm and node
-- check `npm` version
-  - `npm --version`
-- install latest `npm` version globally (`-g` or `--global`)
-  - `sudo npm install -g npm@latest`
-- install latest `node` version
-  - `sudo n latest`
-- Install the dependencies to the global mode (`-g` or `--global`)
-  - `sudo npm update -g`
+### Install Python
 
-### Install Client Dependencies e.g. cp-dsl
+The OceanDSL languages are based on python3.
 
-- Goto extension directory `python-oceandsls/cp-dsl`
-- Install the dependencies to the local node_modules 
-  - `npm install`
+Install Python in Ubuntu with:
+
+`sudo apt install python3 python3-pip`
+
+In some distributions *python3* uses the executable name *python3* leaving
+*python* for *python2*. As the following instructions use *python*, you have
+either to substitute the names accordingly or in Ubuntu install the following
+package:
+
+`sudo apt install python-is-python3`
+
+Install the virtual environment. This helps to keep your distribution
+Python setup and the setup for the DSLs separate.
+
+`sudo apt install python3-virtualenv`
+
+Alternatively, you can install the packages via *pip*. Howver, this does
+not work in Ubuntu, as it manages its packages via apt/dpkg.
+
+`python -m pip install --upgrade pip setuptools wheel`
+
+Check whether *virtualenv* is installed:
+
+`python -m pip show virtualenv`
+
+This should result in
+```
+Name: virtualenv
+Version: 20.24.1+ds
+Summary: Virtual Python Environment builder
+Home-page: 
+Author: 
+Author-email: 
+License: 
+Location: /usr/lib/python3/dist-packages
+Requires: distlib, filelock, platformdirs
+Required-by:
+```
+
+If missing install it:
+
+`python -m pip install virtualenv`
+
+### Install LSP Server Dependencies
+
+For this how to, we assume that you install your virtual environment in your
+home directory. You can, however, install it anywhere. Be sure to adjust paths accordingly.
+
+`cd $HOME`
+
+Generate virtual environment in directory `.venv` using the standard
+library `venv` or use the tool `virtualenv`.
+
+Using `venv`:
+
+`python -m venv .venv`
+
+Using `virtualenv`:
+
+`virtualenv .venv`
+
+Activate virtual environment `.venv`
+
+`source .venv/bin/activate`
+
+This will result in the following output:
+```
+(.venv) user@hostname:~$ 
+```
+Where `user` will be your username and `hostname` will be the name of your computer.
+
+Install `antlr4-python3-runtime`, `Jinja2`, `mock`, `pygls` and `pytest`
+package into virtual environment `.venv`
+
+`python -m pip install antlr4-python3-runtime Jinja2 mock pygls pytest`
+
+The last line of this operation should look like this:
+```
+Successfully installed Jinja2-3.1.3 MarkupSafe-2.1.5 antlr4-python3-runtime-4.13.1 attrs-23.2.0 cattrs-23.2.3 iniconfig-2.0.0 lsprotocol-2023.0.1 mock-5.1.0 packaging-23.2 pluggy-1.4.0 pygls-1.3.0 pytest-8.0.0
+```
+
+The version numbers reflect the state of these packages while writing this documentation. They may differ in future.
+
+## Update npm and node
+
+In case you want to use VSCode as editor, you need JavaScript.
+Therefore, install and update JavaScript package manager which is used by VSCode.
+
+`sudo apt install npm`
+
+Check `npm` version
+
+`npm --version`
 
 ### Run Example using VSCode
 
-- Open `python-oceandsls/cp-dsl` in VSCode
-- Trust author files in `python-oceandsls/cp-dsl`
-- Goto Run and Debug
-  - `Ctrl/Cmd+Shift+D`
-- Select `Server + Client`
-- Start Debugging via `F5` or GUI
-- Open a `*.odsl` file
-- If server is working correctly notification shows `Text Document Did Open`
+In case the package is not up-to-date, install latest `npm` version globally
+(`-g` or `--global`)
+
+sudo npm install -g npm@latest`
 
 ### Troubleshooting
 
@@ -74,19 +141,21 @@ Apache 2.0
   - Alternative create `.vscode/settings.json` file in `python-oceandsls/cp-dsl` directory and set `python.defaultInterpreterPath` to point to the virtual environment
     - settings.json
 
-          {
-              // set Python Interpreter relative to workspaceFolder to virtual environment '.venv'
-              "python.defaultInterpreterPath": "${workspaceFolder}/../.venv/bin/python",
-              // alternative
-              //"python.defaultInterpreterPath": "../.venv",
-              // deprecated
-              // "python.pythonPath": "${workspaceFolder}/../.venv/bin/python",
+Install latest `node` version
 
-              // Pylance VSCode code analysis and auto-completion using Python 3.10
-              "python.analysis.extraPaths": [
-                  "{workspaceFolder}/../.venv/lib/python3.10/site-packages/:${workspaceFolder}/../antlrLib/"
-              ],
+`sudo n latest`
 
+Output:
+```
+  copying : node/21.6.1
+installed : v21.6.1 (with npm 10.2.4)
+```
+
+The version numbers may differ in your installation.
+
+Install the dependencies to the global mode (`-g` or `--global`)
+
+`sudo npm update -g`
 
               // Object with environment variables that will be added to the VS Code process to be used by the terminal on OS X
               "terminal.integrated.env.osx": {"PYTHONPATH": "${workspaceFolder}/.."},
@@ -94,10 +163,26 @@ Apache 2.0
               // Object with environment variables that will be added to the VS Code process to be used by the terminal on Linux
               "terminal.integrated.env.linux": {"PYTHONPATH": "${workspaceFolder}/.."},
 
-              // Object with environment variables that will be added to the VS Code process to be used by the terminal on Windows
-              "terminal.integrated.env.windows": {"PYTHONPATH": "${workspaceFolder}/.."},
-          }
+### Install and setup VScode
 
-- If npm version conflicts exists change npm to the required version
-  - E.g. reset npm version to 9.2.0
-    - `sudo npm install -g npm@9.2.0`
+Install VScode in Ubuntu:
+
+`$ sudo apt install code`
+
+### Install Python extensions in VSCode
+
+Start VScode by typing:
+
+`$ code`
+
+![vscode start screen](images/vscode-start-screen.png)
+
+You can no choose a theme, if you like.
+
+Click on *extensions*. This is the icon on the left made out of squares. If
+unsure hover with the mouse over the icons on the left until you find extensions.
+
+Search for the Python plugin as depicted in the screenshot below.
+You can either browse the list or type the name in the search field at the top.
+
+![vscode install python](images/vscode-install-python.png)

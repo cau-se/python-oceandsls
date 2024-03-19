@@ -87,5 +87,5 @@ def main():
             conf_server.start_io()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
