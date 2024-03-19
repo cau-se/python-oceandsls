@@ -12,6 +12,10 @@ the build and setup of models.
 This documentation shows how to setup VSCode, Vi and Emacs with the LSP
 service.
 
+## License
+
+Apache 2.0
+
 ## Prerequisites
 
 You need `python3` installed and, in case your python installation is managed
@@ -30,30 +34,6 @@ Instructions are in the main README.md
 
 After installing the dependencies and setting up the virutal environment,
 go to the extension directory `python-oceandsls/cp-dsl`
-
-## Install and setup VSCode
-
-Install VScode in Ubuntu:
-
-`$ sudo apt install code`
-
-### Install Python extensions in VSCode
-
-Start VScode by typing:
-
-`$ code`
-
-![vscode start screen](images/vscode-start-screen.png)
-
-You can no choose a theme, if you like.
-
-Click on *extensions*. This is the icon on the left made out of squares. If
-unsure hover with the mouse over the icons on the left until you find extensions.
-
-Search for the Python plugin as depicted in the screenshot below.
-You can either browse the list or type the name in the search field at the top.
-
-![vscode install python](images/vscode-install-python.png)
 
 ### Include LSPs in VSCode
 
