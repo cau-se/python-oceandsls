@@ -18,29 +18,22 @@ Apache 2.0
 
 ## Prerequisites
 
-You need `python3` installed and, in case your python installation is managed by the distribution installer, you
-need a virtual environment.
+You need `python3` installed and, in case your python installation is managed
+by the distribution installer, you need a virtual environment.
 
 For VSCode, you also need `npm`, `node` and `VSCode` installed.
 
-In Ubuntu you can install `virtualenv` with
-- `sudo apt install python3-virtualenv`
-
-Alternatively, you can install it via pip
-- `python -m pip install virtualenv`
+See main README.md for details.
 
 ## Installation
 
-You can either install additional python packages in your system using pip or use a virtual evnironment to
-ensure the system installation is not modified.
+You can either install additional python packages in your system using pip or
+use a virtual evnironment to ensure the system installation is not modified.
 
-### Create virtual environment
+Instructions are in the main README.md
 
-- Open a terminal and ensure you are in the home folder `cd`
-- Run `virtualenv local` local is then the name of your virtual environment
-- Activate virtual environment
-  `source local/bin/activate`
-  This will change your command line prompt to `(local) username@hostname:~$`
+After installing the dependencies and setting up the virutal environment,
+go to the extension directory `python-oceandsls/cp-dsl`
 
 ### Include LSPs in VSCode
 
