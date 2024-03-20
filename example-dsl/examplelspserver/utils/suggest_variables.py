@@ -19,7 +19,7 @@ __author__ = 'sgu'
 # utils
 import asyncio
 import threading
-from typing import List, ParamSpec
+from typing import List, ParamSpec, Type
 
 # antlr4
 from antlr4 import ParserRuleContext

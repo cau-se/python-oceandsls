@@ -17,8 +17,6 @@ __author__ = "sgu"
 #  limitations under the License.
 
 # utils
-import logging
-
 from dataclasses import dataclass
 from typing import Any, List, Optional
 
@@ -26,10 +24,6 @@ from typing import Any, List, Optional
 from antlr4 import BufferedTokenStream, TerminalNode, Token
 from antlr4.ParserRuleContext import ParserRuleContext
 from antlr4.tree.Tree import ErrorNodeImpl, TerminalNodeImpl
-
-# debug
-logger = logging.getLogger(__name__)
-logger.disabled = True
 
 
 @dataclass
@@ -91,7 +85,7 @@ def position_of_token(
 
 
 def compute_token_position_of_terminal(
-        terminal_node: TerminalNode, token_stream: BufferedTokenStream, caret_position: CaretPosition, identifier_token_types: List[int]
+        terminal_node: TerminalNode, caret_position: CaretPosition, identifier_token_types: List[int]
 ):
     token: Token = terminal_node.symbol if isinstance(terminal_node, TerminalNodeImpl) else None
     text: str = terminal_node.getText() if isinstance(terminal_node, TerminalNodeImpl) else None
@@ -146,6 +140,6 @@ def compute_token_position(
     if identifier_token_types is None:
         identifier_token_types = []
     if isinstance(parser_rule_context, TerminalNode):
-        return compute_token_position_of_terminal(parser_rule_context, tokens, caret_position, identifier_token_types)
+        return compute_token_position_of_terminal(parser_rule_context, caret_position, identifier_token_types)
     else:
         return compute_token_position_of_child_node(parser_rule_context, tokens, caret_position, identifier_token_types)
