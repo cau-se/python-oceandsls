@@ -271,10 +271,6 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
             # ReturnType
             return_type = value_list[2].name if value_list[2] is not None else None
 
-            # RoutineSymbol
-            # isinstance(value_list[3],RoutineSymbol)
-            # issubclass(foo, FunctionSymbol)
-
             routine_type: str = None
             if value_list[3] is FunctionSymbol:
                 routine_type = "FUNCTION"

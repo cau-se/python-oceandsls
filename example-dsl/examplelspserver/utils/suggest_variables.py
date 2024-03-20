@@ -67,46 +67,53 @@ def run_async( func, *args: P.args or None, **kwargs: P.kwargs or None ):
         return asyncio.run( func( *args, **kwargs ) )
 
 
-def getScope( context: ParserRuleContext, symbolTable: SymbolTable ):
+def get_scope(context: ParserRuleContext, symbolTable: SymbolTable):
     if context is None:
         return None
 
-    scope = run_async( symbolTable.symbol_with_context, context )
+    scope = run_async(symbolTable.symbol_with_context, context)
 
     if scope is not None:
         return scope
     else:
-        return getScope( context.parentCtx, symbolTable )
+        return get_scope(context.parentCtx, symbolTable)
 
 
-def get_all_symbols_of_type( scope: ScopedSymbol, symbolType: type ):
-    symbols: List[ Symbol ] = run_async( scope.get_symbols_of_type, symbolType )
-    parent = scope.parent( )
-    while parent is not None and not isinstance( parent, ScopedSymbol ):
-        parent = parent.parent( )
-    if parent is not None:
-        symbols.extend( get_all_symbols_of_type( parent, symbolType ) )
+def get_all_symbols_of_type(scope: ScopedSymbol, symbol_type: type):
+    symbols: List[Symbol] = run_async(scope.get_symbols_of_type, symbol_type, False)
+    parent = scope.parent()
+    broken_chain: bool = False
+    while parent is not None and not isinstance(parent, ScopedSymbol):
+        parent = parent.parent()
+        broken_chain = True
+    if parent is not None and broken_chain:
+        symbols.extend(get_all_symbols_of_type(parent, symbol_type))
     return symbols
 
 
-def suggest_variables( symbolTable: SymbolTable, position: TokenPosition ):
-    context = position.context
-    scope = getScope( context, symbolTable )
-    symbols: List[ Symbol ]
-    if isinstance( scope, ScopedSymbol ):  # Local scope
-        symbols = get_all_symbols_of_type( scope, VariableSymbol )
-    else:  # Global scope
-        symbols = run_async( symbolTable.get_symbols_of_type, VariableSymbol )
+def suggest_symbols(symbol_table: SymbolTable, position: TokenPosition, symbol_type: Type = VariableSymbol) -> List[str]:
+    if position:
+        context = position.context
+        scope = get_scope(context, symbol_table)
+        symbols: List[Symbol]
+        if isinstance(scope, ScopedSymbol):  # Local scope
+            symbols = get_all_symbols_of_type(scope, symbol_type)
+        else:  # Global scope
+            symbols = run_async(symbol_table.get_symbols_of_type, symbol_type, False)
 
-    variable = position.context
-    while not isinstance( variable, Top_levelContext ) and variable.parentCtx is not None:
-        variable = variable.parentCtx
+        text: str = position.text
 
-    return filter_tokens( position.text if variable is not None else '', list( map( lambda s: s.name, symbols ) ) )
-
-
-def filter_tokens( text: str, candidates: List[ str ] ):
-    if len( text.strip( ) ) == 0:
-        return candidates
     else:
-        return list( filter( lambda c: c.lower( ).startswith( text.lower( ) ), candidates ) )
+        symbols = run_async(symbol_table.get_nested_symbols_of_type, symbol_type)
+        text = ""
+    return filter_symbols(text, symbols, symbol_type)
+
+
+def filter_symbols(text: str, symbols: List[Symbol], symbol_type: Type = VariableSymbol) -> List[str]:
+    match symbol_type:
+        case _:
+            candidates = list(map(lambda s: s.name, symbols))
+            if len(text.strip()) == 0:
+                return candidates
+            else:
+                return list(filter(lambda c: c.lower().startswith(text), candidates))
