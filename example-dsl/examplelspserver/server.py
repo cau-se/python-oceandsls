@@ -57,7 +57,7 @@ from codeCompletionCore.CodeCompletionCore import CandidatesCollection, CodeComp
 
 # user relative imports
 from examplelspserver.utils.compute_token_index import CaretPosition, TokenPosition, compute_token_position
-from examplelspserver.utils.suggest_variables import suggest_variables
+from examplelspserver.utils.suggest_variables import suggest_symbols
 from examplelspserver.cst.diagnostic_listener import DiagnosticListener
 from examplelspserver.cst.symbol_table_visitor import SymbolTableVisitor
 from examplelspserver.gen.python.exampleDsl.exampleDslLexer import exampleDslLexer
@@ -85,6 +85,9 @@ class ExampleLSPServer( LanguageServer ):
     CMD_UNREGISTER_COMPLETIONS = 'unregisterCompletions'
 
     CONFIGURATION_SECTION = 'ODslExampleServer'
+
+    top_level_context = exampleDslParser.StatContext
+    parseTree: top_level_context
 
     def __init__( self, *args ):
         super( ).__init__( *args )
@@ -120,7 +123,7 @@ def _validate( ls: ExampleLSPServer, params ):
     # ls.show_message_log( 'Validating file...' )
 
     # get file content for lexer input stream
-    text_doc: Document = ls.workspace.get_document( params.text_document.uri )
+    text_doc: Document = ls.workspace.get_text_document( params.text_document.uri )
     source: str = text_doc.source
     # validate format if source is determined
     diagnostics: List[ Diagnostic ] = _validate_format( ls, source ) if source is not None else [ ]
@@ -165,7 +168,7 @@ def completions( params: Optional[ CompletionParams ] = None ) -> CompletionList
     """Returns completion items."""
 
     # set input stream of characters for lexer
-    text_doc: Document = example_server.workspace.get_document( params.text_document.uri )
+    text_doc: Document = example_server.workspace.get_text_document( params.text_document.uri )
     source: str = text_doc.source
     input_stream: InputStream = InputStream( source )
 
@@ -215,7 +218,7 @@ def completions( params: Optional[ CompletionParams ] = None ) -> CompletionList
 
         symbol_table = symbol_table_visitor.visit( parseTree )
 
-        variables = suggest_variables( symbol_table, tokenIndex )
+        variables = suggest_symbols( symbol_table, tokenIndex )
 
         for variable in variables:
             completion_list.items.append( CompletionItem( label = variable ) )
@@ -276,7 +279,7 @@ def did_save( server: ExampleLSPServer, params: DidSaveTextDocumentParams ):
     """Text document did save notification."""
 
     # set input stream of characters for lexer
-    text_doc: Document = example_server.workspace.get_document( params.text_document.uri )
+    text_doc: Document = example_server.workspace.get_text_document( params.text_document.uri )
     source: str = text_doc.source
     input_stream: InputStream = InputStream( source )
 
@@ -312,7 +315,7 @@ def semantic_tokens( ls: ExampleLSPServer, params: SemanticTokensParams ):
     TOKENS = re.compile( '".*"(?=:)' )
 
     uri = params.text_document.uri
-    doc = ls.workspace.get_document( uri )
+    doc = ls.workspace.get_text_document( uri )
 
     last_line = 0
     last_start = 0

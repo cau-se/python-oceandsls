@@ -56,6 +56,9 @@ class bgcLSPServer(LanguageServer):
 
     CONFIGURATION_SECTION = 'ODslBGCServer'
 
+    top_level_context = BgcDslParser.BgcModelContext
+    parseTree: top_level_context
+
     # Input file path
     input_path: str
 
@@ -280,7 +283,7 @@ def semantic_tokens(ls: bgcLSPServer, params: SemanticTokensParams):
     TOKENS = re.compile('".*"(?=:)')
 
     uri = params.text_document.uri
-    doc = ls.workspace.get_document(uri)
+    doc = ls.workspace.get_text_document(uri)
 
     last_line = 0
     last_start = 0

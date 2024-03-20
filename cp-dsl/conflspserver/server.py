@@ -84,6 +84,9 @@ class confLSPServer(LanguageServer):
 
     CONFIGURATION_SECTION = 'ODslCONFServer'
 
+    top_level_context = ConfigurationParser.ConfigurationModelContext
+    parseTree: top_level_context
+
     # Input file path
     input_path: str
 
@@ -173,7 +176,7 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     """Returns completion items."""
 
     # set input stream of characters for lexer
-    text_doc: Document = conf_server.workspace.get_document(params.text_document.uri)
+    text_doc: Document = conf_server.workspace.get_text_document(params.text_document.uri)
     source: str = text_doc.source
     input_stream: InputStream = InputStream(source)
 
@@ -313,7 +316,7 @@ def document_symbol(
 ) -> Optional[Union[List[DocumentSymbol], List[SymbolInformation]]]:
     # get the document
     uri = params.text_document.uri
-    doc = server.workspace.get_document(uri)
+    doc = server.workspace.get_text_document(uri)
 
     data = []
 
@@ -435,7 +438,7 @@ def semantic_tokens(ls: confLSPServer, params: SemanticTokensParams):
     TOKENS = re.compile('".*"(?=:)')
 
     uri = params.text_document.uri
-    doc = ls.workspace.get_document(uri)
+    doc = ls.workspace.get_text_document(uri)
 
     last_line = 0
     last_start = 0
