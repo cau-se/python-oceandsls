@@ -17,7 +17,7 @@ __author__ = "stu222808"
 #  limitations under the License.
 
 # util imports
-from typing import TypeVar, Generic, Dict, Optional, Callable, Any
+from typing import  Generic, Callable
 
 # antlr4
 from antlr4.tree.Tree import ParseTree
@@ -150,14 +150,22 @@ class SymbolTableVisitor(ConfigurationVisitor, Generic[T]):
                 return prefix
         return UnitPrefix.NoP
 
-    def withScope(self, type: T, tree: ParseTree, name: str, action: Callable) -> T:
+    def withScope(self, t: type, tree: ParseTree, name: str, action: Callable) -> T:
+        """
+        Add a scoped symbol to the symboltable and recursively add all symbols inside this scope the symboltable
+        :param t: Symbol type
+        :param tree: Context of the scoped symbol
+        :param name: Symbol name
+        :param action: Lambda function to add children symbols to symboltable
+        :return: Current scope
+        """
         scope = self._symbol_table.get_all_nested_symbols_sync(name)
         if len(scope) < 1:
             print("Symbol with name " + str(name) + " could not be found")
             return
         elif len(scope) > 1:
             for elem in scope:
-                if isinstance(elem, type):
+                if isinstance(elem, t):
                     scope = elem
                     break
         else:
@@ -165,11 +173,12 @@ class SymbolTableVisitor(ConfigurationVisitor, Generic[T]):
         if type == FeatureSymbol:
             scope.is_activated = True
         scope.configuration.append(tree)
+        current_scope = self._scope
         self._scope = scope
         try:
             return action()
         finally:
             if self._scope:
-                self._scope = scope.parent()
+                self._scope = current_scope
             else:
                 print("scope not set")

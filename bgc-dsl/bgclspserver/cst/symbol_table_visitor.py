@@ -17,13 +17,13 @@ __author__ = "stu90642"
 #  limitations under the License.
 
 # util imports
-from typing import TypeVar, Generic, Dict, Optional, Callable, Any
+from typing import Generic, Callable
 
 # antlr4
 from antlr4.tree.Tree import ParseTree
 
 # user relative imports
-from ..symbolTable.symbol_table import ScopedSymbol, SymbolTable, P, T, VariableSymbol, RoutineSymbol, SymbolTableOptions
+from ..symboltable.symbol_table import SymbolTable, P, T, VariableSymbol, SymbolTableOptions
 from ..gen.python.BgcDsl.BgcDslParser import BgcDslParser
 from ..gen.python.BgcDsl.BgcDslVisitor import BgcDslVisitor
 
@@ -87,14 +87,23 @@ class SymbolTableVisitor(BgcDslVisitor, Generic[T]):
     # def visitFuncExpr(self, ctx: TestGrammarParser.FuncExprContext):
     #     return self.withScope( ctx, RoutineSymbol, lambda: self.visitChildren( ctx ), ctx.ID().getText() )
 
-    def withScope(
-            self, tree: ParseTree, t: type, action: Callable, *my_args: P.args or None,
-            **my_kwargs: P.kwargs or None
-    ) -> T:
-        scope = self._symbolTable.addNewSymbolOfType(t, self._scope, *my_args, **my_kwargs)
+    def withScope(self, tree: ParseTree, t: type, action: Callable, *my_args: P.args or None, **my_kwargs: P.kwargs or None) -> T:
+        """
+        Add a scoped symbol to the symboltable and recursively add all symbols inside this scope the symboltable
+        :param tree: Context of the scoped symbol
+        :param t: Symbol type
+        :param action: Lambda function to add children symbols to symboltable
+        :param my_args: Arguments of symbol type
+        :param my_kwargs: named Arguments of symbol type
+        :return: Current scope
+        """
+        # Add scoped symbol to symboltable
+        scope = self._symbol_table.add_new_symbol_of_type(t, self._scope, *my_args, **my_kwargs)
         scope.context = tree
+        # Update Scope to the new symbol and save the old scope (mihgt be changed if scope is inserted above current scope)
+        current_scope = self._scope
         self._scope = scope
         try:
             return action()
         finally:
-            self._scope = scope.parent()
+            self._scope = current_scope

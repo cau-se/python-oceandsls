@@ -49,7 +49,7 @@ class MemberVisibility(Enum):
     Library = 6
 
 
-# Class Modifier(Enum):
+# class Modifier(Enum):
 #     Static = 0
 #     Final = 1
 #     Sealed = 2
@@ -79,7 +79,7 @@ class TypeKind(Enum):
     Alias = 12
 
 
-# Class ReferenceKind(Enum):
+# class ReferenceKind(Enum):
 #     Irrelevant = 0
 #     # Default for most languages for dynamically allocated memory ("Type*" in C++).
 #     Pointer = 1

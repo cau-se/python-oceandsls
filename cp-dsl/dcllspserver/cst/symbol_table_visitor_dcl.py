@@ -1,6 +1,6 @@
 """SymbolTableVisitor module."""
 
-__author__ = 'stu222808'
+__author__ = "stu222808"
 
 #  Copyright (c) 2023.  OceanDSL (https://oceandsl.uni-kiel.de)
 #
@@ -17,7 +17,7 @@ __author__ = 'stu222808'
 #  limitations under the License.
 
 # util imports
-from typing import TypeVar, Generic, Dict, Optional, Callable, Any
+from typing import Generic, Callable
 
 # antlr4
 from antlr4.tree.Tree import ParseTree
@@ -217,12 +217,18 @@ class SymbolTableVisitorDcl(DeclarationVisitor, Generic[T]):
         symbol = self._symbolTable.addNewSymbolOfType(RangeSymbol, self._scope, rangeName, type(ctx.type_), ctx.minimum, ctx.maximum)
         symbol.context = ctx
 
-    def withScope(
-            self, tree: ParseTree, t: type, action: Callable, *my_args: P.args or None,
-            **my_kwargs: P.kwargs or None
-    ) -> T:
+    def withScope(self, tree: ParseTree, t: type, action: Callable, *my_args: P.args or None, **my_kwargs: P.kwargs or None) -> T:
+        """
+        Add a scoped symbol to the symboltable and recursively add all symbols inside this scope the symboltable
+        :param tree: Context of the scoped symbol
+        :param t: Symbol type
+        :param action: Lambda function to add children symbols to symboltable
+        :param my_args: Arguments of symbol type
+        :param my_kwargs: named Arguments of symbol type
+        :return: Current scope
+        """
         try:
-            scope = self._symbolTable.addNewSymbolOfType(t, self._scope, *my_args, **my_kwargs)
+            scope = self._symbol_table.add_new_symbol_of_type(t, self._scope, *my_args, **my_kwargs)
         except DuplicateSymbolError:
             print("WARNING: Duplicate declaration of var:", my_args[0], "Proceed with merging")
             scope = self._scope.resolveSync(my_args[0])
@@ -231,8 +237,9 @@ class SymbolTableVisitorDcl(DeclarationVisitor, Generic[T]):
             else:
                 scope.description = my_args[2]
         scope.context = tree
+        current_scope = self._scope
         self._scope = scope
         try:
             return action()
         finally:
-            self._scope = scope.parent()
+            self._scope = current_scope

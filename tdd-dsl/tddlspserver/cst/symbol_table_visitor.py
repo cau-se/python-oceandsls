@@ -280,7 +280,7 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
         # Add scoped symbol to symboltable
         scope = self._symbol_table.add_new_symbol_of_type(t, self._scope, *my_args, **my_kwargs)
         scope.context = tree
-        # Update Scope to the new symbol and save the old scope (mihgt be changed if scope is inserted above current scope)
+        # Update Scope to the new symbol and save the old scope (might be changed if scope is inserted above current scope)
         current_scope = self._scope
         self._scope = scope
         try:
