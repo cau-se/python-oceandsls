@@ -8,7 +8,7 @@ antlr4 := java -jar /usr/local/lib/antlr-4.13.1-complete.jar
 EXPPKGTARGETS = exampleDsl TestExprCore
 
 # Release version used by release targets
-EXPPACKAGE = example-dsl/exampleLSPServer
+EXPPACKAGE = example-dsl/examplelspserver
 EXPVER = $(strip $(shell cat version))
 EXPPYEXPVERDIR = $(EXPPACKAGE)-$(EXPVER)
 EXPPYBUILDDIR = $(EXPPACKAGE)/../build/$(EXPPYEXPVERDIR)
@@ -51,7 +51,7 @@ release_EXP: $(EXPGRAMMAR).tar.gz
 BGCPKGTARGETS = BgcDsl
 
 # Release version used by release targets
-BGCPACKAGE = bgc-dsl/bgcLSPServer
+BGCPACKAGE = bgc-dsl/bgclspserver
 BGCVER = $(strip $(shell cat version))
 BGCPYBGCVERDIR = $(BGCPACKAGE)-$(BGCVER)
 BGCPYBUILDDIR = $(BGCPACKAGE)/../build/$(BGCPYBGCVERDIR)
