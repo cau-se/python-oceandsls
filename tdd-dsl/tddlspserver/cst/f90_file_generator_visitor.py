@@ -130,7 +130,7 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
         # Write content to module if module is set
         for idx, module_symbol in enumerate(module_symbols):
 
-            # Check test flags. E.g. overwrite flag
+            # Check test flags, e.g. overwrite flag
             self.overwrite = False
             if ctx.test_flags:
                 self.visit(ctx.test_flags)
@@ -198,7 +198,7 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
 
         # TODO document
         # Update source directory
-        # If the given path is an absolute path, then self._testPath is ignored and the joining is only the given path
+        # If the given path is an absolute path, then self._testPath is ignored and the joined path is only the given path
         self.work_path = os.path.join(self.cwd, user_path)
 
     # Get list of used module symbols
