@@ -172,6 +172,22 @@ class Scope:
         return sum(self.operands.values())
 
     @property
+    def ratio_operators(self) -> float:
+        """
+        Ratio of operators : nN1 = n1/N1
+        :return: nN1
+        """
+        return self.n_operators / self.sum_operators
+
+    @property
+    def ratio_operands(self) -> float:
+        """
+        Ratio of operands : nN2 = n2/N2
+        :return: nN2
+        """
+        return self.n_operands / self.sum_operands
+
+    @property
     def vocabulary(self) -> int:
         """
         Program vocabulary: η = η1 + η2
@@ -196,10 +212,10 @@ class Scope:
         n1: int = self.n_operators
         n2: int = self.n_operands
 
-        operator_lenght: int = n1 * log2(n1) if n1 > 0 else 0
-        operands_lenght: int = n2 * log2(n2) if n2 > 0 else 0
+        operator_length: int = n1 * log2(n1) if n1 > 0 else 0
+        operands_length: int = n2 * log2(n2) if n2 > 0 else 0
 
-        return operator_lenght + operands_lenght
+        return operator_length + operands_length
 
     @property
     def volume(self) -> float:
@@ -372,7 +388,7 @@ class Scope:
 
     def set_weighted_metrics(self):
         self.__weighted_metrics["CC"] = (self.cyclomatic_complexity, self.high_coefficient)  # incl conditionals
-        self.__weighted_metrics["LOC"] = (self.loc, self.mid_coefficient)
+        self.__weighted_metrics["LOC"] = (self.loc, self.high_coefficient)
         self.__weighted_metrics["DEPTH"] = (self.depth_of_nesting, self.high_coefficient)
         self.__weighted_metrics["NP"] = (self.n_arguments, self.mid_coefficient)
         self.__weighted_metrics["NL"] = (self.n_loops, self.mid_coefficient)
