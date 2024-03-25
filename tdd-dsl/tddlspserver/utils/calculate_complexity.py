@@ -94,11 +94,17 @@ class Scope:
 
     # Metrics
     __weighted_metrics: Dict[str, tuple] = field(default_factory=lambda: {})  # Union[tuple[int,float], tuple[float,float] ]
-    __weighted_metrics_sum: Optional[float] = field(default=None)
+    __testability_score: Optional[float ] = field( default=None )
     __testability_index: Optional[float] = field(default=None)
     __normalized_testability_score: Optional[float] = field(default=None)
     __aggregated_testability_score: Optional[float] = field(default=None)
-    __testability_factor: Optional[float] = field(default=None)
+    __test_factor: Optional[float ] = field( default=None )
+    __testBenefit: Optional[float ] = field( default=None )
+    __testEffort: Optional[float ] = field( default=None )
+    __aggregated_test_score: Optional[float ] = field( default=None )
+    __normalized_test_score: Optional[float ] = field( default=None )
+    __test_index: Optional[float ] = field( default=None )
+    __test_score: Optional[float ] = field( default=None )
 
     # Set of operators pairs
     __operator_pairs: Set = field(default_factory=lambda: {"()", "{}", "<>", "[]"})
@@ -177,20 +183,20 @@ class Scope:
         return sum(self.operands.values())
 
     @property
-    def ratio_operators(self) -> float:
+    def index_operators( self ) -> float:
         """
-        Ratio of operators : nN1 = n1/N1
+        Index of operators : nN1 = n1/(1 + N1)
         :return: nN1
         """
-        return self.n_operators / self.sum_operators if self.sum_operators > 0 else 0
+        return self.n_operators / (1 +self.sum_operators)
 
     @property
-    def ratio_operands(self) -> float:
+    def index_operands( self ) -> float:
         """
-        Ratio of operands : nN2 = n2/N2
+        Index of operands : nN2 = n2/(1 + N2)
         :return: nN2
         """
-        return self.n_operands / self.sum_operands if self.sum_operands > 0 else 0
+        return self.n_operands / (1 + self.sum_operands)
 
     @property
     def vocabulary(self) -> int:
@@ -396,17 +402,17 @@ class Scope:
         self.__weighted_metrics["LOC"] = (self.loc, self.high_coefficient, testability.CON)
         self.__weighted_metrics["DEPTH"] = (self.depth_of_nesting, self.high_coefficient, testability.CON)
         self.__weighted_metrics["NP"] = (self.n_arguments, self.mid_coefficient, testability.CON)
-        self.__weighted_metrics["NL"] = (self.n_loops, self.mid_coefficient, testability.PRO)
+        self.__weighted_metrics["NL"] = (self.n_loops, self.mid_coefficient, testability.CON)
         self.__weighted_metrics["NB"] = (self.n_branches, self.mid_coefficient, testability.CON)
         self.__weighted_metrics["NV"] = (self.n_declarations, self.mid_coefficient, testability.CON)
         self.__weighted_metrics["NR"] = (self.n_results, self.mid_coefficient, testability.CON)
         self.__weighted_metrics["NC"] = (self.n_external_calls, self.mid_coefficient, testability.CON)
-        self.__weighted_metrics["NYT"] = (self.n_operators, self.low_coefficient, testability.NONE)
-        self.__weighted_metrics["NYD"] = (self.n_operands, self.low_coefficient, testability.NONE)
+        self.__weighted_metrics["NYT"] = (self.n_operators, self.low_coefficient, testability.CON)
+        self.__weighted_metrics["NYD"] = (self.n_operands, self.low_coefficient, testability.CON)
         self.__weighted_metrics["NT"] = (self.sum_operators, self.low_coefficient, testability.CON)
         self.__weighted_metrics["ND"] = (self.sum_operands, self.low_coefficient, testability.CON)
-        self.__weighted_metrics["nNT"] = (self.ratio_operators, self.low_coefficient, testability.NONE)
-        self.__weighted_metrics["nND"] = (self.ratio_operands, self.low_coefficient, testability.PRO)
+        self.__weighted_metrics["nNT"] = (self.index_operators, self.low_coefficient, testability.NONE)
+        self.__weighted_metrics["nND"] = (self.index_operands, self.low_coefficient, testability.NONE)
         self.__weighted_metrics["NY"] = (self.vocabulary, self.low_coefficient, testability.CON)
         self.__weighted_metrics["N"] = (self.program_length, self.low_coefficient, testability.CON)
         self.__weighted_metrics["NHAT"] = (self.calculated_length, self.no_coefficient, testability.NONE)
@@ -416,114 +422,123 @@ class Scope:
         self.__weighted_metrics["T"] = (self.time_required_to_program, self.no_coefficient, testability.NONE)
         self.__weighted_metrics["B"] = (self.n_bugs, self.high_coefficient, testability.NONE)
 
-        # Reset WSM
-        self.__weighted_metrics_sum = None
-        self.__testability_factor = None
+        # Reset TAS
+        self.__testability_score = None
+        self.__test_factor = None
 
     @property
     def weighted_metrics(self) -> dict[str, tuple]:
-        """WSM = a * A ..."""
+        """WM = a * A"""
         if not self.__weighted_metrics:
             self.set_weighted_metrics()
 
         return self.__weighted_metrics
 
     @property
-    def weighted_metrics_sum(self) -> float:
-        """WSM = a * A ..."""
-        if self.__weighted_metrics_sum is None:
-            metrics = self.weighted_metrics.values()
-            weighted_metrics_sum_pro: float = 0.0
-            weighted_metrics_sum_con: float = 0.0
-            for metric in metrics:
+    def testability_score( self ) -> float:
+        """TAS = sum(WM)"""
+        if self.__testability_score is None:
+            self.__testability_score = 0
+            for metric in self.weighted_metrics.values():
                 match metric[2]:
                     case testability.CON:
-                        weighted_metrics_sum_con += metric[0] * metric[1]
-                    case testability.PRO:
-                        weighted_metrics_sum_pro += metric[0] * metric[1]
+                        self.__testability_score += metric[0 ] * metric[1 ]
 
-            self.__weighted_metrics_sum = weighted_metrics_sum_pro / weighted_metrics_sum_con if weighted_metrics_sum_con > 0 else 0
-
-        return self.__weighted_metrics_sum
+        return self.__testability_score
 
     @property
     def testability_index(self) -> float:
-        """TI = 1/ (1 + WSM) ... """
-        if self.__weighted_metrics_sum is None or self.__testability_index is None:
-            self.__testability_index = 1 / (1 + self.weighted_metrics_sum)
+        """TAI = 1/ (1 + TAS) ... """
+        if self.__testability_score is None or self.__testability_index is None:
+            self.__testability_index = 1 / (1 + self.testability_score)
 
         return self.__testability_index
 
     @property
     def normalized_testability_score(self) -> float:
-        """NTS = (WSM - min(WM)) / (max(WM) - min(WM))"""
-        if self.__weighted_metrics_sum is None or self.__normalized_testability_score is None:
-            minWSM_pro: float = 0.0
-            maxWSM_pro: float = 0.0
-            minWSM_con: float = 0.0
-            maxWSM_con: float = 0.0
+        """NTAS = (TAS - min(WM)) / (max(WM) - min(WM))"""
+        if self.__testability_score is None or self.__normalized_testability_score is None:
+            minWSM: float = 0.0
+            maxWSM: float = 0.0
             for metric in self.weighted_metrics.values():
-                weighted_metric: float = metric[0] * metric[1]
                 match metric[2]:
                     case testability.CON:
-                        minWSM_con = weighted_metric if weighted_metric < minWSM_con else minWSM_con
-                        maxWSM_con = weighted_metric if maxWSM_con < weighted_metric else maxWSM_con
-                    case testability.PRO:
-                        minWSM_pro = weighted_metric if weighted_metric < minWSM_pro else minWSM_pro
-                        maxWSM_pro = weighted_metric if maxWSM_pro < weighted_metric else maxWSM_pro
+                        weighted_metric: float = metric[0] * metric[1]
+                        minWSM = weighted_metric if weighted_metric < minWSM else minWSM
+                        maxWSM = weighted_metric if maxWSM < weighted_metric else maxWSM
 
-            minWSM: float = minWSM_pro / minWSM_con if minWSM_con > 0 else 0
-            maxWSM: float = maxWSM_pro / maxWSM_con if maxWSM_con > 0 else 0
-
-            self.__normalized_testability_score = (self.weighted_metrics_sum - minWSM) / (maxWSM - minWSM) if (maxWSM - minWSM) > 0 else 0
+            self.__normalized_testability_score = (self.testability_score - minWSM) / (maxWSM - minWSM) if (maxWSM - minWSM) > 0 else 0
 
         return self.__normalized_testability_score
 
     @property
     def aggregated_testability_score(self) -> float:
-        """ATS = 1 / n sum(A ...)"""
-        if self.__weighted_metrics_sum is None or self.__aggregated_testability_score is None:
-            sumMetrics_pro: float = 0.0
-            sumMetrics_con: float = 0.0
+        """ATAS = 1 / n TAS"""
+        if self.__testability_score is None or self.__aggregated_testability_score is None:
             n: int = 0
 
             for metric in self.weighted_metrics.values():
-                if metric[1] > 0:
-                    match metric[2]:
-                        case testability.CON:
-                            sumMetrics_con += metric[0]
-                        case testability.PRO:
-                            sumMetrics_pro += metric[0]
-                    n += 1
+                match metric[2]:
+                    case testability.CON:
+                        n += 1
 
-            sumMetrics: float = sumMetrics_pro / sumMetrics_con if sumMetrics_con > 0 else 0
-
-            self.__aggregated_testability_score = 1 / n * sumMetrics
+            self.__aggregated_testability_score = 1 / n * self.testability_score
 
         return self.__aggregated_testability_score
 
     @property
-    def testability_factor(self) -> float:
-        """TF = 1 (g Bugs) / (1 + a CC + b LOC + c Branches + d Loops + e Variables + f Calls)"""
-        if self.__testability_factor is None:
+    def test_score( self ) -> float:
+        """TS = b * TAS"""
+        if self.__test_score is None:
+            self.__test_score = self.test_Benefit * self.testability_score
 
-            numeratorFactors = ["B","nND"]
-            numeratorWSM: float = 0
-            for factor in numeratorFactors:
-                metric: tuple = self.weighted_metrics[factor]
-                numeratorWSM += metric[0] * metric[1]
-            denominatorFactors = ["CC", "LOC", "NB", "NL", "NV", "NC"]
-            denominatorWSM: float = 0
-            for factor in denominatorFactors:
-                metric: tuple = self.weighted_metrics[factor]
-                denominatorWSM += metric[0] * metric[1]
+        return self.__test_score
 
-            self.__testability_factor = 1 * numeratorWSM / (1 + denominatorWSM)
-        else :
-            if self.name == "hflx":
-                print(self.name)
+    @property
+    def test_index(self) -> float:
+        """TI = b * TAI """
+        if self.__test_index is None:
+            self.__test_index = self.test_Benefit * self.testability_index
 
-        return self.__testability_factor
+        return self.__test_index
+
+    @property
+    def normalized_test_score(self) -> float:
+        """NTS = b * NTAS"""
+        if self.__normalized_test_score is None:
+            self.__normalized_test_score = self.test_Benefit * self.normalized_testability_score
+
+        return self.__normalized_test_score
+
+    @property
+    def aggregated_test_score(self) -> float:
+        """ATS = b * ATAS"""
+        if self.__aggregated_test_score is None:
+            self.__aggregated_test_score = self.test_Benefit * self.aggregated_testability_score
+
+        return self.__aggregated_test_score
+
+    @property
+    def test_factor( self ) -> float:
+        """TF = 1 (g Bugs) / (1 + a CC + b LOC + c Depth + d Parameters + e Branches + f Calls + g Results)"""
+        if self.__test_factor is None:
+            self.__test_factor = 1 * self.test_Benefit / (1 + self.test_Effort)
+
+        return self.__test_factor
+
+    @property
+    def test_Benefit( self ):
+        if self.__testBenefit is None:
+            self.__testBenefit: float = self.score_of( [ "B" ] )
+
+        return self.__testBenefit
+
+    @property
+    def test_Effort( self ):
+        if self.__testEffort is None:
+            self.__testEffort: float = self.score_of( ["CC", "LOC", "DEPTH", "NP", "NB", "NC", "NR"] )
+
+        return self.__testEffort
 
     ###############################
     # Coefficients
@@ -552,6 +567,13 @@ class Scope:
     ###############################
     # Utils
     ###############################
+
+    def score_of( self, factors: List[str ] ) -> float:
+        score: float = 0
+        for factor in factors:
+            metric: tuple = self.weighted_metrics[ factor ]
+            score += metric[ 0 ] * metric[ 1 ]
+        return score
 
     def close_result(self):
         self.__scope_result_decl.close()
@@ -603,12 +625,12 @@ class Scope:
                     f"Halstead Complexity Measures:{self.debug_seperator}"
                     f"Number of distinct Operators ηT: {self.n_operators}{self.debug_seperator}"
                     f"Number of distinct Operands ηD: {self.n_operands}{self.debug_seperator}"
-                    f"Number of total Operators N1: {self.sum_operators}{self.debug_seperator}"
-                    f"Number of total Operands N2: {self.sum_operands}{self.debug_seperator}"
-                    f"Number of Operators ratio nN1: {self.ratio_operators}{self.debug_seperator}"
-                    f"Number of Operands ratio nN2: {self.ratio_operands}{self.debug_seperator}"
+                    f"Number of total Operators NT: {self.sum_operators}{self.debug_seperator}"
+                    f"Number of total Operands ND: {self.sum_operands}{self.debug_seperator}"
+                    f"Index of Operators nNT: {self.index_operators}{self.debug_seperator}"
+                    f"Index of Operands nND: {self.index_operands}{self.debug_seperator}"
                     f"Vocabulary (ηT + ηD): {self.vocabulary}{self.debug_seperator}"
-                    f"Program Length (N1 + N2): {self.program_length}{self.debug_seperator}"
+                    f"Program Length (NT + ND): {self.program_length}{self.debug_seperator}"
                     f"Calculated Length: {self.calculated_length}{self.debug_seperator}"
                     f"Volume: {self.volume}{self.debug_seperator}"
                     f"Difficulty: {self.difficulty}{self.debug_seperator}"
@@ -617,48 +639,56 @@ class Scope:
                     f"Number of delivered bugs: {self.n_bugs}{self.debug_seperator}"
                     # f"Distinct Operators: {self.operators}{self.debug_seperator}"
                     # f"Distinct Operands: {self.operands}{self.debug_seperator}"
-                    f"Testability Index:{self.debug_seperator}"
-                    f"Weighted Metrics Sum: {self.weighted_metrics_sum}{self.debug_seperator}"
+                    f"Test Score:{self.debug_seperator}"
+                    f"Testability Score: {self.testability_score}{self.debug_seperator}"
                     f"Testability Index: {self.testability_index}{self.debug_seperator}"
                     f"Normalized Testability Score: {self.normalized_testability_score}{self.debug_seperator}"
                     f"Aggregated Testability Score: {self.aggregated_testability_score}{self.debug_seperator}"
-                    f"Testability Factor: {self.testability_factor}"
+                    f"Test Score: {self.test_score}{self.debug_seperator}"
+                    f"Test Index: {self.test_index}{self.debug_seperator}"
+                    f"Normalized Test Score: {self.normalized_test_score}{self.debug_seperator}"
+                    f"Aggregated Test Score: {self.aggregated_test_score}{self.debug_seperator}"
+                    f"Test Factor: {self.test_factor}"
                     )
         else:
-            return (self.debug_seperator.join(str(x) for x in [self.name,
-                                                               self.src,
-                                                               self.cyclomatic_complexity,
-                                                               self.depth_of_nesting,
-                                                               self.loc,
-                                                               self.n_arguments,
-                                                               self.n_conditionals,
-                                                               self.n_loops,
-                                                               self.n_branches,
-                                                               self.n_declarations,
-                                                               self.n_results,
-                                                               self.n_external_calls,
-                                                               self.n_decision_points,
+            return (self.debug_seperator.join(str(x) for x in [ self.name,
+                                                                self.src,
+                                                                self.cyclomatic_complexity,
+                                                                self.depth_of_nesting,
+                                                                self.loc,
+                                                                self.n_arguments,
+                                                                self.n_conditionals,
+                                                                self.n_loops,
+                                                                self.n_branches,
+                                                                self.n_declarations,
+                                                                self.n_results,
+                                                                self.n_external_calls,
+                                                                self.n_decision_points,
+                                                                "",
+                                                                self.n_operators,
+                                                                self.n_operands,
+                                                                self.sum_operators,
+                                                                self.sum_operands,
+                                                                self.index_operators,
+                                                                self.index_operands,
+                                                                self.vocabulary,
+                                                                self.program_length,
+                                                                self.calculated_length,
+                                                                self.volume,
+                                                                self.difficulty,
+                                                                self.effort,
+                                                                self.time_required_to_program,
+                                                                self.n_bugs,
                                                                "",
-                                                               self.n_operators,
-                                                               self.n_operands,
-                                                               self.sum_operators,
-                                                               self.sum_operands,
-                                                               self.ratio_operators,
-                                                               self.ratio_operands,
-                                                               self.vocabulary,
-                                                               self.program_length,
-                                                               self.calculated_length,
-                                                               self.volume,
-                                                               self.difficulty,
-                                                               self.effort,
-                                                               self.time_required_to_program,
-                                                               self.n_bugs,
-                                                               "",
-                                                               self.weighted_metrics_sum,
-                                                               self.testability_index,
-                                                               self.normalized_testability_score,
-                                                               self.aggregated_testability_score,
-                                                               self.testability_factor]))
+                                                                self.testability_score,
+                                                                self.testability_index,
+                                                                self.normalized_testability_score,
+                                                                self.aggregated_testability_score,
+                                                                self.test_score,
+                                                                self.test_index,
+                                                                self.normalized_test_score,
+                                                                self.aggregated_test_score,
+                                                                self.test_factor ] ))
 
     ###############################
     # Sort utils
@@ -699,20 +729,16 @@ class Scope:
                 return self.n_decision_points
             case "Number of distinct Operators":
                 return self.n_operators
-            case "ηT":
-                return self.n_operators
             case "Number of distinct Operands":
-                return self.n_operands
-            case "ηD":
                 return self.n_operands
             case "Number of total Operators":
                 return self.sum_operators
-            case "NT":
-                return self.sum_operators
             case "Number of total Operands":
                 return self.sum_operands
-            case "ND":
-                return self.sum_operands
+            case "Operator Index":
+                return self.index_operators
+            case "Operands Index":
+                return self.index_operands
             case "Vocabulary":
                 return self.vocabulary
             case "Program Length":
@@ -729,16 +755,18 @@ class Scope:
                 return self.time_required_to_program
             case "Number of delivered bugs":
                 return self.n_bugs
-            case "Weighted Metrics Sum":
-                return self.weighted_metrics_sum
+            case "Testability Score":
+                return self.testability_score
             case "Testability Index":
                 return self.testability_index
             case "Normalized Testability Score":
                 return self.normalized_testability_score
             case "Aggregated Testability Score":
                 return self.aggregated_testability_score
-            case "Testability Factor":
-                return self.testability_factor
+            case "Test Factor":
+                return self.test_factor
+            case _ :
+                return self.test_factor
 
 
 # Set the namespace as Fxtran for XPath expressions
@@ -784,9 +812,16 @@ def add_operators_to(scope: Scope, element: ET.Element):
 def calculate_metrics(xml_path: str = None, src: str = None, sort_metric=None, debug: bool = False, debug_seperator: str = "\n") -> dict[str, Scope]:
     """
     Calculate cyclomatic complexity and halstead complexity measures from fxtran formatted xml file for Fortran code
-    :param xml_path:
+    :param xml_path: Path to fxtran xml files
+    :param src: Optional path to Fortran source files
+    :param sort_metric: Optional sort metric
+    :param debug: Optional debug output
+    :param debug_seperator: Optional seperator for debug output
     :return: None
     """
+
+    if xml_path is None:
+        return {}
     # Get the root element
     tree = ET.parse(xml_path)
     root = tree.getroot()
