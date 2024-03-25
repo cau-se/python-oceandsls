@@ -128,65 +128,66 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
                 ops_impl.append(value_list[-1])
 
         # Write content to module if module is set
-        for idx, module_symbol in enumerate(module_symbols):
+        if module_symbols is not None:
+            for idx, module_symbol in enumerate(module_symbols):
 
-            # Check test flags, e.g. overwrite flag
-            self.overwrite = False
-            if ctx.test_flags:
-                self.visit(ctx.test_flags)
+                # Check test flags, e.g. overwrite flag
+                self.overwrite = False
+                if ctx.test_flags:
+                    self.visit(ctx.test_flags)
 
-            if self.overwrite:
-                # Merge all files that should overwrite other files
+                if self.overwrite:
+                    # Merge all files that should overwrite other files
 
-                # Set module file
-                module_name = module_symbol.name
-                module_file = ".".join([module_name, self.file_suffix])
+                    # Set module file
+                    module_name = module_symbol.name
+                    module_file = ".".join([module_name, self.file_suffix])
+                    abs_path: str = os.path.join(self.work_path, module_file)
+
+                    if abs_path in self.overwrite_files:
+                        self.overwrite = False
+                    else:
+                        self.overwrite_files.append(abs_path)
+
+                if module_symbol.file and not self.overwrite:
+                    # Module exists
+
+                    insert = True
+                    module_file = module_symbol.file
+
+                    if ops_names or ops_impl:
+                        if idx == 0:
+                            # Write content only to main module and only if operations are added
+                            content = {module_symbol.name: [", ".join(ops_names), "\n\n".join(ops_impl)]}
+                        else:
+                            content = {module_symbol.name: ["", ""]}
+                    else:
+                        content = {}
+
+                else:
+                    # Module is new
+                    insert = False
+
+                    # Set module file
+                    module_name = module_symbol.name
+                    module_file = ".".join([module_name, self.file_suffix])
+                    module_symbol.file = module_file
+
+                    # Render template with new operations
+                    if idx == 0:
+                        content = template.render(name=module_name, opsNames=ops_names, ops=ops_impl)
+                    else:
+                        content = template.render(name=module_name)
+
+                # Get absolute file path
+                self.visit(ctx.srcpath)
                 abs_path: str = os.path.join(self.work_path, module_file)
 
-                if abs_path in self.overwrite_files:
-                    self.overwrite = False
-                else:
-                    self.overwrite_files.append(abs_path)
+                # Get the file attributes for previously generated files
+                file_attr = self.files.get(abs_path)
 
-            if module_symbol.file and not self.overwrite:
-                # Module exists
-
-                insert = True
-                module_file = module_symbol.file
-
-                if ops_names or ops_impl:
-                    if idx == 0:
-                        # Write content only to main module and only if operations are added
-                        content = {module_symbol.name: [", ".join(ops_names), "\n\n".join(ops_impl)]}
-                    else:
-                        content = {module_symbol.name: ["", ""]}
-                else:
-                    content = {}
-
-            else:
-                # Module is new
-                insert = False
-
-                # Set module file
-                module_name = module_symbol.name
-                module_file = ".".join([module_name, self.file_suffix])
-                module_symbol.file = module_file
-
-                # Render template with new operations
-                if idx == 0:
-                    content = template.render(name=module_name, opsNames=ops_names, ops=ops_impl)
-                else:
-                    content = template.render(name=module_name)
-
-            # Get absolute file path
-            self.visit(ctx.srcpath)
-            abs_path: str = os.path.join(self.work_path, module_file)
-
-            # Get the file attributes for previously generated files
-            file_attr = self.files.get(abs_path)
-
-            # Write content to file
-            self.files[abs_path] = write_file(abs_path, content, file_attr, insert)
+                # Write content to file
+                self.files[abs_path] = write_file(abs_path, content, file_attr, insert)
 
         # Return list of generated files
         return self.files
