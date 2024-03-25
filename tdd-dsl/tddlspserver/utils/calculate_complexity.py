@@ -94,10 +94,10 @@ class Scope:
 
     # Metrics
     __weighted_metrics: Dict[str, tuple] = field(default_factory=lambda: {})  # Union[tuple[int,float], tuple[float,float] ]
-    __testability_score: Optional[float ] = field( default=None )
+    __testability_difficulty: Optional[float ] = field( default=None )
     __testability_index: Optional[float] = field(default=None)
-    __normalized_testability_score: Optional[float] = field(default=None)
-    __aggregated_testability_score: Optional[float] = field(default=None)
+    __normalized_testability_difficulty: Optional[float ] = field( default=None )
+    __aggregated_testability_difficulty: Optional[float ] = field( default=None )
     __test_factor: Optional[float ] = field( default=None )
     __testBenefit: Optional[float ] = field( default=None )
     __testEffort: Optional[float ] = field( default=None )
@@ -169,34 +169,34 @@ class Scope:
     @property
     def sum_operators(self) -> int:
         """
-        Total number of operators : N1
-        :return: N1
+        Total number of operators : NT
+        :return: NT
         """
         return sum(self.operators.values())
 
     @property
     def sum_operands(self) -> int:
         """
-        Total number of operands : N2
-        :return: N2
+        Total number of operands : ND
+        :return: ND
         """
         return sum(self.operands.values())
 
     @property
-    def index_operators( self ) -> float:
+    def ratio_operators( self ) -> float:
         """
-        Index of operators : nN1 = n1/(1 + N1)
-        :return: nN1
+        Index of operators : nNT = NT / nT
+        :return: nNT
         """
-        return self.n_operators / (1 +self.sum_operators)
+        return self.sum_operators / self.n_operators if self.n_operators > 0 else 0
 
     @property
-    def index_operands( self ) -> float:
+    def ratio_operands( self ) -> float:
         """
-        Index of operands : nN2 = n2/(1 + N2)
-        :return: nN2
+        Index of operands : nND = ND / nD
+        :return: nND
         """
-        return self.n_operands / (1 + self.sum_operands)
+        return self.sum_operands / self.n_operands if self.n_operands > 0 else 0
 
     @property
     def vocabulary(self) -> int:
@@ -209,7 +209,7 @@ class Scope:
     @property
     def program_length(self) -> int:
         """
-        Program length: N = N1 + N2
+        Program length: N = NT + ND
         :return: N
         """
         return self.sum_operators + self.sum_operands
@@ -217,7 +217,7 @@ class Scope:
     @property
     def calculated_length(self) -> float:
         """
-        Calculated estimated program length: N^ = ηT log2 ηT + ηD log2 ηD
+        Calculated estimated program length: N^ = ηT logD ηT + ηD logD ηD
         :return:  N^
         """
         nT: int = self.n_operators
@@ -399,7 +399,7 @@ class Scope:
 
     def set_weighted_metrics(self):
         self.__weighted_metrics["CC"] = (self.cyclomatic_complexity, self.high_coefficient, testability.CON)  # incl conditionals
-        self.__weighted_metrics["LOC"] = (self.loc, self.high_coefficient, testability.CON)
+        self.__weighted_metrics["LOC"] = (self.loc, self.direct_coefficient, testability.CON)
         self.__weighted_metrics["DEPTH"] = (self.depth_of_nesting, self.high_coefficient, testability.CON)
         self.__weighted_metrics["NP"] = (self.n_arguments, self.mid_coefficient, testability.CON)
         self.__weighted_metrics["NL"] = (self.n_loops, self.mid_coefficient, testability.CON)
@@ -411,8 +411,8 @@ class Scope:
         self.__weighted_metrics["NYD"] = (self.n_operands, self.low_coefficient, testability.CON)
         self.__weighted_metrics["NT"] = (self.sum_operators, self.low_coefficient, testability.CON)
         self.__weighted_metrics["ND"] = (self.sum_operands, self.low_coefficient, testability.CON)
-        self.__weighted_metrics["nNT"] = (self.index_operators, self.low_coefficient, testability.NONE)
-        self.__weighted_metrics["nND"] = (self.index_operands, self.low_coefficient, testability.NONE)
+        self.__weighted_metrics["nNT"] = (self.ratio_operators, self.mid_coefficient, testability.CON)
+        self.__weighted_metrics["nND"] = (self.ratio_operands, self.mid_coefficient, testability.CON)
         self.__weighted_metrics["NY"] = (self.vocabulary, self.low_coefficient, testability.CON)
         self.__weighted_metrics["N"] = (self.program_length, self.low_coefficient, testability.CON)
         self.__weighted_metrics["NHAT"] = (self.calculated_length, self.no_coefficient, testability.NONE)
@@ -420,10 +420,10 @@ class Scope:
         self.__weighted_metrics["D"] = (self.difficulty, self.no_coefficient, testability.NONE)
         self.__weighted_metrics["E"] = (self.effort, self.no_coefficient, testability.NONE)
         self.__weighted_metrics["T"] = (self.time_required_to_program, self.no_coefficient, testability.NONE)
-        self.__weighted_metrics["B"] = (self.n_bugs, self.high_coefficient, testability.NONE)
+        self.__weighted_metrics["B"] = (self.n_bugs, self.direct_coefficient, testability.NONE)
 
         # Reset TAS
-        self.__testability_score = None
+        self.__testability_difficulty = None
         self.__test_factor = None
 
     @property
@@ -435,29 +435,29 @@ class Scope:
         return self.__weighted_metrics
 
     @property
-    def testability_score( self ) -> float:
+    def testability_difficulty( self ) -> float:
         """TAS = sum(WM)"""
-        if self.__testability_score is None:
-            self.__testability_score = 0
+        if self.__testability_difficulty is None:
+            self.__testability_difficulty = 0
             for metric in self.weighted_metrics.values():
                 match metric[2]:
                     case testability.CON:
-                        self.__testability_score += metric[0 ] * metric[1 ]
+                        self.__testability_difficulty += metric[0 ] * metric[1 ]
 
-        return self.__testability_score
+        return self.__testability_difficulty
 
     @property
     def testability_index(self) -> float:
         """TAI = 1/ (1 + TAS) ... """
-        if self.__testability_score is None or self.__testability_index is None:
-            self.__testability_index = 1 / (1 + self.testability_score)
+        if self.__testability_difficulty is None or self.__testability_index is None:
+            self.__testability_index = 1 / (1 + self.testability_difficulty)
 
         return self.__testability_index
 
     @property
-    def normalized_testability_score(self) -> float:
+    def normalized_testability_difficulty( self ) -> float:
         """NTAS = (TAS - min(WM)) / (max(WM) - min(WM))"""
-        if self.__testability_score is None or self.__normalized_testability_score is None:
+        if self.__testability_difficulty is None or self.__normalized_testability_difficulty is None:
             minWSM: float = 0.0
             maxWSM: float = 0.0
             for metric in self.weighted_metrics.values():
@@ -467,14 +467,14 @@ class Scope:
                         minWSM = weighted_metric if weighted_metric < minWSM else minWSM
                         maxWSM = weighted_metric if maxWSM < weighted_metric else maxWSM
 
-            self.__normalized_testability_score = (self.testability_score - minWSM) / (maxWSM - minWSM) if (maxWSM - minWSM) > 0 else 0
+            self.__normalized_testability_difficulty = (self.testability_difficulty - minWSM) / (maxWSM - minWSM) if (maxWSM - minWSM) > 0 else 0
 
-        return self.__normalized_testability_score
+        return self.__normalized_testability_difficulty
 
     @property
-    def aggregated_testability_score(self) -> float:
+    def aggregated_testability_difficulty( self ) -> float:
         """ATAS = 1 / n TAS"""
-        if self.__testability_score is None or self.__aggregated_testability_score is None:
+        if self.__testability_difficulty is None or self.__aggregated_testability_difficulty is None:
             n: int = 0
 
             for metric in self.weighted_metrics.values():
@@ -482,17 +482,9 @@ class Scope:
                     case testability.CON:
                         n += 1
 
-            self.__aggregated_testability_score = 1 / n * self.testability_score
+            self.__aggregated_testability_difficulty = 1 / n * self.testability_difficulty
 
-        return self.__aggregated_testability_score
-
-    @property
-    def test_score( self ) -> float:
-        """TS = b * TAS"""
-        if self.__test_score is None:
-            self.__test_score = self.test_Benefit * self.testability_score
-
-        return self.__test_score
+        return self.__aggregated_testability_difficulty
 
     @property
     def test_index(self) -> float:
@@ -506,7 +498,7 @@ class Scope:
     def normalized_test_score(self) -> float:
         """NTS = b * NTAS"""
         if self.__normalized_test_score is None:
-            self.__normalized_test_score = self.test_Benefit * self.normalized_testability_score
+            self.__normalized_test_score = self.test_Benefit * self.normalized_testability_difficulty
 
         return self.__normalized_test_score
 
@@ -514,7 +506,7 @@ class Scope:
     def aggregated_test_score(self) -> float:
         """ATS = b * ATAS"""
         if self.__aggregated_test_score is None:
-            self.__aggregated_test_score = self.test_Benefit * self.aggregated_testability_score
+            self.__aggregated_test_score = self.test_Benefit * self.aggregated_testability_difficulty
 
         return self.__aggregated_test_score
 
@@ -529,7 +521,7 @@ class Scope:
     @property
     def test_Benefit( self ):
         if self.__testBenefit is None:
-            self.__testBenefit: float = self.score_of( [ "B" ] )
+            self.__testBenefit: float =  (1 - 1/(1 + self.score_of( [ "B" ] ) ))
 
         return self.__testBenefit
 
@@ -563,6 +555,11 @@ class Scope:
     def high_coefficient(self) -> float:
         """0.1-0.15"""
         return 0.12
+
+    @property
+    def direct_coefficient(self) -> float:
+        """1.0"""
+        return 1.00
 
     ###############################
     # Utils
@@ -627,8 +624,8 @@ class Scope:
                     f"Number of distinct Operands ηD: {self.n_operands}{self.debug_seperator}"
                     f"Number of total Operators NT: {self.sum_operators}{self.debug_seperator}"
                     f"Number of total Operands ND: {self.sum_operands}{self.debug_seperator}"
-                    f"Index of Operators nNT: {self.index_operators}{self.debug_seperator}"
-                    f"Index of Operands nND: {self.index_operands}{self.debug_seperator}"
+                    f"Ratio of Operators nNT: {self.ratio_operators}{self.debug_seperator}"
+                    f"Ratio of Operands nND: {self.ratio_operands}{self.debug_seperator}"
                     f"Vocabulary (ηT + ηD): {self.vocabulary}{self.debug_seperator}"
                     f"Program Length (NT + ND): {self.program_length}{self.debug_seperator}"
                     f"Calculated Length: {self.calculated_length}{self.debug_seperator}"
@@ -640,11 +637,10 @@ class Scope:
                     # f"Distinct Operators: {self.operators}{self.debug_seperator}"
                     # f"Distinct Operands: {self.operands}{self.debug_seperator}"
                     f"Test Score:{self.debug_seperator}"
-                    f"Testability Score: {self.testability_score}{self.debug_seperator}"
+                    f"Testability Score: {self.testability_difficulty}{self.debug_seperator}"
                     f"Testability Index: {self.testability_index}{self.debug_seperator}"
-                    f"Normalized Testability Score: {self.normalized_testability_score}{self.debug_seperator}"
-                    f"Aggregated Testability Score: {self.aggregated_testability_score}{self.debug_seperator}"
-                    f"Test Score: {self.test_score}{self.debug_seperator}"
+                    f"Normalized Testability Score: {self.normalized_testability_difficulty}{self.debug_seperator}"
+                    f"Aggregated Testability Score: {self.aggregated_testability_difficulty}{self.debug_seperator}"
                     f"Test Index: {self.test_index}{self.debug_seperator}"
                     f"Normalized Test Score: {self.normalized_test_score}{self.debug_seperator}"
                     f"Aggregated Test Score: {self.aggregated_test_score}{self.debug_seperator}"
@@ -669,8 +665,8 @@ class Scope:
                                                                 self.n_operands,
                                                                 self.sum_operators,
                                                                 self.sum_operands,
-                                                                self.index_operators,
-                                                                self.index_operands,
+                                                                self.ratio_operators,
+                                                                self.ratio_operands,
                                                                 self.vocabulary,
                                                                 self.program_length,
                                                                 self.calculated_length,
@@ -680,11 +676,10 @@ class Scope:
                                                                 self.time_required_to_program,
                                                                 self.n_bugs,
                                                                "",
-                                                                self.testability_score,
+                                                                self.testability_difficulty,
                                                                 self.testability_index,
-                                                                self.normalized_testability_score,
-                                                                self.aggregated_testability_score,
-                                                                self.test_score,
+                                                                self.normalized_testability_difficulty,
+                                                                self.aggregated_testability_difficulty,
                                                                 self.test_index,
                                                                 self.normalized_test_score,
                                                                 self.aggregated_test_score,
@@ -736,9 +731,9 @@ class Scope:
             case "Number of total Operands":
                 return self.sum_operands
             case "Operator Index":
-                return self.index_operators
+                return self.ratio_operators
             case "Operands Index":
-                return self.index_operands
+                return self.ratio_operands
             case "Vocabulary":
                 return self.vocabulary
             case "Program Length":
@@ -755,14 +750,20 @@ class Scope:
                 return self.time_required_to_program
             case "Number of delivered bugs":
                 return self.n_bugs
-            case "Testability Score":
-                return self.testability_score
+            case "Testability Difficulty":
+                return self.testability_difficulty
             case "Testability Index":
                 return self.testability_index
-            case "Normalized Testability Score":
-                return self.normalized_testability_score
-            case "Aggregated Testability Score":
-                return self.aggregated_testability_score
+            case "Normalized Testability Difficulty":
+                return self.normalized_testability_difficulty
+            case "Aggregated Testability Difficulty":
+                return self.aggregated_testability_difficulty
+            case "Test Index":
+                return self.test_index
+            case "Normalized Test Score":
+                return self.normalized_test_score
+            case "Aggregated Test Score":
+                return self.aggregated_test_score
             case "Test Factor":
                 return self.test_factor
             case _ :
