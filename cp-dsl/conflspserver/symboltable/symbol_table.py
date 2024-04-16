@@ -108,7 +108,7 @@ class UnitKind(Enum):
     ton = 10
 
 
-class UnitPrefix:
+class UnitPrefix(Enum):
     """
     Rough categorization of a unit from SI prefixes.
     """
@@ -549,7 +549,7 @@ class UnitSymbol(TypedSymbol):
     attached_unit: Optional[Unit]
     attached_description: Optional[str]
 
-    def __init__(self, name: str, attached_description: str, attached_keys=None, attached_unit: Unit, attached_type: Type = None):
+    def __init__(self, name: str, attached_description: str, attached_keys=None, attached_unit: Unit = None, attached_type: Type = None):
         super().__init__(name, attached_type, attached_keys)
         self.attached_unit = attached_unit
         self.attached_description = attached_description
