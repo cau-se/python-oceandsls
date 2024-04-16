@@ -23,6 +23,7 @@ from conflspserver.cst.symbol_table_visitor import SymbolTableVisitor
 from conflspserver.utils.calc import DeclarationCalculator, ConfigurationCalculator
 from conflspserver.generators.uvic.code_generator import UvicCodeGenerator
 from conflspserver.generators.mitgcm.code_generator import MitGcmCodeGenerator
+from conflspserver.generators.eval.code_generator import EvalCodeGenerator
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -54,24 +55,44 @@ if __name__ == '__main__':
         if not os.path.isdir(output_path):
             os.mkdir(output_path)
         with open(current_path) as conf_file:
+            # 1 read CONF file
+            # 2 identify declaration file
+            # 3 read declaration file
+            # 4 compute model
+            # 5 provide model to generator
+
+            #
+            # 1 read CONF file
             data = conf_file.read()
             input_stream = InputStream(data)
             lexer = ConfigurationLexer(input_stream)
             stream = CommonTokenStream(lexer)
             dcl_parsed = ConfigurationParser(stream).configurationModel()
+
+            print("bla")
+            print(dcl_parsed.declarationModel.text)
+
+            # What is the purpose of this here
             configuration_visitor.visit(dcl_parsed)
+
+            #
+            # 2 indentify declaration file
+
+            #
+            # 3 read declaration file
+            
+            #
+            # 4 compute model
             try:
                 declaration_calculator = DeclarationCalculator(configuration_visitor.symbol_table)
             except AttributeError as e:
                 print("ERROR: Could not parse Declaration-File correctly")
                 print(e)
-            # try:
+            
             declaration_result = declaration_calculator.calculate()
-            # declaration_result.
-            table = ConfigurationCalculator(declaration_result, configuration_visitor.configuration_list).calculate()
-            # except AttributeError as e:
-            #     print("ERROR: Could not parse Configuration-File")
-            #     print(e)
+
+            #
+            # 5 provide model to generator
             if configuration_visitor.generator_selector == 'uvic':
                 try:
                     generator = UvicCodeGenerator(table, output_path)

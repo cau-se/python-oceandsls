@@ -15,12 +15,10 @@
 import jinja2 as j
 import os
 
-from ..symboltable.symbol_table import SymbolTable
-
 __author__ = 'Reiner Jung'
 
 # Relative imports
-from ..symboltable.symbol_table import SymbolTable, GroupSymbol, VariableSymbol, FeatureSymbol, EnumSymbol
+from conflspserver.symboltable.symbol_table import SymbolTable, GroupSymbol, VariableSymbol, FeatureSymbol, EnumSymbol
 from ..code_generator import StandardCodeGenerator
 
 
