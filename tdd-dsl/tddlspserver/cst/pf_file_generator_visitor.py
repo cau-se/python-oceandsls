@@ -44,7 +44,12 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
     file_suffix: str
     found_ref: bool
     found_par: bool
+    found_array: bool
+    is_var: bool
+    pointers: List[str]
+    procedure_calls: List[str]
     symbol_table: SymbolTable
+    array_name: str
 
     def __init__(
             self, template_path: str = "tdd-dsl/tddlspserver/filewriter/jinjatemplates/pf", files: Dict[str, Tuple[float, str, str]] = {},
@@ -65,6 +70,8 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
         self.overwrite = False
         self.overwrite_files: List[str] = []
         self.files: dict[str, Tuple[float, str, str]] = files
+        self.pointers = []
+        self.procedure_calls = []
 
         self.symbol_table = symbol_table
 
@@ -107,7 +114,8 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
         assertions = []
         for assertion in ctx.assertions:
             assertions.append(self.visit(assertion))
-        content = template.render(name=name, scope=scope, vars_=vars_, assertions=assertions)
+
+        content = template.render(name=name, scope=scope, vars_=vars_, assertions=assertions, calls=self.procedure_calls, pointers=self.pointers)
 
         # Check test flags. E.g. overwrite flag
         self.overwrite = False
@@ -157,14 +165,18 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
         for var in ctx.vars_:
             templates: List[str] = self.visit(var)
             # Is the variable initialized with a reference?
-            match (self.found_par, self.found_ref):
-                case [True, _]:
+            match (self.found_par, self.found_ref, self.found_array):
+                case [True, _ , _]:
                     # Add parameter to top of declaration
                     parm.append(templates[0])
-                case [_, False]:
-                    # Append declaration with constant expression as normal
-                    vars.append(templates[0])
-                case [False, True]:
+                case [_ , _ , True]:
+                    # Split array declaration with initialization separately, dismiss extra declaration entry
+                    decl.append(templates[0])
+                    vars.extend(templates[2:])
+                case [_, False, _]:
+                    # Append declaration with constant expression as decl before allocate
+                    decl.append(templates[0])
+                case [False, True, _]:
                     # Split declaration and initialization separately
                     vars.append(templates[0])
                     decl.append(templates[1])
@@ -178,7 +190,7 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
         # Set declaration list to None if empty
         # Decl = decl if decl else None
 
-        return template.render(parm=parm, decl=decl, vars=vars)
+        return template.render(parm=parm, decl=decl, vars=vars, pointers=self.pointers)
 
     # Visit a parse tree produced by TestSuiteParser#testVars.
     def visitTestVar(self, ctx: TestSuiteParser.TestVarContext):
@@ -192,21 +204,43 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
 
         self.found_ref = False
         # Reset foundRef flag for right side
-        value = self.visit(ctx.expr())
+        value = self.visit(ctx.expr()) if ctx.value  else None
 
         templates: List[str] = []
 
         match (self.found_par, self.found_ref):
             case [True, _] | [_, False]:
                 # Found Parameter no reference on right side: Add declaration with constant expression
-                templates.extend([template.render(decl=decl, name=None, value=value, comment=comment), None])
+                templates.extend([template.render(decl=decl, name=None, value=value, comment=comment, is_var = self.is_var), None])
             case [False, True]:
                 # Found reference on right side: Separate declaration and initialization
-                templates.extend([template.render(decl=None, name=name, value=value, comment=comment), decl])
+                templates.extend([template.render(decl=None, name=name, value=value, comment=comment, is_var = self.is_var), decl])
             case _:
                 pass
+        if ctx.elements:
+            self.found_array = True
+            self.array_name = name;
+            for element in ctx.elements:
+                templates.append(self.visit(element))
+        else:
+            self.found_array = False
+            self.array_name = None
 
         return templates
+
+    # Visit a parse tree produced by TestSuiteParser#varElement.
+    def visitVarElement(self, ctx:TestSuiteParser.VarElementContext):
+        template = self.environment.get_template(self.file_templates[ctx.getRuleIndex()])
+        name = ctx.name.text
+        value = self.visit(ctx.expr())
+        is_var: bool = True
+        for key in ctx.keys:
+            key_text: str = key.keyword.text
+            if key_text.lower() == "pointer":
+                self.pointers.append(self.array_name + "%" + name)
+            if key_text.lower() == "proc":
+                is_var = False
+        return template.render( name= self.array_name + "%" + name, value=value, isVar = is_var )
 
     # Visit a parse tree produced by TestSuiteParser#varDeclaration.
     def visitVarDeclaration(self, ctx: TestSuiteParser.VarDeclarationContext):
@@ -214,11 +248,16 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
         name = ctx.ID().getText()
         type = self.visit(ctx.type_)
         keys = []
+        self.is_var = True
         for key in ctx.keys:
             key_text: str = key.keyword.text
             # Flag parameter
             if key_text.lower() == "parameter":
                 self.found_par = True
+            if key_text.lower() == "pointer":
+                self.pointers.append(name)
+            if key_text.lower() == "proc":
+                self.is_var = False
             keys.append(key_text)
 
         return template.render(name=name, type=type, keys=keys)
@@ -232,7 +271,7 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
     def visitPrcRef(self, ctx: TestSuiteParser.PrcRefContext):
         self.found_ref = True
         template = self.environment.get_template(self.file_templates[ctx.getRuleIndex()])
-        name = ctx.ID().getText()
+        name = self.visit(ctx.name)
         args = []
         for arg in ctx.args:
             args.append(self.visit(arg))
@@ -242,8 +281,11 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
     def visitVarRef(self, ctx: TestSuiteParser.VarRefContext):
         self.found_ref = True
         template = self.environment.get_template(self.file_templates[ctx.getRuleIndex()])
-        name = ctx.ID().getText()
+        name = self.visit(ctx.name)
         return template.render(name=name)
+
+    def visitVarID(self, ctx:TestSuiteParser.VarIDContext):
+        return ctx.baseName.text + "%" + ctx.elementName.text if ctx.elementName else ctx.baseName.text
 
     # Visit a parse tree produced by TestSuiteParser#enm.
     def visitEnm(self, ctx: TestSuiteParser.EnmContext):
@@ -351,6 +393,16 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
 
         # Render template
         return template.render(directive=directive, input_=input_, output=output, pub_attributes=pub_attributes, comment=comment, tag=tag)
+
+    # Visit a parse tree produced by TestSuiteParser#extendedTestParameter.
+    def visitExtendedTestParameter(self, ctx:TestSuiteParser.ExtendedTestParameterContext):
+        if ctx.procedure():
+            template = self.environment.get_template(self.file_templates[ctx.getRuleIndex()])
+            procedure_calls: List [str] = []
+            for procedure in ctx.procedure():
+                procedure_calls.append(template.render(procedure=self.visit(procedure)))
+            self.procedure_calls.extend(procedure_calls)
+        return self.visitChildren(ctx)
 
     # Visit a parse tree produced by TestSuiteParser#testDirective.
     def visitTestDirective(self, ctx: TestSuiteParser.TestDirectiveContext):

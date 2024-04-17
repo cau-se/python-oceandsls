@@ -2,4 +2,6 @@
 
 {% endif %}{% if decl %} {{ decl|join("\n ") }}
 
+{% endif %}{% if pointers %} allocate({{ pointers|join(", ") }})
+
 {% endif %} {{ vars|join("\n ") }}

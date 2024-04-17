@@ -104,6 +104,16 @@ public interface TestSuiteListener extends ParseTreeListener {
 	 */
 	void exitTestVar(TestSuiteParser.TestVarContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link TestSuiteParser#varElement}.
+	 * @param ctx the parse tree
+	 */
+	void enterVarElement(TestSuiteParser.VarElementContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link TestSuiteParser#varElement}.
+	 * @param ctx the parse tree
+	 */
+	void exitVarElement(TestSuiteParser.VarElementContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link TestSuiteParser#varDeclaration}.
 	 * @param ctx the parse tree
 	 */
@@ -317,6 +327,30 @@ public interface TestSuiteListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitConstantSpec(TestSuiteParser.ConstantSpecContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code pointerSpec}
+	 * labeled alternative in {@link TestSuiteParser#f90StdKey}.
+	 * @param ctx the parse tree
+	 */
+	void enterPointerSpec(TestSuiteParser.PointerSpecContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code pointerSpec}
+	 * labeled alternative in {@link TestSuiteParser#f90StdKey}.
+	 * @param ctx the parse tree
+	 */
+	void exitPointerSpec(TestSuiteParser.PointerSpecContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code procedureSpec}
+	 * labeled alternative in {@link TestSuiteParser#f90StdKey}.
+	 * @param ctx the parse tree
+	 */
+	void enterProcedureSpec(TestSuiteParser.ProcedureSpecContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code procedureSpec}
+	 * labeled alternative in {@link TestSuiteParser#f90StdKey}.
+	 * @param ctx the parse tree
+	 */
+	void exitProcedureSpec(TestSuiteParser.ProcedureSpecContext ctx);
 	/**
 	 * Enter a parse tree produced by the {@code customKey}
 	 * labeled alternative in {@link TestSuiteParser#f90StdKey}.
@@ -591,6 +625,16 @@ public interface TestSuiteListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitPrcRef(TestSuiteParser.PrcRefContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link TestSuiteParser#varID}.
+	 * @param ctx the parse tree
+	 */
+	void enterVarID(TestSuiteParser.VarIDContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link TestSuiteParser#varID}.
+	 * @param ctx the parse tree
+	 */
+	void exitVarID(TestSuiteParser.VarIDContext ctx);
 	/**
 	 * Enter a parse tree produced by the {@code parensUnit}
 	 * labeled alternative in {@link TestSuiteParser#unitSpec}.
