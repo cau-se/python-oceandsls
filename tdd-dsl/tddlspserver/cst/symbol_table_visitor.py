@@ -69,7 +69,23 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
     # Visit a parse tree produced by TestSuiteParser#testVar.
     def visitTestVar(self, ctx: TestSuiteParser.TestVarContext):
         decl = self.visit(ctx.varDeclaration())
+        elements: List
+        if ctx.elements:
+            elements = []
+            for element in ctx.elements:
+                elements.append(self.visit(element))
+        else:
+            elements = None
         return self._symbol_table.add_new_symbol_of_type(VariableSymbol, self._scope, decl[0], ctx.value, decl[1], decl[2])
+
+    # Visit a parse tree produced by TestSuiteParser#varElement.
+    def visitVarElement(self, ctx:TestSuiteParser.VarElementContext):
+        name = ctx.name.text
+        value = ctx.value
+        keys = []
+        for key in ctx.keys:
+            keys.append(key.keyword.text)
+        return name, value, keys
 
     # Visit a parse tree produced by TestSuiteParser#varDeclaration.
     def visitVarDeclaration(self, ctx: TestSuiteParser.VarDeclarationContext):
@@ -128,7 +144,7 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
 
     # Visit a parse tree produced by TestSuiteParser#prcRef.
     def visitPrcRef(self, ctx: TestSuiteParser.PrcRefContext):
-        name = ctx.ID().getText()
+        name = self.visit(ctx.name)
         args = []
         for arg in ctx.args:
             args.append(self.visit(arg))
@@ -136,8 +152,11 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
 
     # Visit a parse tree produced by TestSuiteParser#varRef.
     def visitVarRef(self, ctx: TestSuiteParser.VarRefContext):
-        name = ctx.ID().getText()
-        return name
+        return self.visit(ctx.name)
+
+    # Visit a parse tree produced by TestSuiteParser#varID.
+    def visitVarID(self, ctx:TestSuiteParser.VarIDContext):
+        return ctx.baseName.text + "%" + ctx.elementName.text if ctx.elementName else ctx.baseName.text
 
     # Visit a parse tree produced by TestSuiteParser#enm.
     def visitEnm(self, ctx: TestSuiteParser.EnmContext):

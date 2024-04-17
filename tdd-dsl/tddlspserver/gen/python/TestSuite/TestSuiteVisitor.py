@@ -54,6 +54,11 @@ class TestSuiteVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by TestSuiteParser#varElement.
+    def visitVarElement(self, ctx:TestSuiteParser.VarElementContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by TestSuiteParser#varDeclaration.
     def visitVarDeclaration(self, ctx:TestSuiteParser.VarDeclarationContext):
         return self.visitChildren(ctx)
@@ -146,6 +151,16 @@ class TestSuiteVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by TestSuiteParser#constantSpec.
     def visitConstantSpec(self, ctx:TestSuiteParser.ConstantSpecContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by TestSuiteParser#pointerSpec.
+    def visitPointerSpec(self, ctx:TestSuiteParser.PointerSpecContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by TestSuiteParser#procedureSpec.
+    def visitProcedureSpec(self, ctx:TestSuiteParser.ProcedureSpecContext):
         return self.visitChildren(ctx)
 
 
@@ -266,6 +281,11 @@ class TestSuiteVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by TestSuiteParser#prcRef.
     def visitPrcRef(self, ctx:TestSuiteParser.PrcRefContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by TestSuiteParser#varID.
+    def visitVarID(self, ctx:TestSuiteParser.VarIDContext):
         return self.visitChildren(ctx)
 
 

@@ -28,7 +28,7 @@ import CommonLexerRules;
 /** Arithmetic expression for value calculation */
 unitSpec        : '(' type=unitSpec ')'                       # parensUnit /** Parenthesized expression */
                 | left=unitSpec op=('*' | '/') right=unitSpec # mulDivUnit /** Multiplication, Division have precedence */
-                | type=unitSpec op='**' exponent=INT          # expUnit    /** Addition, Subtraction have not precedence */
+                | type=unitSpec op='**' ('-') exponent=INT    # expUnit    /** Addition, Subtraction have not precedence */
                 | type=siUnit                                 # stdUnit
                 | type=customUnit                             # cstUnit
                 ;

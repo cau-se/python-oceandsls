@@ -14,7 +14,7 @@
     <option name="ADD_CONTENT_ROOTS" value="true" />
     <option name="ADD_SOURCE_ROOTS" value="true" />
     <option name="SCRIPT_NAME" value="tdd-dsl.tddlspserver" />
-    <option name="PARAMETERS" value="--tcp -m &quot;Testability Factor&quot;" />
+    <option name="PARAMETERS" value="--tcp -m &quot;Test Factor&quot;" />
     <option name="SHOW_COMMAND_LINE" value="false" />
     <option name="EMULATE_TERMINAL" value="false" />
     <option name="MODULE_MODE" value="true" />

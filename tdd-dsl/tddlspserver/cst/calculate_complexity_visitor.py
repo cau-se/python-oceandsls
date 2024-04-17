@@ -2,6 +2,7 @@
 
 __author__ = "sgu"
 
+import logging
 #  Copyright (c) 2023.  OceanDSL (https://oceandsl.uni-kiel.de)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +18,7 @@ __author__ = "sgu"
 #  limitations under the License.
 
 import os
+import shutil
 # Util imports
 from typing import Callable, Generic
 
@@ -30,6 +32,8 @@ from ..gen.python.TestSuite.TestSuiteVisitor import TestSuiteVisitor
 from ..utils.calculate_complexity import calculate_metrics
 from ..symboltable.symbol_table import MetricSymbol, SymbolTable, PathSymbol, SymbolTableOptions, P, T, TestCaseSymbol
 
+# Debug Log
+logger = logging.getLogger(__name__)
 
 class CalculateComplexityVisitor(TestSuiteVisitor, Generic[T]):
     _symbol_table: SymbolTable
@@ -105,6 +109,12 @@ class CalculateComplexityVisitor(TestSuiteVisitor, Generic[T]):
             for scope_name, scope in scope_elements.items():
                 if scope.is_testable:
                     self._symbol_table.add_new_symbol_of_type(MetricSymbol, self._scope, scope_name, scope)
+
+        try:
+            # Remove temporary xml files
+            shutil.rmtree(xml_path)
+        except OSError as e:
+            logger.error("Error deleting temporary xml directory : %s - %s." % (e.filename, e.strerror))
 
     def withScope(self, tree: ParseTree, t: type, action: Callable, *my_args: P.args or None, **my_kwargs: P.kwargs or None) -> T:
         """

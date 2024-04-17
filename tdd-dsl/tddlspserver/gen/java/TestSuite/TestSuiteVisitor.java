@@ -68,6 +68,12 @@ public interface TestSuiteVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitTestVar(TestSuiteParser.TestVarContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link TestSuiteParser#varElement}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitVarElement(TestSuiteParser.VarElementContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link TestSuiteParser#varDeclaration}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -193,6 +199,20 @@ public interface TestSuiteVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitConstantSpec(TestSuiteParser.ConstantSpecContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code pointerSpec}
+	 * labeled alternative in {@link TestSuiteParser#f90StdKey}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitPointerSpec(TestSuiteParser.PointerSpecContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code procedureSpec}
+	 * labeled alternative in {@link TestSuiteParser#f90StdKey}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitProcedureSpec(TestSuiteParser.ProcedureSpecContext ctx);
 	/**
 	 * Visit a parse tree produced by the {@code customKey}
 	 * labeled alternative in {@link TestSuiteParser#f90StdKey}.
@@ -354,6 +374,12 @@ public interface TestSuiteVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitPrcRef(TestSuiteParser.PrcRefContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link TestSuiteParser#varID}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitVarID(TestSuiteParser.VarIDContext ctx);
 	/**
 	 * Visit a parse tree produced by the {@code parensUnit}
 	 * labeled alternative in {@link TestSuiteParser#unitSpec}.

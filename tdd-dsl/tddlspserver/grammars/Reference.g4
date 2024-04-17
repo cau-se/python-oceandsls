@@ -38,9 +38,12 @@ expr                    : '(' inner=expr ')'                                # pa
 
 /** Procedure or variables to lookup in the symboltable */
 reference               : procedure                                         # funRef        /** Function call like f(), f(x), f(1,2) */
-                        | name=ID                                           # varRef
+                        | name=varID                                        # varRef
                         ;
 
 /** Procedure to lookup in the symboltable and for direct call */
-procedure               : name=ID '(' (args+=expr(',' args+=expr)*)? ')'    # prcRef        /** Procedure call like f(), f(x), f(1,2) */
+procedure               : name=varID '(' (args+=expr(',' args+=expr)*)? ')' # prcRef   /** Procedure call like f(), f(x), f(1,2) */
+                        ;
+
+varID                   : baseName=ID ('%' elementName=ID)?
                         ;
