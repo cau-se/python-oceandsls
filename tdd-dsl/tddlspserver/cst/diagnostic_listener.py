@@ -43,6 +43,14 @@ class DiagnosticListener(ErrorListener):
     # Enables printing ATN state info to terminal.
     show_debug_output: bool = False
 
+    @property
+    def symbol( self ) -> str:
+        return self._symbol
+
+    @property
+    def state( self ) -> int:
+        return self._state
+
     # Reset the listener's state
     def reset(self):
         self.diagnostics = []
@@ -66,6 +74,10 @@ class DiagnosticListener(ErrorListener):
                 message=msg
             )
         )
+
+        self._state:int = recognizer.state
+
+        self._symbol:str = offendingSymbol.text
 
         if self.show_debug_output and self.logger.isEnabledFor(logging.DEBUG):
             self.logger.debug("ERROR: when parsing line %d column %d: %s\n" % (line, column, msg))
