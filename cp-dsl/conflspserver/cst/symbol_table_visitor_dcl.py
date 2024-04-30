@@ -1,6 +1,6 @@
 """SymbolTableVisitor module."""
 
-__author__ = 'stu222808'
+__author__ = "stu222808"
 
 #  Copyright (c) 2023.  OceanDSL (https://oceandsl.uni-kiel.de)
 #
@@ -24,21 +24,22 @@ from antlr4.tree.Tree import ParseTree
 from antlr4.Token import CommonToken
 
 # user relative imports
-from ..symboltable.symbol_table import SymbolTable, P, T, GroupSymbol, FeatureSymbol, SymbolTableOptions, VariableSymbol, FundamentalUnit, UnitPrefix, \
-    UnitKind, EnumSymbol, ArraySymbol, RangeSymbol, ComposedUnit, UnitSpecification, DuplicateSymbolError
+from symboltable.symbol_table import SymbolTable, P, T, GroupSymbol, FeatureSymbol, SymbolTableOptions, VariableSymbol, \
+    EnumSymbol, ArraySymbol, RangeSymbol, DuplicateSymbolError
+from symboltable.cp_model import FundamentalUnit, UnitPrefix, UnitKind, ComposedUnit, UnitSpecification
 from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
 from dcllspserver.gen.python.Declaration.DeclarationVisitor import DeclarationVisitor
 
 # NOTE: Method names starting with visit are required to look like this, as parts of the grammar
 # are named in that way
 
-class SymbolTableVisitorDcl(DeclarationVisitor, Generic[T]):
+class DeclarationCPVisitor(DeclarationVisitor, Generic[T]):
     _symbol_table: SymbolTable
 
-    def __init__(self, name: str = '', ):
+    def __init__(self, symbol_table: SymbolTable ):
         super().__init__()
         # creates a new symboltable with no duplicate symbols
-        self._symbol_table = SymbolTable(name, SymbolTableOptions(False))
+        self._symbol_table = symbol_table
         # TODO scope marker
         # self._scope = self._symbol_table.add_new_symbol_of_type( ScopedSymbol, None )
         self._scope = self._symbol_table
@@ -102,8 +103,9 @@ class SymbolTableVisitorDcl(DeclarationVisitor, Generic[T]):
 
     # sIUnit                      :   (prefix=ePrefix)? type=eSIUnitType #siUnit;
     def visitSiunit(self, ctx: DeclarationParser.SIUnitContext):
-        return FundamentalUnit(name=ctx.type_.getText() if ctx.type_ else "", unit_prefix=self.stringToPrefix(
-            ctx.prefix.getText() if ctx.prefix else ""), unit_kind=self.stringToUnitType(ctx.type_.getText() if ctx.type_ else ""))
+        return FundamentalUnit(name=ctx.type_.getText() if ctx.type_ else "",
+            unit_prefix=self.stringToPrefix(ctx.prefix.getText() if ctx.prefix else ""),
+            unit_kind=self.stringToUnitType(ctx.type_.getText() if ctx.type_ else ""))
 
     # customUnit                  :   name=STRING #customunit;
     def visitCustomunit(self, ctx: DeclarationParser.CustomUnitContext):
@@ -212,10 +214,16 @@ class SymbolTableVisitorDcl(DeclarationVisitor, Generic[T]):
         symbol = self._symbol_table.add_new_symbol_of_type(RangeSymbol, self._scope, rangeName, type(ctx.type_), ctx.minimum, ctx.maximum)
         symbol.context = ctx
 
-    def withScope(
-            self, tree: ParseTree, t: type, action: Callable, *my_args: P.args or None,
-            **my_kwargs: P.kwargs or None
-    ) -> T:
+    def withScope(self, tree: ParseTree, t: type, action: Callable, *my_args: P.args or None, **my_kwargs: P.kwargs or None) -> T:
+        """
+        Add a scoped symbol to the symboltable and recursively add all symbols inside this scope the symboltable
+        :param tree: Context of the scoped symbol
+        :param t: Symbol type
+        :param action: Lambda function to add children symbols to symboltable
+        :param my_args: Arguments of symbol type
+        :param my_kwargs: named Arguments of symbol type
+        :return: Current scope
+        """
         try:
             scope = self._symbol_table.add_new_symbol_of_type(t, self._scope, *my_args, **my_kwargs)
         except DuplicateSymbolError:

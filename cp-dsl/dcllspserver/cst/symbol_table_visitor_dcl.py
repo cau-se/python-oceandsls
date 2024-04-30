@@ -23,36 +23,38 @@ from typing import Generic, Callable
 from antlr4.tree.Tree import ParseTree
 from antlr4.Token import CommonToken
 
-from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
-
 # user relative imports
-from ..symboltable.symbol_table import (
-    SymbolTable, P, T, GroupSymbol, FeatureSymbol, SymbolTableOptions, VariableSymbol, FundamentalUnit, UnitPrefix, UnitKind, EnumSymbol, ArraySymbol,
-    RangeSymbol, ComposedUnit, UnitSpecification, DuplicateSymbolError
+from symboltable.symbol_table import (
+    SymbolTable, P, T, GroupSymbol, FeatureSymbol, SymbolTableOptions, VariableSymbol, EnumSymbol, ArraySymbol,
+    RangeSymbol, DuplicateSymbolError
 )
+
+from symboltable.cp_model import UnitPrefix, UnitKind, UnitSpecification, ComposedUnit, FundamentalUnit
+
 from ..gen.python.Declaration.DeclarationParser import DeclarationParser
 from ..gen.python.Declaration.DeclarationVisitor import DeclarationVisitor
 
+# NOTE: Method names starting with visit are required to look like this, as parts of the grammar
+# are named in that way
 
-class SymbolTableVisitorDcl(DeclarationVisitor, Generic[T]):
-    _symbolTable: SymbolTable
+class DeclarationCPVisitor(DeclarationVisitor, Generic[T]):
+    _symbol_table: SymbolTable
 
-    def __init__(self, name: str = '', ):
+    def __init__(self, symbol_table:SymbolTable):
         super().__init__()
-        # creates a new symboltable with no duplicate symbols
-        self._symbolTable = SymbolTable(name, SymbolTableOptions(False))
         # TODO scope marker
-        # self._scope = self._symbolTable.addNewSymbolOfType( ScopedSymbol, None )
-        self._scope = self._symbolTable
+        self._symbol_table = symbol_table
+        # self._scope = self._symbol_table.add_new_symbol_of_type( ScopedSymbol, None )
+        self._scope = self._symbol_table
         self.inlineInt = 0
         self._enumIndex = 0
 
     @property
-    def symbolTable(self) -> SymbolTable:
-        return self._symbolTable
+    def symbol_table(self) -> SymbolTable:
+        return self._symbol_table
 
-    def defaultResult(self) -> SymbolTable:
-        return self._symbolTable
+    def default_result(self) -> SymbolTable:
+        return self._symbol_table
 
     # Visit a parse tree produced by DeclarationParser#paramAssignStat.
     # 'def' name=ID type=paramType ':' unit=unitSpecification (',' description=STRING)? ('=' defaultValue=arithmeticExpression)?
@@ -60,9 +62,9 @@ class SymbolTableVisitorDcl(DeclarationVisitor, Generic[T]):
 
         # define the given Parameter
         varName = ctx.name.text if ctx.name else ""  # set and get the variable name here
-        oldSymbol: VariableSymbol = self._scope.resolveSync(varName)
+        oldSymbol: VariableSymbol = self._scope.resolve_sync(varName)
         unit = self.visit(ctx.unit)
-        varType = self._scope.resolveSync(ctx.type_.getText())
+        varType = self._scope.resolve_sync(ctx.type_.getText())
         varType = varType if varType else self.visit(ctx.type_)
         description = ctx.description.text if ctx.description else ""
         # if it is a Array, it was already created, so no need for a variable Symbol
@@ -86,7 +88,7 @@ class SymbolTableVisitorDcl(DeclarationVisitor, Generic[T]):
                 print("ERROR: cannot merge", varName, "values")
             symbol = oldSymbol
         else:
-            symbol = self._symbolTable.addNewSymbolOfType(VariableSymbol, self._scope, varName, description, ctx, unit, varType)
+            symbol = self._symbol_table.add_new_symbol_of_type(VariableSymbol, self._scope, varName, description, ctx, unit, varType)
             symbol.context = ctx
         return symbol
 
@@ -104,11 +106,9 @@ class SymbolTableVisitorDcl(DeclarationVisitor, Generic[T]):
 
     # sIUnit                      :   (prefix=ePrefix)? type=eSIUnitType #siUnit;
     def visitSiunit(self, ctx: DeclarationParser.SIUnitContext):
-        return FundamentalUnit(
-            name=ctx.type_.getText() if ctx.type_ else "",
-            unitPrefix=self.stringToPrefix(ctx.prefix.getText() if ctx.prefix else ""),
-            unitKind=self.stringToUnitType(ctx.type_.getText() if ctx.type_ else "")
-        )
+        return FundamentalUnit(name=ctx.type_.getText() if ctx.type_ else "",
+            unit_prefix=self.stringToPrefix(ctx.prefix.getText() if ctx.prefix else ""),
+            unit_kind=self.stringToUnitType(ctx.type_.getText() if ctx.type_ else ""))
 
     # customUnit                  :   name=STRING #customunit;
     def visitCustomunit(self, ctx: DeclarationParser.CustomUnitContext):
@@ -152,18 +152,18 @@ class SymbolTableVisitorDcl(DeclarationVisitor, Generic[T]):
         return self.withScope(ctx, GroupSymbol, lambda: self.visitChildren(ctx), "", FeatureSymbol, "")
 
     def visitEnumerationType(self, ctx: DeclarationParser.EnumerationTypeContext):
-        enumName = ctx.name.text if ctx.name else ""
-        enumList = []
+        enum_name = ctx.name.text if ctx.name else ""
+        enum_list = []
         self._enumIndex = 0
         for i in ctx.enumeral():
-            # enumList representation: [(id, value),...]
-            enumList.append(self.visitEnumeral(i))
+            # enum_list representation: [(id, value),...]
+            enum_list.append(self.visitEnumeral(i))
             self._enumIndex += 1
-        oldSymbol = self._scope.resolveSync(enumName)
+        oldSymbol = self._scope.resolve_sync(enum_name)
         if oldSymbol:
-            oldSymbol.enums += enumList
+            oldSymbol.enums += enum_list
         else:
-            symbol = self._symbolTable.addNewSymbolOfType(EnumSymbol, self._scope, enumName, enumList)
+            symbol = self._symbol_table.add_new_symbol_of_type(EnumSymbol, self._scope, enum_name, enum_list)
             symbol.context = ctx
 
     def visitEnumeral(self, ctx: DeclarationParser.EnumeralContext):
@@ -181,11 +181,11 @@ class SymbolTableVisitorDcl(DeclarationVisitor, Generic[T]):
             # enumList representation: [(id, value),...]
             enumList.append(self.visitEnumeral(i))
             self._enumIndex += 1
-        oldSymbol = self._scope.resolveSync(enumName)
+        oldSymbol = self._scope.resolve_sync(enumName)
         if oldSymbol:
             enumName = "inline_" + str(self.inlineInt)
             self.inlineInt += 1
-        symbol = self._symbolTable.addNewSymbolOfType(EnumSymbol, self._scope, enumName, enumList)
+        symbol = self._symbol_table.add_new_symbol_of_type(EnumSymbol, self._scope, enumName, enumList)
         symbol.context = ctx
         return symbol
 
@@ -196,10 +196,10 @@ class SymbolTableVisitorDcl(DeclarationVisitor, Generic[T]):
         bounds = []
         for i in ctx.dimensions:
             bounds.append(self.visit(i))
-        symbol = self._symbolTable.addNewSymbolOfType(ArraySymbol, self._scope, "array_temp", bounds[0][1], bounds[0][0])
+        symbol = self._symbol_table.add_new_symbol_of_type(ArraySymbol, self._scope, "array_temp", bounds[0][1], bounds[0][0])
         # context will be set in visitparameterassignement
         # symbol.context = ctx
-        symbol.type = self._scope.resolveSync(ctx.type_.text)
+        symbol.type = self._scope.resolve_sync(ctx.type_.text)
         return symbol
 
     def visitSizeDimension(self, ctx: DeclarationParser.SizeDimensionContext):
@@ -210,11 +210,11 @@ class SymbolTableVisitorDcl(DeclarationVisitor, Generic[T]):
 
     def visitRangeType(self, ctx: DeclarationParser.RangeTypeContext):
         rangeName = ctx.name.text
-        oldSymbol = self._scope.resolveSync(rangeName)
+        oldSymbol = self._scope.resolve_sync(rangeName)
         if oldSymbol:
             oldSymbol.minimum = ctx.minimum if ctx.minimum else oldSymbol.minimum
             oldSymbol.maximum = ctx.maximum if ctx.maximum else oldSymbol.maximum
-        symbol = self._symbolTable.addNewSymbolOfType(RangeSymbol, self._scope, rangeName, type(ctx.type_), ctx.minimum, ctx.maximum)
+        symbol = self._symbol_table.add_new_symbol_of_type(RangeSymbol, self._scope, rangeName, type(ctx.type_), ctx.minimum, ctx.maximum)
         symbol.context = ctx
 
     def withScope(self, tree: ParseTree, t: type, action: Callable, *my_args: P.args or None, **my_kwargs: P.kwargs or None) -> T:
@@ -231,7 +231,7 @@ class SymbolTableVisitorDcl(DeclarationVisitor, Generic[T]):
             scope = self._symbol_table.add_new_symbol_of_type(t, self._scope, *my_args, **my_kwargs)
         except DuplicateSymbolError:
             print("WARNING: Duplicate declaration of var:", my_args[0], "Proceed with merging")
-            scope = self._scope.resolveSync(my_args[0])
+            scope = self._scope.resolve_sync(my_args[0])
             if isinstance(scope, FeatureSymbol):
                 scope.description = my_args[1]
             else:

@@ -68,7 +68,7 @@ from .utils.compute_token_index import compute_token_position, CaretPosition, To
 from .utils.suggest_variables import suggest_symbols
 from .utils.conf_errors_strategy import CONFErrorStrategy
 
-from .cst.symbol_table_visitor import SymbolTableVisitor
+from .cst.symbol_table_visitor import ConfigurationCPVisitor
 from .cst.diagnostic_listener import DiagnosticListener
 
 from .gen.python.Configuration.ConfigurationLexer import ConfigurationLexer
@@ -254,7 +254,7 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     # Variables finding
     if any(rule in candidates.rules for rule in [ConfigurationParser.configurationModel]):
 
-        symbolTableVisitor: SymbolTableVisitor = SymbolTableVisitor('completions')
+        symbolTableVisitor: ConfigurationCPVisitor = ConfigurationCPVisitor('completions')
 
         symbolTable = symbolTableVisitor.visit(parse_tree)
 

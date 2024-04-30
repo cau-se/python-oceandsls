@@ -18,7 +18,7 @@ import os
 __author__ = 'Reiner Jung'
 
 # Relative imports
-from conflspserver.symboltable.symbol_table import SymbolTable, GroupSymbol, VariableSymbol, FeatureSymbol, EnumSymbol
+from symboltable.symbol_table import SymbolTable, GroupSymbol, VariableSymbol, FeatureSymbol, EnumSymbol
 from ..code_generator import StandardCodeGenerator
 
 class MitGcmCodeGenerator(StandardCodeGenerator):
