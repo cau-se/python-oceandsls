@@ -23,7 +23,7 @@ from conflspserver.gen.python.Configuration.ConfigurationParser import Configura
 from dcllspserver.gen.python.Declaration.DeclarationLexer import DeclarationLexer
 from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
 from conflspserver.cst.symbol_table_visitor import ConfigurationCPVisitor, ConfigurationVisitor
-from dcllspserver.cst.symbol_table_visitor_dcl import DeclarationCPVisitor
+from dcllspserver.cst.symbol_table_visitor import DeclarationCPVisitor
 from conflspserver.utils.calc import DeclarationCalculator, ConfigurationCalculator
 from conflspserver.generators.uvic.code_generator import UvicCodeGenerator
 from conflspserver.generators.mitgcm.code_generator import MitGcmCodeGenerator
@@ -52,6 +52,21 @@ def parse_declaration_file(declaration_path:str) -> DeclarationParser:
         stream = CommonTokenStream(lexer)
     
         return DeclarationParser(stream)
+
+def compute_declaration(symbol_table: SymbolTable, input_path: str):
+    tree = parse_declaration_file(input_path)
+    print("Visit declaration model")
+    DeclarationCPVisitor(symbol_table).visit(tree.declarationModel())
+    print("Compute declaration")
+    try:
+        calculator = DeclarationCalculator(symbol_table)
+        result = calculator.calculate()
+        print("Computed declaration")
+        return result
+    except AttributeError as e:
+        print("ERROR: Could not parse Declaration-File correctly")
+        print(e)
+        return None
 
 if __name__ == '__main__':
     compile_mode: CompileFlags = CompileFlags.RELAX
@@ -103,43 +118,36 @@ if __name__ == '__main__':
         if i and not i.endswith(".oconf"):
             estimated_working_directory += os.sep
             estimated_working_directory += i
-    configuration_visitor = ConfigurationCPVisitor("user_conf_1", estimated_working_directory)
+    configuration_visitor = ConfigurationCPVisitor(SymbolTable("check_1", SymbolTableOptions(False)), estimated_working_directory)
     output_path = args.output_path if args.output_path else os.path.join(estimated_working_directory, "gen")
     if not os.path.isdir(output_path):
         os.mkdir(output_path)
         
     # 1 read CONF file
     print(f"parse {input_configuration_path}")
-    configration_tree = parse_configuration_file(input_configuration_path)
+    configuration_tree = parse_configuration_file(input_configuration_path)
     # 2 identify declaration file
-    used_declaration_model = configration_tree.configurationModel().declarationModel.text
+    used_declaration_model = configuration_tree.configurationModel().declarationModel.text
     print(f"Model {used_declaration_model}")
     # 3 read declaration file
     input_declaration_path = os.path.join(input_directory_path, f"{used_declaration_model}.decl")
     print(f"declaration model {input_declaration_path}")
-    declaration_tree = parse_declaration_file(input_declaration_path)
         
     # 4 compute model
     # 4.1 creates a new symboltable with no duplicate symbols
     print("Create symbol table")
     symbol_table = SymbolTable("root_1", SymbolTableOptions(False))
     # 4.2 declaration
-    print("Visit declarion model")
-    declaration_visitor = DeclarationCPVisitor(symbol_table).visit(declaration_tree.declarationModel())
-    print("Compute declaration")
-    try:
-        declaration_calculator = DeclarationCalculator(configuration_visitor.symbol_table)
-    except AttributeError as e:
-        print("ERROR: Could not parse Declaration-File correctly")
-        print(e)
-
-    declaration_result = declaration_calculator.calculate()
-    print("Computed declaration")
-
+    declaration_result = compute_declaration(symbol_table, input_declaration_path)
+    if declaration_result is None:
+        print("Declaration error")
+        exit(1)
+    
     # 4.3 configuration
     print("Visit configuration")
-    configuration_visitor = ConfigurationCPVisitor(symbol_table)
-    configuration_visitor.visit(configration_tree.configurationModel())
+    configuration_visitor = ConfigurationCPVisitor(symbol_table, estimated_working_directory)
+    configuration_tree = parse_configuration_file(input_configuration_path)
+    configuration_visitor.visit(configuration_tree.configurationModel())
     print("Compute configuration")
     table = ConfigurationCalculator(declaration_result, configuration_visitor.configuration_list).calculate()
     print("Completed")

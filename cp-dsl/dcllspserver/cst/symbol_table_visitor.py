@@ -17,7 +17,7 @@ __author__ = "stu222808"
 #  limitations under the License.
 
 # util imports
-from typing import TypeVar, Generic, Dict, Optional, Callable, Any
+from typing import Generic, Callable
 
 # antlr4
 from antlr4.tree.Tree import ParseTree
@@ -27,8 +27,9 @@ from antlr4.Token import CommonToken
 from symboltable.symbol_table import SymbolTable, P, T, GroupSymbol, FeatureSymbol, SymbolTableOptions, VariableSymbol, \
     EnumSymbol, ArraySymbol, RangeSymbol, DuplicateSymbolError
 from symboltable.cp_model import FundamentalUnit, UnitPrefix, UnitKind, ComposedUnit, UnitSpecification
-from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
-from dcllspserver.gen.python.Declaration.DeclarationVisitor import DeclarationVisitor
+
+from ..gen.python.Declaration.DeclarationParser import DeclarationParser
+from ..gen.python.Declaration.DeclarationVisitor import DeclarationVisitor
 
 # NOTE: Method names starting with visit are required to look like this, as parts of the grammar
 # are named in that way
@@ -36,7 +37,7 @@ from dcllspserver.gen.python.Declaration.DeclarationVisitor import DeclarationVi
 class DeclarationCPVisitor(DeclarationVisitor, Generic[T]):
     _symbol_table: SymbolTable
 
-    def __init__(self, symbol_table: SymbolTable ):
+    def __init__(self, symbol_table:SymbolTable):
         super().__init__()
         # creates a new symboltable with no duplicate symbols
         self._symbol_table = symbol_table
@@ -234,8 +235,12 @@ class DeclarationCPVisitor(DeclarationVisitor, Generic[T]):
             else:
                 scope.description = my_args[2]
         scope.context = tree
+        # next line is not present in confdsl
+        current_scope = self._scope
         self._scope = scope
         try:
             return action()
         finally:
-            self._scope = scope.parent()
+            self._scope = current_scope
+            # Alternative ending used in conf DSL
+            # self._scope = scope.parent()
