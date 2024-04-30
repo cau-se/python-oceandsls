@@ -1191,10 +1191,11 @@ class ModuleSymbol(ScopedSymbol):
 
 class VariableSymbol(UnitSymbol):
 
-    def __init__(self, name: str, value=None, attached_type: Type = None, attached_keys: List[str] = None):
+    def __init__(self, name: str, value=None, attached_type: Type = None, attached_keys: List[str] = None, array_elements: List = None):
         super().__init__(name, attached_type, attached_keys)
 
         self.value = value
+        self.array_elements = array_elements
 
 
 class PathSymbol(VariableSymbol):

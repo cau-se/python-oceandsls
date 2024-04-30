@@ -59,7 +59,10 @@ testVars                : 'var' ':' NEWLINE
                         ;
 
 /** Variables used in test case*/
-testVar                : decl=varDeclaration ('=' value=expr)? comment=optionalDesc  /** Ends on newline */
+testVar                 : decl=varDeclaration ( ( ('=' value=expr)? comment=optionalDesc ) | (comment=optionalDesc (elements+=varElement)+) ) /** Ends on newline */
+                        ;
+
+varElement              : '-' name=ID (',' keys+=f90StdKey (',' keys+=f90StdKey)*)? '=' value=expr comment=optionalDesc /** Ends on newline */
                         ;
 
 /** Declaration of variables used in test cases  */
@@ -89,8 +92,8 @@ pubAttributes           : ('tolerance' ':' tol=expr NEWLINE)?
                         ;
 
 /** Input for optional subroutine call; ends on newline */
-extendedTestParameter   : ('call' ':' procedure NEWLINE                                  /** Ends on newline */
-                          (procedure NEWLINE)*)?                                  /** Ends on newline */
+extendedTestParameter   : ('call' ':' procedures+=procedure NEWLINE                                  /** Ends on newline */
+                          (procedures+=procedure NEWLINE)*)?                                  /** Ends on newline */
                           testParameter                                                    /** Ends on newline */
                         ;
 

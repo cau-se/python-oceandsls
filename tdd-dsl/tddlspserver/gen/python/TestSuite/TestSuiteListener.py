@@ -89,6 +89,15 @@ class TestSuiteListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by TestSuiteParser#varElement.
+    def enterVarElement(self, ctx:TestSuiteParser.VarElementContext):
+        pass
+
+    # Exit a parse tree produced by TestSuiteParser#varElement.
+    def exitVarElement(self, ctx:TestSuiteParser.VarElementContext):
+        pass
+
+
     # Enter a parse tree produced by TestSuiteParser#varDeclaration.
     def enterVarDeclaration(self, ctx:TestSuiteParser.VarDeclarationContext):
         pass
@@ -257,6 +266,24 @@ class TestSuiteListener(ParseTreeListener):
 
     # Exit a parse tree produced by TestSuiteParser#constantSpec.
     def exitConstantSpec(self, ctx:TestSuiteParser.ConstantSpecContext):
+        pass
+
+
+    # Enter a parse tree produced by TestSuiteParser#pointerSpec.
+    def enterPointerSpec(self, ctx:TestSuiteParser.PointerSpecContext):
+        pass
+
+    # Exit a parse tree produced by TestSuiteParser#pointerSpec.
+    def exitPointerSpec(self, ctx:TestSuiteParser.PointerSpecContext):
+        pass
+
+
+    # Enter a parse tree produced by TestSuiteParser#procedureSpec.
+    def enterProcedureSpec(self, ctx:TestSuiteParser.ProcedureSpecContext):
+        pass
+
+    # Exit a parse tree produced by TestSuiteParser#procedureSpec.
+    def exitProcedureSpec(self, ctx:TestSuiteParser.ProcedureSpecContext):
         pass
 
 
@@ -473,6 +500,15 @@ class TestSuiteListener(ParseTreeListener):
 
     # Exit a parse tree produced by TestSuiteParser#prcRef.
     def exitPrcRef(self, ctx:TestSuiteParser.PrcRefContext):
+        pass
+
+
+    # Enter a parse tree produced by TestSuiteParser#varID.
+    def enterVarID(self, ctx:TestSuiteParser.VarIDContext):
+        pass
+
+    # Exit a parse tree produced by TestSuiteParser#varID.
+    def exitVarID(self, ctx:TestSuiteParser.VarIDContext):
         pass
 
 

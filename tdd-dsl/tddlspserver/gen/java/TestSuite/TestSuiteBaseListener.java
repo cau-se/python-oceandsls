@@ -125,6 +125,18 @@ public class TestSuiteBaseListener implements TestSuiteListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterVarElement(TestSuiteParser.VarElementContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitVarElement(TestSuiteParser.VarElementContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterVarDeclaration(TestSuiteParser.VarDeclarationContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -348,6 +360,30 @@ public class TestSuiteBaseListener implements TestSuiteListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitConstantSpec(TestSuiteParser.ConstantSpecContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterPointerSpec(TestSuiteParser.PointerSpecContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitPointerSpec(TestSuiteParser.PointerSpecContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterProcedureSpec(TestSuiteParser.ProcedureSpecContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitProcedureSpec(TestSuiteParser.ProcedureSpecContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -636,6 +672,18 @@ public class TestSuiteBaseListener implements TestSuiteListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitPrcRef(TestSuiteParser.PrcRefContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterVarID(TestSuiteParser.VarIDContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitVarID(TestSuiteParser.VarIDContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

@@ -4,5 +4,10 @@ SUBROUTINE {{ name }}()
 
 {{ vars_ }}
 
+{{ calls|join("\n") }}
+
+{% if pointers %} deallocate({{ pointers|join(", ") }})
+{% endif %}
+
 {{ assertions|join("\n") }}
 END SUBROUTINE {{ name }}
