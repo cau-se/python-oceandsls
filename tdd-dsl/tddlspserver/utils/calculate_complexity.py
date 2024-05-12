@@ -1,4 +1,4 @@
-""" Demo implementation for cyclomatic complexity calculation"""
+""" Implementation for complexity calculation"""
 
 __author__ = "sgu"
 
