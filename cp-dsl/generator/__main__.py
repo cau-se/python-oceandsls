@@ -18,17 +18,17 @@ import os
 from enum import Enum
 
 # relative imports
-from conflspserver.gen.python.Configuration.ConfigurationLexer import ConfigurationLexer
-from conflspserver.gen.python.Configuration.ConfigurationParser import ConfigurationParser
-from dcllspserver.gen.python.Declaration.DeclarationLexer import DeclarationLexer
-from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
-from conflspserver.cst.symbol_table_visitor import ConfigurationCPVisitor, ConfigurationVisitor
-from dcllspserver.cst.symbol_table_visitor import DeclarationCPVisitor
-from conflspserver.utils.calc import DeclarationCalculator, ConfigurationCalculator
-from conflspserver.generators.uvic.code_generator import UvicCodeGenerator
-from conflspserver.generators.mitgcm.code_generator import MitGcmCodeGenerator
-from conflspserver.generators.eval.code_generator import EvalCodeGenerator
-from symboltable.symbol_table import SymbolTable, SymbolTableOptions
+from ..conflspserver.gen.python.Configuration.ConfigurationLexer import ConfigurationLexer
+from ..conflspserver.gen.python.Configuration.ConfigurationParser import ConfigurationParser
+from ..dcllspserver.gen.python.Declaration.DeclarationLexer import DeclarationLexer
+from ..dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
+from ..conflspserver.cst.symbol_table_visitor import ConfigurationCPVisitor, ConfigurationVisitor
+from ..dcllspserver.cst.symbol_table_visitor import DeclarationCPVisitor
+from ..conflspserver.utils.calc import DeclarationCalculator, ConfigurationCalculator
+from ..conflspserver.generators.uvic.code_generator import UvicCodeGenerator
+from ..conflspserver.generators.mitgcm.code_generator import MitGcmCodeGenerator
+from ..conflspserver.generators.eval.code_generator import EvalCodeGenerator
+from ..symboltable.symbol_table import SymbolTable, SymbolTableOptions
 
 class CompileFlags(Enum):
     RELAX = "relax"
@@ -41,7 +41,7 @@ def parse_configuration_file(configuration_path:str) -> ConfigurationParser:
         input_stream = InputStream(data)
         lexer = ConfigurationLexer(input_stream)
         stream = CommonTokenStream(lexer)
-    
+
         return ConfigurationParser(stream)
 
 def parse_declaration_file(declaration_path:str) -> DeclarationParser:
@@ -50,7 +50,7 @@ def parse_declaration_file(declaration_path:str) -> DeclarationParser:
         input_stream = InputStream(data)
         lexer = DeclarationLexer(input_stream)
         stream = CommonTokenStream(lexer)
-    
+
         return DeclarationParser(stream)
 
 def compute_declaration(symbol_table: SymbolTable, input_path: str):
@@ -105,14 +105,14 @@ if __name__ == '__main__':
         print("ERROR: Please specify a configuration file as argument!")
         parser.print_help()
         exit(1)
-    
+
     input_configuration_path = args.input_path if os.path.isabs(args.input_path) else os.path.join(os.getcwd(), args.input_path)
     if not os.path.exists(input_configuration_path) and os.path.isfile(input_configuration_path):
         print(f"ERROR: Given file {input_configuration_path} not found.")
         exit(1)
 
     input_directory_path = os.path.dirname(input_configuration_path)
-    
+
     estimated_working_directory = ""
     for i in input_configuration_path.split(os.sep):
         if i and not i.endswith(".oconf"):
@@ -122,7 +122,7 @@ if __name__ == '__main__':
     output_path = args.output_path if args.output_path else os.path.join(estimated_working_directory, "gen")
     if not os.path.isdir(output_path):
         os.mkdir(output_path)
-        
+
     # 1 read CONF file
     print(f"parse {input_configuration_path}")
     configuration_tree = parse_configuration_file(input_configuration_path)
@@ -132,7 +132,7 @@ if __name__ == '__main__':
     # 3 read declaration file
     input_declaration_path = os.path.join(input_directory_path, f"{used_declaration_model}.decl")
     print(f"declaration model {input_declaration_path}")
-        
+
     # 4 compute model
     # 4.1 creates a new symboltable with no duplicate symbols
     print("Create symbol table")
@@ -142,7 +142,7 @@ if __name__ == '__main__':
     if declaration_result is None:
         print("Declaration error")
         exit(1)
-    
+
     # 4.3 configuration
     print("Visit configuration")
     configuration_visitor = ConfigurationCPVisitor(symbol_table, estimated_working_directory)
