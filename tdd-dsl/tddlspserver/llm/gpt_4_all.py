@@ -24,8 +24,8 @@ with model.chat_session():
     response3 = model.generate(prompt='thank you', temp=0)
     print(model.current_chat_session)
 
-tokens = []
-with model.chat_session():
-    for token in model.generate("What is the capital of France?", streaming=True):
-        tokens.append(token)
-print(tokens)
+# tokens = []
+# with model.chat_session():
+#     for token in model.generate("What is the capital of France?", streaming=True):
+#         tokens.append(token)
+# print(tokens)

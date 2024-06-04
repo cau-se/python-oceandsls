@@ -36,7 +36,7 @@ from langchain_community.llms import GPT4All
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 
-from llm_handler_dob import CHROMA_SETTINGS, LOADER_MAPPING, LANG_MAPPINGS
+from llm_handler_dto import CHROMA_SETTINGS, LOADER_MAPPING, LANG_MAPPINGS
 
 class LLM_Handler:
     def __init__(
