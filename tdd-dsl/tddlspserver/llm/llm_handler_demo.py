@@ -24,7 +24,7 @@ from langchain_community.llms import GPT4All
 from langchain.chains import ConversationalRetrievalChain
 from langchain.callbacks import StdOutCallbackHandler
 
-#TODO check needed
+# TODO check needed
 from sentence_transformers import SentenceTransformer
 
 root_dir = os.getcwd()
@@ -45,9 +45,9 @@ print(f"{len(docs)} documents loaded.")
 print("Creating vectorstore.")
 
 text_splitter = RecursiveCharacterTextSplitter.from_language(
-        chunk_size=60,
-        chunk_overlap=2,
-        language=Language.PYTHON,
+    chunk_size=60,
+    chunk_overlap=2,
+    language=Language.PYTHON,
 )
 texts = text_splitter.split_documents(docs)
 
@@ -66,18 +66,18 @@ texts = text_splitter.split_documents(docs)
 
 
 CHROMA_SETTINGS = Settings(
-        chroma_db_impl="duckdb+parquet",
-        persist_directory="db",
-        anonymized_telemetry=False,
+    chroma_db_impl="duckdb+parquet",
+    persist_directory="db",
+    anonymized_telemetry=False,
 )
 
 embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
 db = Chroma.from_documents(
-        documents = texts,
-        embedding = embeddings,
-        persist_directory="db",
-        client_settings=CHROMA_SETTINGS,
+    documents=texts,
+    embedding=embeddings,
+    persist_directory="db",
+    client_settings=CHROMA_SETTINGS,
 )
 
 db.persist()
@@ -90,27 +90,27 @@ print(f"Vectorstore created at {root_dir}\\db")
 db_dir = os.getcwd() + "/db"
 
 chroma = Chroma(
-        persist_directory=db_dir,
-        embedding_function=embeddings,
-        client_settings=CHROMA_SETTINGS,
+    persist_directory=db_dir,
+    embedding_function=embeddings,
+    client_settings=CHROMA_SETTINGS,
 )
 
 retriever = chroma.as_retriever(
-        search_kwargs={
-                "k": 6,
-                # "fetch_k": 20, # TODO error unk
-                # "maximal_marginal_relevance": True, # TODO error unk
-        }
+    search_kwargs={
+        "k": 6,
+        # "fetch_k": 20, # TODO error unk
+        # "maximal_marginal_relevance": True, # TODO error unk
+    }
 )
 
 llm = GPT4All(
-        model="orca-mini-3b-gguf2-q4_0.gguf", # /home/sgu/.cache/gpt4all/
-        # n_ctx=1000, # TODO error unk
-        backend="gptj",
-        verbose=True,
-        callbacks=[StdOutCallbackHandler()],
-        n_threads=8,  # Change this according to your cpu threads
-        temp=0.5,
+    model="orca-mini-3b-gguf2-q4_0.gguf",  # /home/sgu/.cache/gpt4all/
+    # n_ctx=1000, # TODO error unk
+    backend="gptj",
+    verbose=True,
+    callbacks=[StdOutCallbackHandler()],
+    n_threads=8,  # Change this according to your cpu threads
+    temp=0.5,
 )
 
 qa = ConversationalRetrievalChain.from_llm(llm, retriever=retriever)

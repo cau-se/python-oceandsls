@@ -304,7 +304,7 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
             return None
 
     # Visit a parse tree produced by TestSuiteParser#varElement.
-    def visitVarElement(self, ctx:TestSuiteParser.VarElementContext):
+    def visitVarElement(self, ctx: TestSuiteParser.VarElementContext):
         return self.visit(ctx.value)
 
     # Visit a parse tree produced by TestSuiteParser#testParameter.
@@ -359,7 +359,7 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
         # Check for array element ids
         todo_new_check: bool = False
         if any(c == '%' for c in name):
-            #TODO add TYPE scan to fxtran rm skip
+            # TODO add TYPE scan to fxtran rm skip
             todo_new_check = True
             name = name.rsplit("%", 1)[1]
 
@@ -381,7 +381,7 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
                 # Operation is new, return_type is unknown
                 return_type: Optional[Type] = None
         elif todo_new_check:
-            #TODO add TYPE scan to fxtran rm skip
+            # TODO add TYPE scan to fxtran rm skip
             self.last_op_id = None
             return None
         else:
@@ -412,7 +412,7 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
         # Return variable type
         return varType
 
-    def visitVarID(self, ctx:TestSuiteParser.VarIDContext):
+    def visitVarID(self, ctx: TestSuiteParser.VarIDContext):
         return ctx.baseName.text + "%" + ctx.elementName.text if ctx.elementName else ctx.baseName.text
 
     # Visit a parse tree produced by TestSuiteParser#parensExpr.

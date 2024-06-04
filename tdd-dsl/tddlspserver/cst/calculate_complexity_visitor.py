@@ -35,6 +35,7 @@ from ..symboltable.symbol_table import MetricSymbol, SymbolTable, PathSymbol, Sy
 # Debug Log
 logger = logging.getLogger(__name__)
 
+
 class CalculateComplexityVisitor(TestSuiteVisitor, Generic[T]):
     _symbol_table: SymbolTable
     _test_path: str

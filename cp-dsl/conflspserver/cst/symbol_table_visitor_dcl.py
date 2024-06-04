@@ -32,6 +32,7 @@ from dcllspserver.gen.python.Declaration.DeclarationVisitor import DeclarationVi
 # NOTE: Method names starting with visit are required to look like this, as parts of the grammar
 # are named in that way
 
+
 class SymbolTableVisitorDcl(DeclarationVisitor, Generic[T]):
     _symbol_table: SymbolTable
 

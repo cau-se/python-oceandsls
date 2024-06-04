@@ -21,6 +21,7 @@ __author__ = 'stu222808'
 from conflspserver.symboltable.symbol_table import SymbolTable, GroupSymbol, VariableSymbol, FeatureSymbol, EnumSymbol
 from ..code_generator import StandardCodeGenerator
 
+
 class UvicCodeGenerator(StandardCodeGenerator):
     """code generator for uvic
 

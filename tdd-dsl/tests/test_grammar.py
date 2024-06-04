@@ -45,37 +45,36 @@ from gen.python.TestSuite.TestSuiteParser import TestSuiteParser
 
 class TestGrammar:
     # parser/listener set up
-    @pytest.fixture( scope = "function" )
-    def setup( self, request ) -> None:
+    @pytest.fixture(scope="function")
+    def setup(self, request) -> None:
         # set listener
-        self.errorListener = DiagnosticListener( )
+        self.errorListener = DiagnosticListener()
         # create input stream of characters for lexer
-        inputStream = InputStream( request.param )
+        inputStream = InputStream(request.param)
 
         # create lexer and parser objects and token stream pipe between them
-        self.lexer = TestSuiteLexer( inputStream )
-        self.lexer.removeErrorListeners( )
-        self.lexer.addErrorListener( self.errorListener )
+        self.lexer = TestSuiteLexer(inputStream)
+        self.lexer.removeErrorListeners()
+        self.lexer.addErrorListener(self.errorListener)
 
-        tokenStream = CommonTokenStream( self.lexer )
+        tokenStream = CommonTokenStream(self.lexer)
 
-        self.parser = TestSuiteParser( tokenStream )
-        self.parser.removeErrorListeners( )
-        self.parser.addErrorListener( self.errorListener )
+        self.parser = TestSuiteParser(tokenStream)
+        self.parser.removeErrorListeners()
+        self.parser.addErrorListener(self.errorListener)
 
-
-    @pytest.mark.parametrize( "setup", [ "c = a + b()\n" ], indirect = [ "setup" ] )
-    def test_valid_input( self, setup ):
+    @pytest.mark.parametrize("setup", ["c = a + b()\n"], indirect=["setup"])
+    def test_valid_input(self, setup):
         top_level_context = TestSuiteParser.TestSuiteContext
         # launch parser by invoking rule 'prog'
-        ast = self.parser.testSuite( )
+        ast = self.parser.testSuite()
 
         # check for no symbols in errorListener
-        assert len( self.errorListener.symbol ) == 1
+        assert len(self.errorListener.symbol) == 1
 
-    @pytest.mark.parametrize( "setup", [ "c = + b()\n" ], indirect = [ "setup" ] )
-    def test_invalid_input( self, setup ):
-        ast = self.parser.testSuite( )
+    @pytest.mark.parametrize("setup", ["c = + b()\n"], indirect=["setup"])
+    def test_invalid_input(self, setup):
+        ast = self.parser.testSuite()
 
         # check for '+' symbol in errorListener
         assert self.errorListener.symbol == 'c'

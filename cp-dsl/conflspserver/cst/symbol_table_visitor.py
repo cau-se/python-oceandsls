@@ -17,7 +17,7 @@ __author__ = "stu222808"
 #  limitations under the License.
 
 # util imports
-from typing import  Generic, Callable
+from typing import Generic, Callable
 
 # antlr4
 from antlr4.tree.Tree import ParseTree
@@ -40,9 +40,10 @@ import os
 # NOTE: Method names starting with visit are required to look like this, as parts of the grammar
 # are named in that way
 
+
 class SymbolTableVisitor(ConfigurationVisitor, Generic[T]):
     _symbol_table: SymbolTable
-    
+
     _generator_selector: str
 
     def __init__(self, name: str = '', cwd: str = "."):
@@ -58,7 +59,7 @@ class SymbolTableVisitor(ConfigurationVisitor, Generic[T]):
     @property
     def symbol_table(self) -> SymbolTable:
         return self._symbol_table
-    
+
     @property
     def generator_selector(self) -> str:
         return self._generator_selector

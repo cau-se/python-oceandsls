@@ -38,6 +38,7 @@ from langchain.chains import ConversationalRetrievalChain
 
 from llm_handler_dto import CHROMA_SETTINGS, LOADER_MAPPING, LANG_MAPPINGS
 
+
 class LLM_Handler:
     def __init__(
             self,
@@ -87,7 +88,7 @@ class LLM_Handler:
         all_files = []
         for ext in LOADER_MAPPING:
             all_files.extend(
-                    glob.glob(os.path.join(self.cwd, f"**/*{ext}"), recursive=True)
+                glob.glob(os.path.join(self.cwd, f"**/*{ext}"), recursive=True)
             )
         filtered_files = []
 
@@ -100,7 +101,7 @@ class LLM_Handler:
         # Remove files that are already in the vectorstore if it already exists
         if ignored_files:
             filtered_files = [
-                    file_path for file_path in all_files if file_path not in ignored_files
+                file_path for file_path in all_files if file_path not in ignored_files
             ]
 
         results = []
@@ -137,9 +138,9 @@ class LLM_Handler:
         :rtype: List[Document]
         """
         text_splitter = RecursiveCharacterTextSplitter.from_language(
-                chunk_size=self.chunk_size,
-                chunk_overlap=self.chunk_overlap,
-                language=language,
+            chunk_size=self.chunk_size,
+            chunk_overlap=self.chunk_overlap,
+            language=language,
         )
         texts = text_splitter.split_documents(docs_list)
         return texts
@@ -168,7 +169,7 @@ class LLM_Handler:
                 if ext not in doc_dict:
                     doc_dict[ext] = []
                 futures.append(
-                        executor.submit(self.split_docs, [doc], language=LANG_MAPPINGS[ext])
+                    executor.submit(self.split_docs, [doc], language=LANG_MAPPINGS[ext])
                 )
             # Gather results from futures as they complete
             all_docs = []
@@ -176,7 +177,7 @@ class LLM_Handler:
                 split_docs = future.result()
                 all_docs.extend(split_docs)
         print(
-                f"Split into {len(all_docs)} chunks of text (max. {self.chunk_size} tokens each)"
+            f"Split into {len(all_docs)} chunks of text (max. {self.chunk_size} tokens each)"
         )
         return all_docs
 
@@ -195,7 +196,7 @@ class LLM_Handler:
             embeddings_path = os.path.join(self.chroma_vectorstore, "chroma-embeddings.parquet")
             if os.path.exists(collections_path) and os.path.exists(embeddings_path):
                 index_files = glob.glob(os.path.join(index_path, "*.bin")) + glob.glob(
-                        os.path.join(index_path, "*.pkl")
+                    os.path.join(index_path, "*.pkl")
                 )
                 # At least 3 documents are needed in a working vectorstore.
                 if len(index_files) > 3:
@@ -220,13 +221,13 @@ class LLM_Handler:
             # Update and store locally vectorstore
             print(f"Appending to existing vectorstore at {self.chroma_vectorstore}")
             chroma_vectorstore = Chroma(
-                    persist_directory=self.chroma_vectorstore,
-                    embedding_function=embeddings,
-                    client_settings=CHROMA_SETTINGS,
+                persist_directory=self.chroma_vectorstore,
+                embedding_function=embeddings,
+                client_settings=CHROMA_SETTINGS,
             )
             collection = chroma_vectorstore.get()
             texts = self.process_documents(
-                    [metadata["source"] for metadata in collection["metadatas"]]
+                [metadata["source"] for metadata in collection["metadatas"]]
             )
             print(f"Creating embeddings. May take some minutes...")
             chroma_vectorstore.add_documents(texts)
@@ -236,17 +237,18 @@ class LLM_Handler:
             texts = self.process_documents()
             print(f"Creating embeddings. May take some minutes...")
             chroma_vectorstore = Chroma.from_documents(
-                    texts,
-                    embeddings,
-                    persist_directory=self.chroma_vectorstore,
-                    client_settings=CHROMA_SETTINGS,
+                texts,
+                embeddings,
+                persist_directory=self.chroma_vectorstore,
+                client_settings=CHROMA_SETTINGS,
             )
         chroma_vectorstore.persist()
         chroma_vectorstore = None
 
         print(
-                f"Vectorstore created, you can now run 'eunomia start' to use the LLM to interact with your code!"
+            f"Vectorstore created, you can now run 'eunomia start' to use the LLM to interact with your code!"
         )
+
 
 root_dir = os.getcwd()
 db_dir = root_dir + "/db"
@@ -254,42 +256,42 @@ embeddings = "all-MiniLM-L6-v2"
 ignore_folders = ["folder\\\\to\\\\ignore", "folder\\\\to\\\\ignore2"]
 
 llm_handler = LLM_Handler(
-        root_dir,
-        db_dir,
-        embeddings,
-        ignore_folders,
+    root_dir,
+    db_dir,
+    embeddings,
+    ignore_folders,
 )
 
 embeddings = HuggingFaceEmbeddings(model_name=embeddings)
 chroma_client = Chroma(
-        persist_directory=db_dir,
-        embedding_function=embeddings,
-        client_settings=CHROMA_SETTINGS,
+    persist_directory=db_dir,
+    embedding_function=embeddings,
+    client_settings=CHROMA_SETTINGS,
 )
 retriever = chroma_client.as_retriever(
-        search_kwargs={
-                "k": 6,
-                "fetch_k": 20,
-                "maximal_marginal_relevance": True,
-        }
+    search_kwargs={
+        "k": 6,
+        "fetch_k": 20,
+        "maximal_marginal_relevance": True,
+    }
 )
 llm = GPT4All(
-        model="assistant\absolute\path\LLM\ggml-gpt4all-j-v1.3-groovy.bin",
-        n_ctx=1000,
-        backend="gptj",
-        verbose=True,
-        callbacks=[StdOutCallbackHandler()],
-        n_threads=8,  # Change this according to your cpu threads
-        temp=0.5,
+    model="assistant\absolute\\path\\LLM\\ggml-gpt4all-j-v1.3-groovy.bin",
+    n_ctx=1000,
+    backend="gptj",
+    verbose=True,
+    callbacks=[StdOutCallbackHandler()],
+    n_threads=8,  # Change this according to your cpu threads
+    temp=0.5,
 )
 
 memory = ConversationBufferMemory(
-        memory_key="chat_history",
-        return_messages=True
+    memory_key="chat_history",
+    return_messages=True
 )
 
 qa = ConversationalRetrievalChain.from_llm(
-        llm, retriever=retriever, memory=memory
+    llm, retriever=retriever, memory=memory
 )
 
 # while True:

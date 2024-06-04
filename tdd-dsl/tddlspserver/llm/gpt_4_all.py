@@ -17,7 +17,7 @@ __author__ = "sgu"
 #  limitations under the License.
 
 from gpt4all import GPT4All
-model = GPT4All(model_name='orca-mini-3b-gguf2-q4_0.gguf') # /home/sgu/.cache/gpt4all/
+model = GPT4All(model_name='orca-mini-3b-gguf2-q4_0.gguf')  # /home/sgu/.cache/gpt4all/
 with model.chat_session():
     response1 = model.generate(prompt='hello', temp=0)
     response2 = model.generate(prompt='write me a short poem', temp=0)
