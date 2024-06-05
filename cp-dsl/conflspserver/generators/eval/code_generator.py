@@ -38,4 +38,3 @@ class EvalCodeGenerator(StandardCodeGenerator):
 
     def generate(self) -> None:
         pass
-    

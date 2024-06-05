@@ -408,7 +408,7 @@ class Symbol:
             self.__the_parent.remove_symbol(self)
             self.__the_parent = None
 
-    async def resolve(self, name: str, t: type= None, type_only: bool = False , local_only: bool = False) -> Optional[Symbol]:
+    async def resolve(self, name: str, t: type = None, type_only: bool = False, local_only: bool = False) -> Optional[Symbol]:
         """
         Asynchronously looks up a symbol with a given name, in a bottom-up manner.
 
@@ -422,11 +422,11 @@ class Symbol:
         """
 
         if isinstance(self.__the_parent, ScopedSymbol):
-            return await self.__the_parent.resolve(name,t, type_only, local_only)
+            return await self.__the_parent.resolve(name, t, type_only, local_only)
 
         return None
 
-    def resolve_sync(self, name: str, t: type= None, type_only: bool = False , local_only: bool = False) -> Optional[Symbol]:
+    def resolve_sync(self, name: str, t: type = None, type_only: bool = False, local_only: bool = False) -> Optional[Symbol]:
         """
         Synchronously looks up a symbol with a given name, in a bottom-up manner.
 
@@ -439,7 +439,7 @@ class Symbol:
         scopes (conditionally).
         """
         if isinstance(self.__the_parent, ScopedSymbol):
-            return self.__the_parent.resolve_sync(name,t, type_only, local_only)
+            return self.__the_parent.resolve_sync(name, t, type_only, local_only)
 
         return None
 
@@ -609,7 +609,7 @@ class ScopedSymbol(Symbol):
         symbol_table = self.symbol_table()
         if symbol_table is None or not symbol_table.options.allow_duplicate_symbols:
             for child in self.children():
-                if child is symbol or ( type(symbol) is type(child) and child.name == symbol.name) and isinstance(child, type(symbol)):
+                if child is symbol or (type(symbol) is type(child) and child.name == symbol.name) and isinstance(child, type(symbol)):
                     symbol_name = symbol.name if symbol.name else "<anonymous>"
                     scope_name = self.name if self.name else "<anonymous>"
                     msg: str = f"Attempt to add duplicate symbol \"{symbol_name}\" to \"{scope_name}\""
@@ -904,7 +904,7 @@ class ScopedSymbol(Symbol):
 
         return result
 
-    async def resolve(self, name: str, t: type= None, type_only: bool = False, local_only: bool = False, callers: List[T] = []) -> Optional[Symbol]:
+    async def resolve(self, name: str, t: type = None, type_only: bool = False, local_only: bool = False, callers: List[T] = []) -> Optional[Symbol]:
         """
         :param name: The name of the symbol to resolve.
         :param type_only: no subtype
@@ -924,7 +924,7 @@ class ScopedSymbol(Symbol):
         if not local_only:
             # Call parent scope
             if isinstance(self.parent(), ScopedSymbol) and self.parent() not in callers:
-                return await self.parent().resolve(name,t, type_only, local_only, callers + [self])
+                return await self.parent().resolve(name, t, type_only, local_only, callers + [self])
 
             # Call scopes that are included
             for include_scope in self._include_scopes:
@@ -933,7 +933,7 @@ class ScopedSymbol(Symbol):
 
         return None
 
-    def resolve_sync(self, name: str, t: type= None, type_only: bool = False, local_only: bool = False, callers: List[T] = []) -> Optional[Symbol]:
+    def resolve_sync(self, name: str, t: type = None, type_only: bool = False, local_only: bool = False, callers: List[T] = []) -> Optional[Symbol]:
         """
         :param name: The name of the symbol to resolve.
         :param type_only: no subtype
@@ -1323,7 +1323,7 @@ class SymbolTable(ScopedSymbol):
 
         return None
 
-    async def resolve(self, name: str, t: type= None, type_only: bool = False, local_only: bool = False) -> Optional[Symbol]:
+    async def resolve(self, name: str, t: type = None, type_only: bool = False, local_only: bool = False) -> Optional[Symbol]:
         """
         Asynchronously resolves a name to a symbol.
 
@@ -1333,16 +1333,16 @@ class SymbolTable(ScopedSymbol):
         :param local_only: A flag indicating if only this symbol table should be used or also its dependencies.
         :return: A promise resolving to the found symbol or undefined.
         """
-        result = await super().resolve(name,t, type_only, local_only)
+        result = await super().resolve(name, t, type_only, local_only)
         if result is None and not local_only:
             for dependency in self.dependencies:
-                result = await dependency.resolve(name,t, type_only, False)
+                result = await dependency.resolve(name, t, type_only, False)
                 if result is not None:
                     return result
 
         return result
 
-    def resolve_sync(self, name: str, t: type= None, type_only: bool = False, local_only: bool = False) -> Optional[Symbol]:
+    def resolve_sync(self, name: str, t: type = None, type_only: bool = False, local_only: bool = False) -> Optional[Symbol]:
         """
         Synchronously resolves a name to a symbol.
 
@@ -1352,10 +1352,10 @@ class SymbolTable(ScopedSymbol):
         :param local_only: A flag indicating if only this symbol table should be used or also its dependencies.
         :return: The found symbol or undefined.
         """
-        result = super().resolve_sync(name,t, type_only, local_only)
+        result = super().resolve_sync(name, t, type_only, local_only)
         if result is None and not local_only:
             for dependency in self.dependencies:
-                result = dependency.resolve_sync(name,t, type_only, False)
+                result = dependency.resolve_sync(name, t, type_only, False)
                 if result is not None:
                     return result
 

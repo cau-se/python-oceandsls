@@ -47,7 +47,9 @@ class PublicObj:
     pr_elements: Dict[str, List[str]] = field(default_factory=dict)
 
     def is_public(self, name: str) -> bool:
-        # Entity is considered public if public is not needed or entities are public by default and entity is not specifically marked as private (also not in a private context) or entity is specifically marked as public
+        # Entity is considered public if public is not needed or entities are
+        # public by default and entity is not specifically marked as private (also
+        # not in a private context) or entity is specifically marked as public
         if not self.need_public or not self.default_private and not name.startswith(tuple(self.pr_elements.keys())) or name in self.pub_elements:
             return True
         else:
@@ -394,11 +396,11 @@ def write_decorate_src_xml(src_dir: str = "", out_dir: str = "out", fxtran_path:
 
     # Define the fxtran command
     fxtran_cmd_ops = " ".join(
-            [fxtran_path,  # "-line-length 200",
-             "-no-cpp", "-name-attr", "-code-tag",  # "-strip-comments",
-             # "-no-include",
-             # "-construct-tag",
-             "-o"]
+        [fxtran_path,  # "-line-length 200",
+         "-no-cpp", "-name-attr", "-code-tag",  # "-strip-comments",
+         # "-no-include",
+         # "-construct-tag",
+         "-o"]
     )
 
     # Get Fortran files
