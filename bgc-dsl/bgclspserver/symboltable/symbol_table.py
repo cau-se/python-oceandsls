@@ -609,7 +609,7 @@ class ScopedSymbol(Symbol):
         symbol_table = self.symbol_table()
         if symbol_table is None or not symbol_table.options.allow_duplicate_symbols:
             for child in self.children():
-                if child is symbol or ( type(symbol) == type(child) and child.name == symbol.name) and isinstance(child, type(symbol)):
+                if child is symbol or ( type(symbol) is type(child) and child.name == symbol.name) and isinstance(child, type(symbol)):
                     symbol_name = symbol.name if symbol.name else "<anonymous>"
                     scope_name = self.name if self.name else "<anonymous>"
                     msg: str = f"Attempt to add duplicate symbol \"{symbol_name}\" to \"{scope_name}\""
@@ -917,7 +917,7 @@ class ScopedSymbol(Symbol):
         """
         for child in self.children():
             if child.name == name:
-                if not t or (not type_only and isinstance(child, t)) or (type_only and type(child) == t):
+                if not t or (not type_only and isinstance(child, t)) or (type_only and type(child) is t):
                     return child
 
         # Nothing found locally. Let the parent continue.
@@ -946,7 +946,7 @@ class ScopedSymbol(Symbol):
         """
         for child in self.children():
             if child.name == name:
-                if not t or (not type_only and isinstance(child, t)) or (type_only and type(child) == t):
+                if not t or (not type_only and isinstance(child, t)) or (type_only and type(child) is t):
                     return child
 
         # Nothing found locally. the parent continues.
