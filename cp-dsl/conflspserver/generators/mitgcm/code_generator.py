@@ -21,6 +21,7 @@ __author__ = 'Reiner Jung'
 from conflspserver.symboltable.symbol_table import SymbolTable, GroupSymbol, VariableSymbol, FeatureSymbol, EnumSymbol
 from ..code_generator import StandardCodeGenerator
 
+
 class MitGcmCodeGenerator(StandardCodeGenerator):
     """a generator for mitgcm
 

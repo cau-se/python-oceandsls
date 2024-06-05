@@ -54,7 +54,7 @@ class DeclarationCalculator():
                 print("WARNING: no default value defined for Variable", variable_symbol.name)
 
     def calc_arithmetic_expression_array(self, varctx: DeclarationParser.ParamAssignStatContext,
-                                      ctx: DeclarationParser.ArithmeticExpressionContext, array_symbol: ArraySymbol):
+                                         ctx: DeclarationParser.ArithmeticExpressionContext, array_symbol: ArraySymbol):
         '''calculates a array in decl language'''
 
         # tupleList representation: list[2:4,5] = [range(2,4), range(5)]
@@ -280,7 +280,7 @@ class ConfigurationCalculator(DeclarationCalculator):
             variable_symbol.is_tree = False
 
     def calc_arithmetic_expression_array(self, varctx: ConfigurationParser.ParameterAssignmentContext,
-                                      ctx: ConfigurationParser.ArithmeticExpressionContext, array_symbol: ArraySymbol):
+                                         ctx: ConfigurationParser.ArithmeticExpressionContext, array_symbol: ArraySymbol):
         '''calculates a array configuration'''
 
         # tupleList representation: list[2:4,5] = [range(2,4), range(5)]

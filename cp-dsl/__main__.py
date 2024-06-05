@@ -67,7 +67,7 @@ if __name__ == '__main__':
                 print(e)
             # try:
             declaration_result = declaration_calculator.calculate()
-            #declaration_result.
+            # declaration_result.
             table = ConfigurationCalculator(declaration_result, configuration_visitor.configuration_list).calculate()
             # except AttributeError as e:
             #     print("ERROR: Could not parse Configuration-File")
