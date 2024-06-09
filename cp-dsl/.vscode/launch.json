@@ -3,6 +3,14 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Python Debugger: cp-dsl compiler",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "__main__.py"
+      "args": [ "-i" , "/home/reiner/Projects/OceanDSL/python-oceandsls/cp-dsl/input/testing/basic/global.oconf"],
+      "console": "integratedTerminal"
+    }
+    {
       "name": "Launch Client",
       "type": "extensionHost",
       "request": "launch",

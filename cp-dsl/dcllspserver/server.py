@@ -68,7 +68,7 @@ from .utils.compute_token_index import compute_token_position, CaretPosition, To
 from .utils.suggest_variables import suggest_symbols
 from .utils.dcl_errors_strategy import DCLErrorStrategy
 
-from .cst.symbol_table_visitor_dcl import SymbolTableVisitorDcl
+from .cst.symbol_table_visitor import DeclarationCPVisitor
 from .cst.diagnostic_listener import DiagnosticListener
 
 from .gen.python.Declaration.DeclarationLexer import DeclarationLexer
@@ -295,7 +295,7 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     # Variables finding
     if any(rule in candidates.rules for rule in [DeclarationParser.declarationModel]):
 
-        symbolTableVisitor: SymbolTableVisitorDcl = SymbolTableVisitorDcl('completions')
+        symbolTableVisitor: DeclarationCPVisitor = DeclarationCPVisitor('completions')
 
         symbolTable = symbolTableVisitor.visit(parse_tree)
 

@@ -15,12 +15,10 @@
 import jinja2 as j
 import os
 
-from ..symboltable.symbol_table import SymbolTable
-
 __author__ = 'stu222808'
 
 # Relative imports
-from ..symboltable.symbol_table import SymbolTable, GroupSymbol, VariableSymbol, FeatureSymbol, EnumSymbol
+from symboltable.symbol_table import SymbolTable, GroupSymbol, VariableSymbol, FeatureSymbol, EnumSymbol
 
 
 class StandardCodeGenerator():

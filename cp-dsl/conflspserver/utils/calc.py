@@ -19,10 +19,10 @@ __author__ = "stu222808"
 import operator as op
 
 # Relative Imports
-from ..symboltable.symbol_table import SymbolTable, VariableSymbol, ArraySymbol, ScopedSymbol, EnumSymbol
+from symboltable.symbol_table import SymbolTable, VariableSymbol, ArraySymbol, ScopedSymbol, EnumSymbol
 from conflspserver.gen.python.Configuration.ConfigurationParser import ConfigurationParser
 from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
-from ..symboltable.symbol_table import ArraySymbol, SymbolTable
+from symboltable.symbol_table import ArraySymbol, SymbolTable
 
 
 class DeclarationCalculator():

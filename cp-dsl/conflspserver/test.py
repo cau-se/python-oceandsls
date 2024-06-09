@@ -18,7 +18,7 @@ from conflspserver.gen.python.Configuration.ConfigurationLexer import Configurat
 from conflspserver.gen.python.Configuration.ConfigurationParser import ConfigurationParser
 from antlr4 import InputStream, CommonTokenStream
 from conflspserver.symboltable.symbol_table import VariableSymbol
-from conflspserver.cst.symbol_table_visitor import SymbolTableVisitor
+from conflspserver.cst.symbol_table_visitor import ConfigurationCPVisitor
 from conflspserver.utils.calc import DeclarationCalculator, ConfigurationCalculator
 
 
@@ -31,7 +31,7 @@ def testingArrays():
                 return False
         return True
 
-    tableVisitor = SymbolTableVisitor("testConf")
+    tableVisitor = ConfigurationCPVisitor("testConf")
     with open("../input/arrays/array.oconf") as conf_file:
         data = conf_file.read()
         input_stream = InputStream(data)
@@ -53,7 +53,7 @@ def testingArrays():
 
 # BASIC
 def testBasic():
-    tableVisitor = SymbolTableVisitor("testConf")
+    tableVisitor = ConfigurationCPVisitor("testConf")
     with open("../input/basic/global.oconf") as conf_file:
         data = conf_file.read()
         input_stream = InputStream(data)
@@ -75,7 +75,7 @@ def testBasic():
 
 # conditions
 def testConditions():
-    tableVisitor = SymbolTableVisitor("testConf")
+    tableVisitor = ConfigurationCPVisitor("testConf")
     with open("../input/conditions/configuration.oconf") as conf_file:
         data = conf_file.read()
         input_stream = InputStream(data)

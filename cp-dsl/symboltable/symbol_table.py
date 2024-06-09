@@ -88,27 +88,7 @@ class TypeKind(Enum):
 #     # "Type" as such and default for all value types.
 #     Instance = 3
 
-
-class UnitKind(Enum):
-    """
-    Rough categorization of a unit from SI units.
-    """
-    Unknown = 0
-    Second = 1
-    Metre = 2
-    # TODO si unit is kilogram | added to FundamentalUnit
-    Gram = 3
-    Ampere = 4
-    Kelvin = 5
-    Mole = 6
-    Candela = 7
-    # TODO add non si units?
-    Pascal = 8
-    Joule = 9
-    ton = 10
-
-
-class UnitPrefix:
+class UnitPrefix(Enum):
     """
     Rough categorization of a unit from SI prefixes.
     """
@@ -198,118 +178,9 @@ class Type:
     kind: Optional[TypeKind]
     # reference: Optional[ReferenceKind]
 
-
 @dataclass
 class SymbolTableOptions:
     allow_duplicate_symbols: Optional[bool] = None
-
-
-class classproperty(property):
-    def __get__(self, cls, owner):
-        return classmethod(self.fget).__get__(None, owner)()
-
-
-class FundamentalUnit(Unit):
-    """
-    A single class for all fundamental units which are mostly SI units. They are distinguished via the kind field.
-    """
-
-    def __init__(self, name: str, base_types=[], unit_prefix=UnitPrefix.NoP, unit_kind=UnitKind.Unknown):
-        super().__init__(name=name, base_types=base_types, kind=unit_kind, prefix=unit_prefix)
-
-    @classproperty
-    def second_unit(self) -> FundamentalUnit:
-        return FundamentalUnit(name="second", unit_kind=UnitKind.Second)
-
-    @classproperty
-    def metre_unit(self) -> FundamentalUnit:
-        return FundamentalUnit(name="metre", unit_kind=UnitKind.Metre)
-
-    # TODO si unit is kilogram but unitKind has gram
-    @classproperty
-    def gram_unit(self) -> FundamentalUnit:
-        return FundamentalUnit(name="gram", unit_kind=UnitKind.Gram)
-
-    # TODO si unit is kilogram but unitKind has gram
-    @classproperty
-    def kilogram_unit(self) -> FundamentalUnit:
-        return FundamentalUnit(name="kilogram", unit_prefix=UnitPrefix.Kilo, unit_kind=UnitKind.Gram)
-
-    @classproperty
-    def ampere_unit(self) -> FundamentalUnit:
-        return FundamentalUnit(name="ampere", unit_kind=UnitKind.Ampere)
-
-    @classproperty
-    def kelvin_unit(self) -> FundamentalUnit:
-        return FundamentalUnit(name="Kelvin", unit_kind=UnitKind.Kelvin)
-
-    @classproperty
-    def mole_unit(self) -> FundamentalUnit:
-        return FundamentalUnit(name="Mole", unit_kind=UnitKind.Mole)
-
-    @classproperty
-    def candela_unit(self) -> FundamentalUnit:
-        return FundamentalUnit(name="Candela", unit_kind=UnitKind.Candela)
-
-    @classproperty
-    def pascal_unit(self) -> FundamentalUnit:
-        return FundamentalUnit(name="Pascal", unit_kind=UnitKind.Pascal)
-
-    @classproperty
-    def joule_unit(self) -> FundamentalUnit:
-        return FundamentalUnit(name="Joule", unit_kind=UnitKind.Joule)
-
-    # TODO si unit is kilogram. unitKind has gram but could include ton
-    @classproperty
-    def ton_unit(self) -> FundamentalUnit:
-        return FundamentalUnit(name="Ton", unit_prefix=UnitPrefix.Mega, unit_kind=UnitKind.Gram)
-
-
-class FundamentalType(Type):
-    """
-    A single class for all fundamental types. They are distinguished via the kind field.
-    """
-
-    # , reference_kind=ReferenceKind.Irrelevant
-    def __init__(self, name: str, base_types=[], type_kind=TypeKind.Unknown):
-        # , reference=reference_kind
-        super().__init__(name=name, base_types=base_types, kind=type_kind)
-
-    @classproperty
-    def integer_type(self) -> FundamentalType:
-        return FundamentalType(name="integer", type_kind=TypeKind.Integer)
-
-    @classproperty
-    def real_type(self) -> FundamentalType:
-        return FundamentalType(name="real", type_kind=TypeKind.Float)
-
-    @classproperty
-    def float_type(self) -> FundamentalType:
-        return FundamentalType(name="float", type_kind=TypeKind.Float)
-
-    @classproperty
-    def string_type(self) -> FundamentalType:
-        return FundamentalType(name="string", type_kind=TypeKind.String)
-
-    @classproperty
-    def bool_type(self) -> FundamentalType:
-        return FundamentalType(name="bool", type_kind=TypeKind.Boolean)
-
-
-def get_fundamental_type(type: str = "") -> Type | FundamentalType:
-    """
-    Return FundamentalType of type or, if non-existent, new Type of type
-    :param type: Type name to return
-    :return: FundamentalType of type or, if non-existent, new Type of type
-    """
-    for key in FundamentalType.__dict__.keys():
-        if type:
-            if key == type.lower() + "_type":
-                return getattr(FundamentalType, key)
-
-            return Type(name=type.lower(), base_types=None, kind=None)
-        else:
-            return None
 
 
 class Symbol:
@@ -549,7 +420,7 @@ class UnitSymbol(TypedSymbol):
     attached_unit: Optional[Unit]
     attached_description: Optional[str]
 
-    def __init__(self, name: str, attached_description: str, attached_keys=None, attached_unit: Unit, attached_type: Type = None):
+    def __init__(self, name: str, attached_description: str, attached_keys=None, attached_unit: Unit = None, attached_type: Type = None):
         super().__init__(name, attached_type, attached_keys)
         self.attached_unit = attached_unit
         self.attached_description = attached_description

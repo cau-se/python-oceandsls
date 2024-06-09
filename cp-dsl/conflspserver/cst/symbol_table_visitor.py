@@ -27,9 +27,10 @@ from ..gen.python.Configuration.ConfigurationParser import ConfigurationParser
 from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
 from dcllspserver.gen.python.Declaration.DeclarationLexer import DeclarationLexer
 # user relative imports
-from .symbol_table_visitor_dcl import SymbolTableVisitorDcl as DeclSymbolTableVisitor
-from ..symboltable.symbol_table import SymbolTable, P, T, GroupSymbol, FeatureSymbol, SymbolTableOptions, VariableSymbol, FundamentalUnit, UnitPrefix, \
-    UnitKind, EnumSymbol, ArraySymbol
+from dcllspserver.cst.symbol_table_visitor import DeclarationCPVisitor
+from symboltable.symbol_table import SymbolTable, P, T, GroupSymbol, FeatureSymbol, SymbolTableOptions, VariableSymbol, \
+    EnumSymbol, ArraySymbol
+from symboltable.cp_model import FundamentalUnit, UnitPrefix, UnitKind
 from ..gen.python.Configuration.ConfigurationParser import ConfigurationParser
 from ..gen.python.Configuration.ConfigurationVisitor import ConfigurationVisitor
 from ..gen.python.Configuration.ConfigurationLexer import ConfigurationLexer
@@ -40,16 +41,15 @@ import os
 # NOTE: Method names starting with visit are required to look like this, as parts of the grammar
 # are named in that way
 
-
 class SymbolTableVisitor(ConfigurationVisitor, Generic[T]):
     _symbol_table: SymbolTable
 
     _generator_selector: str
 
-    def __init__(self, name: str = '', cwd: str = "."):
+    def __init__(self, symbol_table:SymbolTable, cwd: str = "."):
         super().__init__()
         # creates a new symboltable with no duplicate symbols
-        self._symbol_table = SymbolTable(name, SymbolTableOptions(False))
+        self._symbol_table = symbol_table
         # TODO scope marker
         # self._scope = self._symbol_table.addNewSymbolOfType( ScopedSymbol, None )
         self._scope = self._symbol_table
@@ -69,22 +69,23 @@ class SymbolTableVisitor(ConfigurationVisitor, Generic[T]):
 
     def visitConfigurationModel(self, ctx: ConfigurationParser.ConfigurationModelContext):
         # Symboltable has to be filled with Declaration Defaults
-        table = self.visitDeclarationTable(ctx.declarationModel.text)
+        #table = self.visitDeclarationTable(ctx.declarationModel.text)
         # add all symbols to symboltable
-        self._symbol_table = table
+        #self._symbol_table = table
         return super().visitConfigurationModel(ctx)
 
-    def visitDeclarationTable(self, declarationName: str):
-        declaration_visitor = DeclSymbolTableVisitor(declarationName + "_ConfDeclVisit")
-        self._generator_selector = declarationName
-        with open(os.path.join(self.cwd, declarationName + ".decl")) as dcl_file:
-            data = dcl_file.read()
-            input_stream = InputStream(data)
-            lexer = DeclarationLexer(input_stream)
-            stream = CommonTokenStream(lexer)
-            dcl_parsed = DeclarationParser(stream).declarationModel()
-            declaration_visitor.visit(dcl_parsed)
-        return declaration_visitor.symbol_table
+#    def visitDeclarationTable(self, declarationName: str):
+#        # we should not do this here
+#        declaration_visitor = DeclarationCPVisitor(declarationName + "_ConfDeclVisit")
+#        self._generator_selector = declarationName
+#        with open(os.path.join(self.cwd, declarationName + ".decl")) as dcl_file:
+#            data = dcl_file.read()
+#            input_stream = InputStream(data)
+#            lexer = DeclarationLexer(input_stream)
+#            stream = CommonTokenStream(lexer)
+#            dcl_parsed = DeclarationParser(stream).declarationModel()
+#            declaration_visitor.visit(dcl_parsed)
+#        return declaration_visitor.symbol_table
 
     def visitParameterAssignment(self, ctx: ConfigurationParser.ParameterAssignmentContext):
         # define the given Parameter
@@ -130,7 +131,7 @@ class SymbolTableVisitor(ConfigurationVisitor, Generic[T]):
     def visitInclude(self, ctx: ConfigurationParser.IncludeContext):
         info = ctx.importedNamespace.text.split(".")
         # visit configuration table
-        confVisitor = SymbolTableVisitor(info[0] + "_ConfVisit")
+        confVisitor = ConfigurationCPVisitor(info[0] + "_ConfVisit")
         with open(os.path.join(self.cwd, info[0] + ".oconf")) as conf_file:
             data = conf_file.read()
             input_stream = InputStream(data)
