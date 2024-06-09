@@ -18,11 +18,7 @@ from dataclasses import dataclass
 from .symbol_table import TypeKind
 
 #
-# Data model for CP-DSL
-#
-
-#
-# units
+# units of datatypes
 #
 
 class classproperty(property):
@@ -182,71 +178,4 @@ class UnitSpecification():
     def get_units(self):
         return self.composedUnitList
 
-
-#
-# type
-#
-
-
-
-
-@dataclass
-class Type:
-    """
-    The root type. Used for typed symbols and type aliases.
-    """
-    name: str
-
-    # The super type of this type or empty if this is a fundamental type.
-    # Also used as the target type for type aliases.
-    base_types: Optional[List[Type]]
-    kind: Optional[TypeKind]
-    # reference: Optional[ReferenceKind]
-
-
-class FundamentalType(Type):
-    """
-    A single class for all fundamental types. They are distinguished via the kind field.
-    """
-
-    # , reference_kind=ReferenceKind.Irrelevant
-    def __init__(self, name: str, base_types=[], type_kind=TypeKind.Unknown):
-        # , reference=reference_kind
-        super().__init__(name=name, base_types=base_types, kind=type_kind)
-
-    @classproperty
-    def integer_type(self) -> FundamentalType:
-        return FundamentalType(name="integer", type_kind=TypeKind.Integer)
-
-    @classproperty
-    def real_type(self) -> FundamentalType:
-        return FundamentalType(name="real", type_kind=TypeKind.Float)
-
-    @classproperty
-    def float_type(self) -> FundamentalType:
-        return FundamentalType(name="float", type_kind=TypeKind.Float)
-
-    @classproperty
-    def string_type(self) -> FundamentalType:
-        return FundamentalType(name="string", type_kind=TypeKind.String)
-
-    @classproperty
-    def bool_type(self) -> FundamentalType:
-        return FundamentalType(name="bool", type_kind=TypeKind.Boolean)
-
-
-def get_fundamental_type(type: str = "") -> Type | FundamentalType:
-    """
-    Return FundamentalType of type or, if non-existent, new Type of type
-    :param type: Type name to return
-    :return: FundamentalType of type or, if non-existent, new Type of type
-    """
-    for key in FundamentalType.__dict__.keys():
-        if type:
-            if key == type.lower() + "_type":
-                return getattr(FundamentalType, key)
-
-            return Type(name=type.lower(), base_types=None, kind=None)
-        else:
-            return None
 

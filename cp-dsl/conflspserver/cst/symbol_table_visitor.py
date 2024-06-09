@@ -41,7 +41,8 @@ import os
 # NOTE: Method names starting with visit are required to look like this, as parts of the grammar
 # are named in that way
 
-class SymbolTableVisitor(ConfigurationVisitor, Generic[T]):
+
+class ConfigurationCPVisitor(ConfigurationVisitor, Generic[T]):
     _symbol_table: SymbolTable
 
     _generator_selector: str

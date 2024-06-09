@@ -27,156 +27,11 @@ from typing import Coroutine, List, Optional, ParamSpec, Set, TypeVar
 # Antlr4
 from antlr4.tree.Tree import ParseTree
 
+from typesystem import Type
+from units import Unit
 
 class DuplicateSymbolError(Exception):
     pass
-
-
-class MemberVisibility(Enum):
-    # Not specified, default depends on the language and type.
-    Unknown = 0
-    # Used in Swift, member can be accessed outside of the defining module and extended.
-    Open = 1
-    # Like Open, but in Swift such a type cannot be extended.
-    Public = 2
-    # Member is only accessible in the defining class and any derived class.
-    Protected = 3
-    # Member can only be accessed from the defining class.
-    Private = 4
-    # Used in Swift, member can be accessed from everywhere in a defining module, not outside however.
-    FilePrivate = 5
-    # Custom enum for special usage.
-    Library = 6
-
-
-class Modifier(Enum):
-    Static = 0
-    Final = 1
-    Sealed = 2
-    Abstract = 3
-    Deprecated = 4
-    Virtual = 5
-    Const = 6
-    Overwritten = 7
-
-
-class TypeKind(Enum):
-    """
-    Rough categorization of a type.
-    """
-    Unknown = 0
-    Integer = 1
-    Float = 2
-    Number = 3
-    String = 4
-    Char = 5
-    Boolean = 6
-    Class = 7
-    Interface = 8
-    Array = 9
-    Map = 10
-    Enum = 11
-    Alias = 12
-
-
-# class ReferenceKind(Enum):
-#     Irrelevant = 0
-#     # Default for most languages for dynamically allocated memory ("Type*" in C++).
-#     Pointer = 1
-#     # "Type&" in C++
-#     Reference = 2
-#     # "Type" as such and default for all value types.
-#     Instance = 3
-
-class UnitPrefix(Enum):
-    """
-    Rough categorization of a unit from SI prefixes.
-    """
-    NoP = 0
-    Quetta = 1
-    Ronna = 2
-    Yotta = 3
-    Zetta = 4
-    Exa = 5
-    Peta = 6
-    Tera = 7
-    Giga = 8
-    Mega = 9
-    Kilo = 10
-    Hecto = 11
-    Deca = 12
-    Deci = 13
-    Centi = 14
-    Mili = 15
-    Micro = 16
-    Nano = 17
-    Pico = 18
-    Femto = 19
-    Atto = 20
-    Zepto = 21
-    Yocto = 22
-    Ronto = 23
-    Quecto = 24
-
-
-@dataclass
-class Unit:
-    """
-    The root unit. Used for unit symbols
-    """
-    name: str
-
-    # The super unit of this unit or empty if this is a SI unit such as second.
-    # TODO add units
-    # TODO add aliases?
-    base_types: List[Unit]
-    prefix: UnitPrefix
-    kind: UnitKind
-    # reference: ReferenceKind
-
-
-class ComposedUnit():
-    """The composed Unit Representation of the Declaration-DSL"""
-    numerator: FundamentalUnit
-    denominator: FundamentalUnit
-    exponent: FundamentalUnit
-    basicUnit: FundamentalUnit
-
-    def __init__(self, basicUnit: FundamentalUnit = None, numerator: FundamentalUnit = None,
-                 denominator: FundamentalUnit = None, exponent: FundamentalUnit = None) -> None:
-        self.basicUnit = basicUnit
-        self.numerator = numerator
-        self.denominator = denominator
-        self.exponent = exponent
-
-
-class UnitSpecification():
-    """CP-DSL Declaration UnitSpecification Representation Class"""
-    prefix: UnitPrefix
-
-    def __init__(self) -> None:
-        self.composedUnitList = []
-        self.prefix = None
-
-    def add(self, unit: ComposedUnit):
-        self.composedUnitList.append(unit)
-
-    def get_units(self):
-        return self.composedUnitList
-
-
-@dataclass
-class Type:
-    """
-    The root type. Used for typed symbols and type aliases.
-    """
-    name: str
-
-    # The super type of this type or empty if this is a fundamental type.
-    # Also used as the target type for type aliases.
-    base_types: Optional[List[Type]]
-    kind: Optional[TypeKind]
-    # reference: Optional[ReferenceKind]
 
 @dataclass
 class SymbolTableOptions:
@@ -201,8 +56,6 @@ class Symbol:
     @property
     def modifiers(self) -> Set[int]:
         return set()
-
-    visibility: MemberVisibility = MemberVisibility.Unknown
 
     __the_parent: Optional[ScopedSymbol] = None
 
@@ -312,7 +165,7 @@ class Symbol:
             self.__the_parent.remove_symbol(self)
             self.__the_parent = None
 
-    async def resolve(self, name: str, t: type = None, type_only: bool = False, local_only: bool = False) -> Optional[Symbol]:
+    async def resolve(self, name: str, t: type= None, type_only: bool = False , local_only: bool = False) -> Optional[Symbol]:
         """
         Asynchronously looks up a symbol with a given name, in a bottom-up manner.
 
@@ -326,11 +179,11 @@ class Symbol:
         """
 
         if isinstance(self.__the_parent, ScopedSymbol):
-            return await self.__the_parent.resolve(name, t, type_only, local_only)
+            return await self.__the_parent.resolve(name,t, type_only, local_only)
 
         return None
 
-    def resolve_sync(self, name: str, t: type = None, type_only: bool = False, local_only: bool = False) -> Optional[Symbol]:
+    def resolve_sync(self, name: str, t: type= None, type_only: bool = False , local_only: bool = False) -> Optional[Symbol]:
         """
         Synchronously looks up a symbol with a given name, in a bottom-up manner.
 
@@ -343,7 +196,7 @@ class Symbol:
         scopes (conditionally).
         """
         if isinstance(self.__the_parent, ScopedSymbol):
-            return self.__the_parent.resolve_sync(name, t, type_only, local_only)
+            return self.__the_parent.resolve_sync(name,t, type_only, local_only)
 
         return None
 
@@ -387,10 +240,8 @@ class Symbol:
 
         return result
 
-
 P = ParamSpec("P")
 T = TypeVar("T", bound=Symbol)
-
 
 class TypedSymbol(Symbol):
     """
@@ -495,7 +346,7 @@ class ScopedSymbol(Symbol):
         symbol_table = self.symbol_table()
         if symbol_table is None or not symbol_table.options.allow_duplicate_symbols:
             for child in self.children():
-                if child is symbol or (type(symbol) is type(child) and child.name == symbol.name) and isinstance(child, type(symbol)):
+                if child is symbol or ( type(symbol) == type(child) and child.name == symbol.name) and isinstance(child, type(symbol)):
                     symbol_name = symbol.name if symbol.name else "<anonymous>"
                     scope_name = self.name if self.name else "<anonymous>"
                     msg: str = f"Attempt to add duplicate symbol \"{symbol_name}\" to \"{scope_name}\""
@@ -789,7 +640,7 @@ class ScopedSymbol(Symbol):
 
         return result
 
-    async def resolve(self, name: str, t: type = None, type_only: bool = False, local_only: bool = False, callers: List[T] = []) -> Optional[Symbol]:
+    async def resolve(self, name: str, t: type= None, type_only: bool = False, local_only: bool = False, callers: List[T] = []) -> Optional[Symbol]:
         """
         :param name: The name of the symbol to resolve.
         :param type_only: no subtype
@@ -802,14 +653,14 @@ class ScopedSymbol(Symbol):
         """
         for child in self.children():
             if child.name == name:
-                if not t or (not type_only and isinstance(child, t)) or (type_only and type(child) is t):
+                if not t or (not type_only and isinstance(child, t)) or (type_only and type(child) == t):
                     return child
 
         # Nothing found locally. Let the parent continue.
         if not local_only:
             # Call parent scope
             if isinstance(self.parent(), ScopedSymbol) and self.parent() not in callers:
-                return await self.parent().resolve(name, t, type_only, local_only, callers + [self])
+                return await self.parent().resolve(name,t, type_only, local_only, callers + [self])
 
             # Call scopes that are included
             for include_scope in self._include_scopes:
@@ -818,7 +669,7 @@ class ScopedSymbol(Symbol):
 
         return None
 
-    def resolve_sync(self, name: str, t: type = None, type_only: bool = False, local_only: bool = False, callers: List[T] = []) -> Optional[Symbol]:
+    def resolve_sync(self, name: str, t: type= None, type_only: bool = False, local_only: bool = False, callers: List[T] = []) -> Optional[Symbol]:
         """
         :param name: The name of the symbol to resolve.
         :param type_only: no subtype
@@ -831,7 +682,7 @@ class ScopedSymbol(Symbol):
         """
         for child in self.children():
             if child.name == name:
-                if not t or (not type_only and isinstance(child, t)) or (type_only and type(child) is t):
+                if not t or (not type_only and isinstance(child, t)) or (type_only and type(child) == t):
                     return child
 
         # Nothing found locally. the parent continues.
@@ -985,263 +836,6 @@ class ScopedSymbol(Symbol):
         return self.parent().next_of(self)
 
 
-class VariableSymbol(Symbol):
-    """a class for parameter of cp-dsl
-
-    Args:
-        Symbol (_type_): _description_
-
-    Returns:
-        _type_: _description_
-    """
-
-    def __init__(self, name: str, description: str = "", value=None, unit_specification: UnitSpecification = None, type=None):
-        super().__init__(name)
-        self.description = description
-        self.unit = unit_specification
-        self.is_tree = isinstance(value, ParseTree)
-        self.val = value if value else None
-        if type == "float":
-            value = 0.0
-        if type == "int":
-            value = 0
-        self.type = type
-        self.is_array = False
-
-    @property
-    def value(self):
-        return self.val
-
-
-class EnumSymbol(Symbol):
-    '''
-    a class for enums of cp-dsl language
-    '''
-
-    def __init__(self, name: str = "", enums=None):
-        super().__init__(name)
-        self.enums = enums
-
-
-class RangeSymbol(Symbol):
-    '''
-    a class for ranges in cp-dsl
-    '''
-
-    def __init__(self, name, type, minimum, maximum):
-        super().__init__(name)
-        self.type = type
-        self.minimum = minimum
-        self.maximum = maximum
-
-
-class ArraySymbol(VariableSymbol):
-    """
-    a class representing a n-dimensional array
-    Array Representation:
-    i[2:7] = {0,1,2,3,4,5}
-    => [2,3,4,5,6,7][0,1,2,3,4,5]
-    i[5][9] = 8
-    => [5][ArraySymbol([9][8])]
-    """
-
-    def __init__(self, name: str = "", upper_bound=0, lower_bound=0):
-        super().__init__(name)
-        self.upper_bound = upper_bound
-        self.lower_bound = lower_bound
-        self.is_array = True
-        self.vectors = []
-        self.array_value = []
-
-    @property
-    def value(self):
-        return self.to_normalized_array()
-
-    # !!!!EXPERIMENTAL!!!!
-    def add(self, vector, val) -> None:
-        """
-        adds a value in the array
-        :vector: the index of the value
-        :val: the value to save in the array
-        """
-        # n Dimension Support
-        if len(vector) >= 2:
-            if isinstance(self.get(vector[0]), ArraySymbol):
-                newArray = self.get(vector[0])
-            else:
-                newArray = ArraySymbol()
-            newArray.add(vector[1:], val)
-            self.add([vector[0]], newArray)
-        else:
-            # check if vector already in array
-            if vector[0] in self.vectors:
-                i = self.vectors.index(vector[0])
-                self.array_value[i] = val
-                return
-            if self.upper_bound == 0 and self.lower_bound == 0:
-                self.vectors.append(vector[0])
-                self.array_value.append(val)
-            else:
-                # Check for the bounds
-                if self.lower_bound <= vector[0] and self.upper_bound >= vector[0] or self.upper_bound == 0:
-                    self.vectors.append(vector[0])
-                    self.array_value.append(val)
-                else:
-                    print("ERROR: Array", self.name, "out of bound error for index", vector)
-
-    def get(self, index) -> T:
-        """
-        get a value out of the list, None if not available
-        :index: the index of the value to return
-        :return: the value on given index
-        """
-        try:
-            if isinstance(index, list):
-                return self.array_value[self.vectors.index(index[0])]
-            return self.array_value[self.vectors.index(index)]
-        except IndexError or ValueError:
-            return None
-
-    def getVector(self, vector) -> T:
-        """
-        get a value out of the list recursive given by a vector
-        :vector: the vector
-        :return: the value on the vector
-        """
-        if len(vector) >= 2:
-            currArray = self
-            try:
-                for i in vector:
-                    index = self.vectors.index(i)
-                    currArray = currArray.value[index]
-                return currArray
-            except IndexError or ValueError:
-                # return the last value reached
-                return currArray
-        else:
-            return self.get(vector[0])
-
-    def remove(self, index) -> T:
-        """
-        removes and returns the value places at index
-        :index: the index of the value to remove
-        :return: the value removed
-        """
-        i = self.vectors.index(index)
-        self.vectors.pop(i)
-        return self.array_value.pop(i)
-
-    def removeVal(self, val) -> None:
-        """
-        removes a given value from the array (first elem found)
-        :val: the value to remove
-        """
-        i = self.array_value.index(val)
-        self.vectors.pop(i)
-        self.array_value.pop(i)
-
-    def toArray(self, recursive=True) -> list:
-        """
-        converts the array in a pyton list
-        :recursive: convert also arrays in arrays
-        :return: the generated python list
-        """
-        returnVal = []
-        for i in range(len(self)):
-            if i in self.vectors:
-                if not recursive:
-                    returnVal.append(self.get(i))
-                else:
-                    elem = self.get(i)
-                    if isinstance(elem, ArraySymbol):
-                        returnVal.append(elem.toArray())
-                    else:
-                        returnVal.append(elem)
-            else:
-                returnVal.append(None)
-        return returnVal
-
-    def to_normalized_array(self, recursive=True) -> list:
-        """
-        converts the array in a pyton list without nones
-        :recursive: convert also arrays in arrays
-        :return: the generated python list
-        """
-        return_value = []
-        for i in range(len(self)):
-            if i in self.vectors:
-                if not recursive:
-                    return_value.append(self.get(i[0])) if isinstance(self.get(i), tuple) else return_value.append(self.get(i))
-                else:
-                    elem = self.get(i)
-                    if isinstance(elem, ArraySymbol):
-                        return_value.append(elem.to_normalized_array())
-                    else:
-                        return_value.append(elem[0]) if isinstance(elem, tuple) else return_value.append(elem)
-        return return_value
-
-    def clear(self) -> None:
-        '''
-        removes all values from the array
-        '''
-        self.vectors = []
-        self.array_value = []
-
-    def __len__(self):
-        if len(self.vectors) == 0:
-            return 0
-        return max(self.vectors) + 1
-
-    def __str__(self):
-        return str(self.toArray()).replace("None, ", "")
-
-
-class GroupSymbol(ScopedSymbol):
-    """
-    A Class for Group Declarations
-    """
-    description: Optional[str]
-    group_type: Optional[T]
-
-    def __init__(self, name: str, groupType: T, description: str = ""):
-        super().__init__(name)
-        self.description = description
-        self.group_type = groupType
-
-    def get_group_variables(self, localOnly=True) -> Coroutine[List[T]]:
-        return self.get_symbols_of_type(self.group_type)
-
-
-class NamespaceSymbol(ScopedSymbol):
-    pass
-
-
-class FeatureSymbol(ScopedSymbol):
-    """
-    A standalone function/procedure/rule.
-    """
-    return_type: Optional[Type]  # Can be null if result is void.
-    is_activated: bool = False  # set if the feature is activated
-
-    def __init__(self, name: str, description: str = "", returnType: Type = None):
-        super().__init__(name)
-        self.return_type = returnType
-        self.is_activated = False
-        self.description = description
-
-    def get_variables(self, localOnly=True) -> Coroutine[List[T]]:
-        return self.getNestedSymbolsOfTypeSync(VariableSymbol)
-
-    def get_parameters(self, localOnly=True) -> Coroutine[List[T]]:
-        return self.getNestedSymbolsOfTypeSync(VariableSymbol)
-
-    def get_units(self, localOnly=True) -> Coroutine[List[T]]:
-        return self.getNestedSymbolsOfTypeSync(UnitSymbol)
-
-    def get_features(self, localOnly=True) -> Coroutine[List[T]]:
-        return self.getNestedSymbolsOfTypeSync(FeatureSymbol)
-
-
 @dataclass
 class SymbolTableInfo:
     dependency_count: int
@@ -1293,7 +887,7 @@ class SymbolTable(ScopedSymbol):
     async def add_new_namespace_from_path(
             self, parent: Optional[ScopedSymbol], path: str,
             delimiter="."
-    ) -> NamespaceSymbol:
+    ) -> ScopedSymbol:
         """
         Asynchronously adds a new namespace to the symbol table or the given parent. The path parameter specifies a
         single namespace name or a chain of namespaces (which can be e.g. "outer.intermittent.inner.final"). If any of
@@ -1309,16 +903,16 @@ class SymbolTable(ScopedSymbol):
         i = 0
         currentParent = self if parent is None else parent
         while i < len(parts) - 1:
-            namespace: NamespaceSymbol = await currentParent.resolve(parts[i], True)
+            namespace: ScopedSymbol = await currentParent.resolve(parts[i], True)
             if namespace is None:
-                namespace = self.add_new_symbol_of_type(NamespaceSymbol, currentParent, parts[i])
+                namespace = self.add_new_symbol_of_type(ScopedSymbol, currentParent, parts[i])
 
             currentParent = namespace
             i += 1
 
-        return self.addNewSymbolOfType(NamespaceSymbol, currentParent, parts[len(parts) - 1])
+        return self.addNewSymbolOfType(ScopedSymbol, currentParent, parts[len(parts) - 1])
 
-    def add_new_namespace_from_path_sync(self, parent: Optional[ScopedSymbol], path: str, delimiter=".") -> NamespaceSymbol:
+    def add_new_namespace_from_path_sync(self, parent: Optional[ScopedSymbol], path: str, delimiter=".") -> ScopedSymbol:
         """
         Synchronously adds a new namespace to the symbol table or the given parent. The path parameter specifies a
         single namespace name or a chain of namespaces (which can be e.g. "outer.intermittent.inner.final"). If any of
@@ -1335,14 +929,14 @@ class SymbolTable(ScopedSymbol):
         currentParent = self if parent is None else parent
 
         while i < len(parts) - 1:
-            namespace: NamespaceSymbol = currentParent.resolveSync(parts[i], True)
+            namespace: ScopedSymbol = currentParent.resolveSync(parts[i], True)
             if namespace is None:
-                namespace = self.addNewSymbolOfType(NamespaceSymbol, currentParent, parts[i])
+                namespace = self.addNewSymbolOfType(ScopedSymbol, currentParent, parts[i])
 
             currentParent = namespace
             i += 1
 
-        return self.addNewSymbolOfType(NamespaceSymbol, currentParent, parts[len(parts) - 1])
+        return self.addNewSymbolOfType(ScopedSymbol, currentParent, parts[len(parts) - 1])
 
     async def get_all_symbols(self, t: type, local_only: bool = False, callers: List[T] = []) -> List[T]:
         """
@@ -1464,7 +1058,7 @@ class SymbolTable(ScopedSymbol):
 
         return None
 
-    async def resolve(self, name: str, t: type = None, type_only: bool = False, local_only: bool = False) -> Optional[Symbol]:
+    async def resolve(self, name: str, t: type= None, type_only: bool = False, local_only: bool = False) -> Optional[Symbol]:
         """
         Asynchronously resolves a name to a symbol.
 
@@ -1474,16 +1068,16 @@ class SymbolTable(ScopedSymbol):
         :param local_only: A flag indicating if only this symbol table should be used or also its dependencies.
         :return: A promise resolving to the found symbol or undefined.
         """
-        result = await super().resolve(name, t, type_only, local_only)
+        result = await super().resolve(name,t, type_only, local_only)
         if result is None and not local_only:
             for dependency in self.dependencies:
-                result = await dependency.resolve(name, t, type_only, False)
+                result = await dependency.resolve(name,t, type_only, False)
                 if result is not None:
                     return result
 
         return result
 
-    def resolve_sync(self, name: str, t: type = None, type_only: bool = False, local_only: bool = False) -> Optional[Symbol]:
+    def resolve_sync(self, name: str, t: type= None, type_only: bool = False, local_only: bool = False) -> Optional[Symbol]:
         """
         Synchronously resolves a name to a symbol.
 
@@ -1493,10 +1087,10 @@ class SymbolTable(ScopedSymbol):
         :param local_only: A flag indicating if only this symbol table should be used or also its dependencies.
         :return: The found symbol or undefined.
         """
-        result = super().resolve_sync(name, t, type_only, local_only)
+        result = super().resolve_sync(name,t, type_only, local_only)
         if result is None and not local_only:
             for dependency in self.dependencies:
-                result = dependency.resolve_sync(name, t, type_only, False)
+                result = dependency.resolve_sync(name,t, type_only, False)
                 if result is not None:
                     return result
 

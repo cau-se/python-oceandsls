@@ -34,7 +34,8 @@ from ..gen.python.Declaration.DeclarationVisitor import DeclarationVisitor
 # NOTE: Method names starting with visit are required to look like this, as parts of the grammar
 # are named in that way
 
-class SymbolTableVisitorDcl(DeclarationVisitor, Generic[T]):
+class DeclarationCPVisitor(DeclarationVisitor, Generic[T]):
+
     _symbol_table: SymbolTable
 
     def __init__(self, symbol_table:SymbolTable):

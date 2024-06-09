@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 exclude = ["input", "client", "node_modules"]
 
 [project]
-name = "CPDSL-Language-Server"
+name = "CP-DSL-Language-Server"
 version = "0.40.0"
 authors = [
     { name = "TODO", email = "TODO" },
