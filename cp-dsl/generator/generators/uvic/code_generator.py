@@ -18,7 +18,8 @@ import os
 __author__ = 'stu222808'
 
 # Relative imports
-from symboltable.symbol_table import SymbolTable, GroupSymbol, VariableSymbol, FeatureSymbol, EnumSymbol
+from model.symbol_table import SymbolTable
+from model.model import GroupSymbol, ParameterSymbol, FeatureSymbol, EnumSymbol
 from ..code_generator import StandardCodeGenerator
 
 
@@ -41,7 +42,7 @@ class UvicCodeGenerator(StandardCodeGenerator):
         template_control = self.template_environment.get_template("control.in.template")
         control_path = os.path.join(self.output_path, "control.in")
         control = open(control_path, "w")
-        control.write(template_control.render(symbols=self._symbol_table.children(), groupSymbol=GroupSymbol, paramSymbol=VariableSymbol,
+        control.write(template_control.render(symbols=self._symbol_table.children(), groupSymbol=GroupSymbol, paramSymbol=ParameterSymbol,
                       featureSymbol=FeatureSymbol, isinstance=isinstance, enumSymbol=EnumSymbol, enumerate=enumerate, bool=bool))
         control.close()
         # mk in template

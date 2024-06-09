@@ -19,11 +19,12 @@ __author__ = "stu222808"
 import operator as op
 
 # Relative Imports
-from model.symbol_table import SymbolTable, VariableSymbol, ArraySymbol, ScopedSymbol, EnumSymbol
+from model.symbol_table import SymbolTable
+from model.model import ParameterSymbol, ArraySymbol, ScopedSymbol, EnumSymbol
 from ..gen.python.Configuration.ConfigurationParser import ConfigurationParser
-from model.symbol_table import ArraySymbol, SymbolTable
+from dcllspserver.utils.calculator import DeclarationCalculator
 
-class ConfigurationCalculator():
+class ConfigurationCalculator(DeclarationCalculator):
     '''A calculator for configured values of parameters'''
 
     def __init__(self, symbol_table: SymbolTable, configuration_list: list):
@@ -40,17 +41,17 @@ class ConfigurationCalculator():
             self.calc_variable(elem, index)
         return self._symbol_table
 
-    def calc_variable(self, variable_symbol: VariableSymbol, index: int):
+    def calc_variable(self, parameter_symbol: ParameterSymbol, index: int):
         '''calculates a parameter or an array'''
-        context = variable_symbol.configuration[index]
+        context = parameter_symbol.configuration[index]
         # check if the context is a Array or a simple Value
-        if variable_symbol.is_array:
+        if parameter_symbol.is_array:
             # Array
-            self.calc_arithmetic_expression_array(context, context.value, variable_symbol)
+            self.calc_arithmetic_expression_array(context, context.value, parameter_symbol)
         else:
             # simple Value
-            variable_symbol.val = self.calc_arithmetic_expression(context.value, variable_symbol)
-            variable_symbol.is_tree = False
+            parameter_symbol.value = self.calc_arithmetic_expression(context.value, parameter_symbol)
+            parameter_symbol.is_tree = False
 
     def calc_arithmetic_expression_array(self,
         var_context: ConfigurationParser.ParameterAssignmentContext,

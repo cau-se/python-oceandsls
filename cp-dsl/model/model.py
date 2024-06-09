@@ -20,9 +20,9 @@ from typing import Optional, Coroutine, TypeVar, List
 # Antlr4
 from antlr4.tree.Tree import ParseTree
 
-from symbol_table import ScopedSymbol, Symbol, UnitSymbol
-from type_system import Type
-from units import UnitSpecification
+from .symbol_table import ScopedSymbol, Symbol, UnitSymbol
+from .type_system import Type
+from .units import UnitSpecification
 
 T = TypeVar("T", bound=Symbol)
 

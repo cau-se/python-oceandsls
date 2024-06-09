@@ -15,7 +15,8 @@
 from __future__ import annotations
 from enum import Enum
 from dataclasses import dataclass
-from utils import classproperty
+
+from .utils import classproperty
 
 #
 # units of datatypes

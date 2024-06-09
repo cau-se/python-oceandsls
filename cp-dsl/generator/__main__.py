@@ -12,23 +12,24 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from antlr4 import InputStream, CommonTokenStream
+from antlr4 import InputStream, CommonTokenStream, FileStream
 import argparse
 import os
 from enum import Enum
 
 # relative imports
-from ..conflspserver.gen.python.Configuration.ConfigurationLexer import ConfigurationLexer
-from ..conflspserver.gen.python.Configuration.ConfigurationParser import ConfigurationParser
-from ..dcllspserver.gen.python.Declaration.DeclarationLexer import DeclarationLexer
-from ..dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
-from ..conflspserver.cst.symbol_table_visitor import ConfigurationCPVisitor, ConfigurationVisitor
-from ..dcllspserver.cst.symbol_table_visitor import DeclarationCPVisitor
-from ..conflspserver.utils.calc import DeclarationCalculator, ConfigurationCalculator
-from .generators.uvic.code_generator import UvicCodeGenerator
-from .generators.mitgcm.code_generator import MitGcmCodeGenerator
-from .generators.eval.code_generator import EvalCodeGenerator
-from ..model.symbol_table import SymbolTable, SymbolTableOptions
+from conflspserver.gen.python.Configuration.ConfigurationLexer import ConfigurationLexer
+from conflspserver.gen.python.Configuration.ConfigurationParser import ConfigurationParser
+from dcllspserver.gen.python.Declaration.DeclarationLexer import DeclarationLexer
+from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
+from conflspserver.cst.symbol_table_visitor import ConfigurationCPVisitor, ConfigurationVisitor
+from dcllspserver.cst.symbol_table_visitor import DeclarationCPVisitor
+from conflspserver.utils.calculator import ConfigurationCalculator
+from dcllspserver.utils.calculator import DeclarationCalculator
+from generators.uvic.code_generator import UvicCodeGenerator
+from generators.mitgcm.code_generator import MitGcmCodeGenerator
+from generators.eval.code_generator import EvalCodeGenerator
+from model.symbol_table import SymbolTable, SymbolTableOptions
 
 class CompileFlags(Enum):
     RELAX = "relax"
@@ -45,13 +46,11 @@ def parse_configuration_file(configuration_path:str) -> ConfigurationParser:
         return ConfigurationParser(stream)
 
 def parse_declaration_file(declaration_path:str) -> DeclarationParser:
-    with open(declaration_path) as declaration_file:
-        data = declaration_file.read()
-        input_stream = InputStream(data)
-        lexer = DeclarationLexer(input_stream)
-        stream = CommonTokenStream(lexer)
+    input_stream = FileStream(declaration_path, "utf-8")
+    lexer = DeclarationLexer(input_stream)
+    stream = CommonTokenStream(lexer)
 
-        return DeclarationParser(stream)
+    return DeclarationParser(stream)
 
 def compute_declaration(symbol_table: SymbolTable, input_path: str):
     tree = parse_declaration_file(input_path)

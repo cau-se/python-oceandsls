@@ -18,7 +18,8 @@ import os
 __author__ = 'stu222808'
 
 # Relative imports
-from symboltable.symbol_table import SymbolTable, GroupSymbol, VariableSymbol, FeatureSymbol, EnumSymbol
+from model.symbol_table import SymbolTable
+from model.model import GroupSymbol, ParameterSymbol, FeatureSymbol, EnumSymbol
 
 
 class StandardCodeGenerator():

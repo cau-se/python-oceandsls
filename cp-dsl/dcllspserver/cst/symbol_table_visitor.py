@@ -24,9 +24,10 @@ from antlr4.tree.Tree import ParseTree
 from antlr4.Token import CommonToken
 
 # user relative imports
-from symboltable.symbol_table import SymbolTable, P, T, GroupSymbol, FeatureSymbol, SymbolTableOptions, VariableSymbol, \
-    EnumSymbol, ArraySymbol, RangeSymbol, DuplicateSymbolError
-from symboltable.cp_model import FundamentalUnit, UnitPrefix, UnitKind, ComposedUnit, UnitSpecification
+from model.symbol_table import SymbolTable, P, T, DuplicateSymbolError
+from model.model import GroupSymbol, FeatureSymbol, ParameterSymbol, \
+    EnumSymbol, ArraySymbol, RangeSymbol
+from model.units import FundamentalUnit, UnitPrefix, UnitKind, ComposedUnit, UnitSpecification
 
 from ..gen.python.Declaration.DeclarationParser import DeclarationParser
 from ..gen.python.Declaration.DeclarationVisitor import DeclarationVisitor
@@ -61,7 +62,7 @@ class DeclarationCPVisitor(DeclarationVisitor, Generic[T]):
 
         # define the given Parameter
         varName = ctx.name.text if ctx.name else ""  # set and get the variable name here
-        oldSymbol: VariableSymbol = self._scope.resolve_sync(varName)
+        oldSymbol: ParameterSymbol = self._scope.resolve_sync(varName)
         unit = self.visit(ctx.unit)
         varType = self._scope.resolve_sync(ctx.type_.getText())
         varType = varType if varType else self.visit(ctx.type_)
@@ -87,7 +88,7 @@ class DeclarationCPVisitor(DeclarationVisitor, Generic[T]):
                 print("ERROR: cannot merge", varName, "values")
             symbol = oldSymbol
         else:
-            symbol = self._symbol_table.add_new_symbol_of_type(VariableSymbol, self._scope, varName, description, ctx, unit, varType)
+            symbol = self._symbol_table.add_new_symbol_of_type(ParameterSymbol, self._scope, varName, description, ctx, unit, varType)
             symbol.context = ctx
         return symbol
 
@@ -139,7 +140,7 @@ class DeclarationCPVisitor(DeclarationVisitor, Generic[T]):
 
     def visitParamGroupAssignStat(self, ctx: DeclarationParser.ParamGroupAssignStatContext):
         description = ctx.description.text if ctx.description else ""
-        return self.withScope(ctx, GroupSymbol, lambda: self.visitChildren(ctx), ctx.name.text if ctx.name else "", VariableSymbol, description)
+        return self.withScope(ctx, GroupSymbol, lambda: self.visitChildren(ctx), ctx.name.text if ctx.name else "", ParameterSymbol, description)
 
     # CHANGES sgu:
     #   featureDeclaration ID is saved as attribute 'name'

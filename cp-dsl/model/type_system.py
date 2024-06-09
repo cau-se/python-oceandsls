@@ -1,4 +1,4 @@
-  Copyright (c) 2023.  OceanDSL (https://oceandsl.uni-kiel.de)
+#  Copyright (c) 2023.  OceanDSL (https://oceandsl.uni-kiel.de)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@ from __future__ import annotations
 from enum import Enum
 from dataclasses import dataclass
 from typing import List, Optional
-from utils import classproperty
+from .utils import classproperty
 
 #
 # Type system

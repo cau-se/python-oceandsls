@@ -28,9 +28,9 @@ from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationPar
 from dcllspserver.gen.python.Declaration.DeclarationLexer import DeclarationLexer
 # user relative imports
 from dcllspserver.cst.symbol_table_visitor import DeclarationCPVisitor
-from symboltable.symbol_table import SymbolTable, P, T, GroupSymbol, FeatureSymbol, SymbolTableOptions, VariableSymbol, \
-    EnumSymbol, ArraySymbol
-from symboltable.cp_model import FundamentalUnit, UnitPrefix, UnitKind
+from model.symbol_table import SymbolTable, P, T, SymbolTableOptions
+from model.model import GroupSymbol, FeatureSymbol, ParameterSymbol, EnumSymbol, ArraySymbol
+from model.units import FundamentalUnit, UnitPrefix, UnitKind
 from ..gen.python.Configuration.ConfigurationParser import ConfigurationParser
 from ..gen.python.Configuration.ConfigurationVisitor import ConfigurationVisitor
 from ..gen.python.Configuration.ConfigurationLexer import ConfigurationLexer

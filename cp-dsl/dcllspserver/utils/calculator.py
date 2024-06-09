@@ -1,6 +1,6 @@
 """Declaration Calculator Module"""
 
-__author__ = "stu222808"
+__author__ = "stu222808, reiner"
 
 #  Copyright (c) 2023.  OceanDSL (https://oceandsl.uni-kiel.de)
 #
@@ -19,9 +19,9 @@ __author__ = "stu222808"
 import operator as op
 
 # Relative Imports
-from model.symbol_table import SymbolTable, VariableSymbol, ArraySymbol, ScopedSymbol, EnumSymbol
+from model.model import ParameterSymbol, ArraySymbol, ScopedSymbol, EnumSymbol
 from ..gen.python.Declaration.DeclarationParser import DeclarationParser
-from model.symbol_table import ArraySymbol, SymbolTable
+from model.symbol_table import SymbolTable
 
 
 class DeclarationCalculator():
@@ -31,26 +31,26 @@ class DeclarationCalculator():
         self._symbol_table = symbol_table
         self._scope = symbol_table
 
-    def calc_variable(self, variable_symbol: VariableSymbol):
+    def calc_parameter(self, parameter_symbol: ParameterSymbol):
         '''calculates a variable or a array and writes its value'''
         # check if the context is a Array or a simple Value
-        context = variable_symbol.context
-        if variable_symbol.is_array:
+        context = parameter_symbol.context
+        if parameter_symbol.is_array:
             # Array
             if context.defaultValue:
-                self.calc_arithmetic_expression_array(context, context.defaultValue, variable_symbol)
-                variable_symbol.is_tree = False
+                self.calc_arithmetic_expression_array(context, context.defaultValue, parameter_symbol)
+                parameter_symbol.is_tree = False
             else:
-                variable_symbol.val = None
-                print("WARNING: no default value defined for Array", variable_symbol.name)
+                parameter_symbol.value = None
+                print(f"WARNING: {context.start.source[1].fileName}:{context.start.line} no default value defined for array parameter {parameter_symbol.name}")
         else:
             # simple value
             if context.defaultValue:
-                variable_symbol.val = self.calc_arithmetic_expression(context.defaultValue, variable_symbol)
-                variable_symbol.is_tree = False
+                parameter_symbol.value = self.calc_arithmetic_expression(context.defaultValue, parameter_symbol)
+                parameter_symbol.is_tree = False
             else:
-                variable_symbol.val = None
-                print("WARNING: no default value defined for Variable", variable_symbol.name)
+                parameter_symbol.value = None
+                print(f"WARNING: {context.start.source[1].fileName}:{context.start.line} no default value defined for scalar parameter {parameter_symbol.name}")
 
     def calc_arithmetic_expression_array(
             self,
@@ -77,7 +77,7 @@ class DeclarationCalculator():
                 return
             index = 0
             if not isinstance(calc_list, list):
-                print("Warning: Array Value is not a list, proceed to convert it in to one")
+                print(f"Warning: {context.start.source[1].fileName}:{context.start.line} Array Value is not a list, proceed to convert it in to one")
                 if isinstance(calc_list, str):
                     if calc_list.startswith("'"):
                         calc_list = calc_list.strip("'")
@@ -109,14 +109,14 @@ class DeclarationCalculator():
         vector = []
         convertToTupleList(range_list, calcList, vector, 0)
 
-    def calc_arithmetic_expression(self, context: DeclarationParser.ArithmeticExpressionContext, variable_symbol: VariableSymbol):
+    def calc_arithmetic_expression(self, context: DeclarationParser.ArithmeticExpressionContext, parameter_symbol: ParameterSymbol):
         '''calculates a normal arithmetic expression for parameter'''
         if context.getChildCount() == 1:
             # must be a multiplication Expression
-            return self.calc_multiplication_expression(context.multiplicationExpression(), variable_symbol)
+            return self.calc_multiplication_expression(context.multiplicationExpression(), parameter_symbol)
         else:
             # has 3 children: left, operator and right
-            leftValue = self.calc_multiplication_expression(context.left, variable_symbol)
+            leftValue = self.calc_multiplication_expression(context.left, parameter_symbol)
             # is enum
             leftValue = leftValue[1] if isinstance(leftValue, tuple) else leftValue
             operator = context.op.getText()
@@ -124,21 +124,21 @@ class DeclarationCalculator():
                 operator = op.add
             else:
                 operator = op.sub
-            rightValue = self.calc_arithmetic_expression(context.right, variable_symbol)
+            rightValue = self.calc_arithmetic_expression(context.right, parameter_symbol)
             # is enum
             rightValue = rightValue[1] if isinstance(rightValue, tuple) else rightValue
             return operator(leftValue, rightValue)
 
-    def calc_multiplication_expression(self, context: DeclarationParser.MultiplicationExpressionContext, variable_symbol: VariableSymbol):
+    def calc_multiplication_expression(self, context: DeclarationParser.MultiplicationExpressionContext, parameter_symbol: ParameterSymbol):
         '''calculates a multiplication expression'''
         if context.getChildCount() == 1:
-            return self.calc_value_expression(context.valueExpression(), variable_symbol)
+            return self.calc_value_expression(context.valueExpression(), parameter_symbol)
         else:
             # has 3 children: left, operator, right
-            left_value = self.calc_value_expression(context.left, variable_symbol)
+            left_value = self.calc_value_expression(context.left, parameter_symbol)
             left_value = left_value[1] if isinstance(left_value, tuple) else left_value
             operator = context.op.getText()
-            right_value = self.calc_multiplication_expression(context.right, variable_symbol)
+            right_value = self.calc_multiplication_expression(context.right, parameter_symbol)
             # is enum
             right_value = right_value[1] if isinstance(right_value, tuple) else right_value
             if operator == "*":
@@ -153,43 +153,43 @@ class DeclarationCalculator():
                 operator = op.mod
             return operator(left_value, right_value)
 
-    def calc_value_expression(self, context: DeclarationParser.ValueExpressionContext, variable_symbol: VariableSymbol):
+    def calc_value_expression(self, context: DeclarationParser.ValueExpressionContext, parameter_symbol: ParameterSymbol):
         '''calculates a value expression'''
         if context.parenthesisExpression():
-            return self.calc_parenthesis_expression(context.parenthesisExpression(), variable_symbol)
+            return self.calc_parenthesis_expression(context.parenthesisExpression(), parameter_symbol)
         if context.namedElementReference():
-            return self.calc_named_element_reference(context.namedElementReference(), variable_symbol)
+            return self.calc_named_element_reference(context.namedElementReference(), parameter_symbol)
         if context.arrayExpression():
-            return self.calc_array_expression(context.arrayExpression(), variable_symbol)
+            return self.calc_array_expression(context.arrayExpression(), parameter_symbol)
         if context.literalExpression():
             return self.calc_literal_expression(context.literalExpression())
-        print("ValueExpressionError: No given Token to proceed in calculation")
+        print("INTERNAL ValueExpressionError: No given Token to proceed in calculation")
         return None
 
-    def calc_parenthesis_expression(self, context: DeclarationParser.ParenthesisExpressionContext, variable_symbol: VariableSymbol):
+    def calc_parenthesis_expression(self, context: DeclarationParser.ParenthesisExpressionContext, parameter_symbol: ParameterSymbol):
         '''calculates a parenthesis expression (expression = arithmetic expression)'''
-        return self.calc_arithmetic_expression(context.expression, variable_symbol)
+        return self.calc_arithmetic_expression(context.expression, parameter_symbol)
 
-    def calc_named_element_reference(self, context: DeclarationParser.NamedElementReferenceContext, variable_symbol: VariableSymbol):
+    def calc_named_element_reference(self, context: DeclarationParser.NamedElementReferenceContext, parameter_symbol: ParameterSymbol):
         '''resolves a named element reference (Enums, Parameter, etc.) also can handle wrong parser choice to handle true or false'''
         # what is attribute? element is maybe a group
         element_attribute = context.attribute.text if context.attribute else None
         if context.element.text == "true" or context.element.text == "false":
-            print("WARNING: wrong parsing in variable", variable_symbol.name, "try to compensate to value", context.element.text)
+            print(f"WARNING: {context.start.source[1].fileName}:{context.start.line} wrong parsing in variable {parameter_symbol.name} try to compensate to value {context.element.text}")
             if context.element.text == "false":
-                variable_symbol.val = False
+                parameter_symbol.value = False
             else:
-                variable_symbol.val = True
-            return variable_symbol.value
+                parameter_symbol.value = True
+            return parameter_symbol.value
         element_value = self._scope.resolve_sync(context.element.text)
         if element_value:
-            # just return the value here should work due to scopeing
+            # just return the value here should work due to scoping
             if element_attribute:
                 if isinstance(element_value, EnumSymbol):
                     for index, value in element_value.enums:
                         if index == element_attribute:
                             return value
-                    print("EnumError: Enum definition could not be found")
+                    print(f"ERROR {context.start.source[1].fileName}:{context.start.line} EnumError: Enum definition could not be found")
                     return 0
                 for i in element_value.children():
                     if i.name == element_attribute:
@@ -197,8 +197,8 @@ class DeclarationCalculator():
             else:
                 return element_value.value
         else:
-            if isinstance(variable_symbol.type, EnumSymbol):
-                for i, j in variable_symbol.type.enums:
+            if isinstance(parameter_symbol.type, EnumSymbol):
+                for i, j in parameter_symbol.type.enums:
                     if i == context.element.text:
                         # just return the enums value
                         return i, j
@@ -207,15 +207,15 @@ class DeclarationCalculator():
                     if isinstance(elem, EnumSymbol):
                         for i, j in elem.enums:
                             if i == context.element.text:
-                                print("WARNING: EnumType not given for variable", variable_symbol.name, "resolving may result in wrong reference")
+                                print(f"WARNING: {context.start.source[1].fileName}:{context.start.line} EnumType not given for variable {parameter_symbol.name} resolving may result in wrong reference")
                                 return i, j
-        print("Named Element", context.element.text, "could not be resolved")
+        print(f"INTERNAL: Named Element {context.element.text} could not be resolved")
 
-    def calc_array_expression(self, context: DeclarationParser.ArrayExpressionContext, variable_symbol: VariableSymbol):
+    def calc_array_expression(self, context: DeclarationParser.ArrayExpressionContext, parameter_symbol: ParameterSymbol):
         '''calculates a array expression'''
         valueList = []
         for i in context.elements:
-            valueList.append(self.calc_arithmetic_expression(i, variable_symbol))
+            valueList.append(self.calc_arithmetic_expression(i, parameter_symbol))
         return valueList
 
     def calc_literal_expression(self, context: DeclarationParser.LiteralExpressionContext):
@@ -239,8 +239,8 @@ class DeclarationCalculator():
         '''writes the calculated values in the value parameter of every parameter found in symbol_table'''
 
         def recursion_helper(element):
-            if isinstance(element, VariableSymbol):
-                self.calc_variable(element)
+            if isinstance(element, ParameterSymbol):
+                self.calc_parameter(element)
             elif not hasattr(element, "children"):
                 pass
             else:
