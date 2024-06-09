@@ -27,7 +27,7 @@ from typing import Coroutine, List, Optional, ParamSpec, Set, TypeVar
 # Antlr4
 from antlr4.tree.Tree import ParseTree
 
-from typesystem import Type
+from type_system import Type
 from units import Unit
 
 class DuplicateSymbolError(Exception):

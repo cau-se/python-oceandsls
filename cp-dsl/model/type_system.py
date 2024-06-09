@@ -15,6 +15,8 @@
 from __future__ import annotations
 from enum import Enum
 from dataclasses import dataclass
+from typing import List, Optional
+from utils import classproperty
 
 #
 # Type system

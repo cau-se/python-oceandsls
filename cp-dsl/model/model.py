@@ -21,7 +21,7 @@ from typing import Optional, Coroutine, TypeVar, List
 from antlr4.tree.Tree import ParseTree
 
 from symbol_table import ScopedSymbol, Symbol, UnitSymbol
-from typesystem import Type, TypeKind
+from type_system import Type
 from units import UnitSpecification
 
 T = TypeVar("T", bound=Symbol)
@@ -83,7 +83,7 @@ class GroupSymbol(ScopedSymbol):
 
 
 
-class VariableSymbol(Symbol):
+class ParameterSymbol(Symbol):
     """a class for parameter of cp-dsl
 
     Args:
@@ -98,17 +98,9 @@ class VariableSymbol(Symbol):
         self.description = description
         self.unit = unit_specification
         self.is_tree = isinstance(value, ParseTree)
-        self.val = value if value else None
-        if type == "float":
-            value = 0.0
-        if type == "int":
-            value = 0
+        self.value = value
         self.type = type
         self.is_array = False
-
-    @property
-    def value(self):
-        return self.val
 
 #
 # Feature
@@ -121,17 +113,17 @@ class FeatureSymbol(ScopedSymbol):
     return_type: Optional[Type]  # Can be null if result is void.
     is_activated: bool = False  # set if the feature is activated
 
-    def __init__(self, name: str, description: str = "", returnType: Type = None):
+    def __init__(self, name: str, description: str = "", return_type: Type = None):
         super().__init__(name)
-        self.return_type = returnType
+        self.return_type = return_type
         self.is_activated = False
         self.description = description
 
     def get_variables(self, localOnly=True) -> Coroutine[List[T]]:
-        return self.getNestedSymbolsOfTypeSync(VariableSymbol)
+        return self.getNestedSymbolsOfTypeSync(ParameterSymbol)
 
     def get_parameters(self, localOnly=True) -> Coroutine[List[T]]:
-        return self.getNestedSymbolsOfTypeSync(VariableSymbol)
+        return self.getNestedSymbolsOfTypeSync(ParameterSymbol)
 
     def get_units(self, localOnly=True) -> Coroutine[List[T]]:
         return self.getNestedSymbolsOfTypeSync(UnitSymbol)
@@ -144,8 +136,7 @@ class FeatureSymbol(ScopedSymbol):
 # Expression
 #
 
-
-class ArraySymbol(VariableSymbol):
+class ArraySymbol(ParameterSymbol):
     """
     a class representing a n-dimensional array
     Array Representation:

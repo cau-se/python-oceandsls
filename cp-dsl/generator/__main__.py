@@ -25,10 +25,10 @@ from ..dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationP
 from ..conflspserver.cst.symbol_table_visitor import ConfigurationCPVisitor, ConfigurationVisitor
 from ..dcllspserver.cst.symbol_table_visitor import DeclarationCPVisitor
 from ..conflspserver.utils.calc import DeclarationCalculator, ConfigurationCalculator
-from ..conflspserver.generators.uvic.code_generator import UvicCodeGenerator
-from ..conflspserver.generators.mitgcm.code_generator import MitGcmCodeGenerator
-from ..conflspserver.generators.eval.code_generator import EvalCodeGenerator
-from ..symboltable.symbol_table import SymbolTable, SymbolTableOptions
+from .generators.uvic.code_generator import UvicCodeGenerator
+from .generators.mitgcm.code_generator import MitGcmCodeGenerator
+from .generators.eval.code_generator import EvalCodeGenerator
+from ..model.symbol_table import SymbolTable, SymbolTableOptions
 
 class CompileFlags(Enum):
     RELAX = "relax"

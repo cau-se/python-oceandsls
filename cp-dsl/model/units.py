@@ -15,16 +15,11 @@
 from __future__ import annotations
 from enum import Enum
 from dataclasses import dataclass
-from .symbol_table import TypeKind
+from utils import classproperty
 
 #
 # units of datatypes
 #
-
-class classproperty(property):
-    def __get__(self, cls, owner):
-        return classmethod(self.fget).__get__(None, owner)()
-
 
 class UnitKind(Enum):
     """
