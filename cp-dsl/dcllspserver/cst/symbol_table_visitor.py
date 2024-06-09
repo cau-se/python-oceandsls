@@ -35,6 +35,7 @@ from ..gen.python.Declaration.DeclarationVisitor import DeclarationVisitor
 # are named in that way
 
 class DeclarationCPVisitor(DeclarationVisitor, Generic[T]):
+
     _symbol_table: SymbolTable
 
     def __init__(self, symbol_table:SymbolTable):

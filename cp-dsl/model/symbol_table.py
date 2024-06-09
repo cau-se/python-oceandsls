@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-__author__ = "sgu"
+__author__ = "stu222808,sgu"
 
 #  Copyright (c) 2023.  OceanDSL (https://oceandsl.uni-kiel.de)
 #
@@ -27,258 +27,15 @@ from typing import Coroutine, List, Optional, ParamSpec, Set, TypeVar
 # Antlr4
 from antlr4.tree.Tree import ParseTree
 
+from typesystem import Type
+from units import Unit
 
 class DuplicateSymbolError(Exception):
     pass
 
-
-class MemberVisibility(Enum):
-    # Not specified, default depends on the language and type.
-    Unknown = 0
-    # Used in Swift, member can be accessed outside of the defining module and extended.
-    Open = 1
-    # Like Open, but in Swift such a type cannot be extended.
-    Public = 2
-    # Member is only accessible in the defining class and any derived class.
-    Protected = 3
-    # Member can only be accessed from the defining class.
-    Private = 4
-    # Used in Swift, member can be accessed from everywhere in a defining module, not outside however.
-    FilePrivate = 5
-    # Custom enum for special usage.
-    Library = 6
-
-
-class Modifier(Enum):
-    Static = 0
-    Final = 1
-    Sealed = 2
-    Abstract = 3
-    Deprecated = 4
-    Virtual = 5
-    Const = 6
-    Overwritten = 7
-
-
-class TypeKind(Enum):
-    """
-    Rough categorization of a type.
-    """
-    Unknown = 0
-    Integer = 1
-    Float = 2
-    Number = 3
-    String = 4
-    Char = 5
-    Boolean = 6
-    Class = 7
-    Interface = 8
-    Array = 9
-    Map = 10
-    Enum = 11
-    Alias = 12
-
-
-class ReferenceKind(Enum):
-    Irrelevant = 0
-    # Default for most languages for dynamically allocated memory ("Type*" in C++).
-    Pointer = 1
-    # "Type&" in C++
-    Reference = 2
-    # "Type" as such and default for all value types.
-    Instance = 3
-
-
-class UnitKind(Enum):
-    """
-    Rough categorization of a unit from SI units.
-    """
-    Unknown = 0
-    Second = 1
-    Metre = 2
-    # TODO si unit is kilogram | added to FundamentalUnit
-    Gram = 3
-    Ampere = 4
-    Kelvin = 5
-    Mole = 6
-    Candela = 7
-    # TODO add non si units?
-    Pascal = 8
-    Joule = 9
-    ton = 10
-
-
-class UnitPrefix:
-    """
-    Rough categorization of a unit from SI prefixes.
-    """
-    NoP = 0
-    Quetta = 1
-    Ronna = 2
-    Yotta = 3
-    Zetta = 4
-    Exa = 5
-    Peta = 6
-    Tera = 7
-    Giga = 8
-    Mega = 9
-    Kilo = 10
-    Hecto = 11
-    Deca = 12
-    Deci = 13
-    Centi = 14
-    Mili = 15
-    Micro = 16
-    Nano = 17
-    Pico = 18
-    Femto = 19
-    Atto = 20
-    Zepto = 21
-    Yocto = 22
-    Ronto = 23
-    Quecto = 24
-
-
-@dataclass
-class Unit:
-    """
-    The root unit. Used for unit symbols
-    """
-    name: str
-
-    # The super unit of this unit or empty if this is a SI unit such as second.
-    # TODO add units
-    # TODO add aliases?
-    base_types: List[Unit]
-    prefix: UnitPrefix
-    kind: UnitKind
-    reference: ReferenceKind
-
-
-@dataclass
-class Type:
-    """
-    The root type. Used for typed symbols and type aliases.
-    """
-    name: str
-
-    # The super type of this type or empty if this is a fundamental type.
-    # Also used as the target type for type aliases.
-    base_types: Optional[List[Type]]
-    kind: Optional[TypeKind]
-    reference: ReferenceKind
-
-
 @dataclass
 class SymbolTableOptions:
     allow_duplicate_symbols: Optional[bool] = None
-
-
-class classproperty(property):
-    # TODO use metaclass factory https://stackoverflow.com/q/6760685/
-    def __get__(self, cls, owner):
-        return classmethod(self.fget).__get__(None, owner)()
-
-
-class FundamentalUnit(Unit):
-    """
-    A single class for all fundamental units which are mostly SI units. They are distinguished via the kind field.
-    """
-
-    def __init__(self, name: str, base_types=[], unit_prefix=UnitPrefix.NoP, unit_kind=UnitKind.Unknown, reference_kind = ReferenceKind.Irrelevant):
-        super().__init__(name=name, base_types=base_types, kind=unit_kind, reference = reference_kind, prefix=unit_prefix)
-
-    @classproperty
-    def second_unit(self) -> FundamentalUnit:
-        return FundamentalUnit(name="second", unit_kind=UnitKind.Second)
-
-    @classproperty
-    def metre_unit(self) -> FundamentalUnit:
-        return FundamentalUnit(name="metre", unit_kind=UnitKind.Metre)
-
-    # TODO si unit is kilogram but unitKind has gram
-    @classproperty
-    def gram_unit(self) -> FundamentalUnit:
-        return FundamentalUnit(name="gram", unit_kind=UnitKind.Gram)
-
-    # TODO si unit is kilogram but unitKind has gram
-    @classproperty
-    def kilogram_unit(self) -> FundamentalUnit:
-        return FundamentalUnit(name="kilogram", unit_prefix=UnitPrefix.Kilo, unit_kind=UnitKind.Gram)
-
-    @classproperty
-    def ampere_unit(self) -> FundamentalUnit:
-        return FundamentalUnit(name="ampere", unit_kind=UnitKind.Ampere)
-
-    @classproperty
-    def kelvin_unit(self) -> FundamentalUnit:
-        return FundamentalUnit(name="Kelvin", unit_kind=UnitKind.Kelvin)
-
-    @classproperty
-    def mole_unit(self) -> FundamentalUnit:
-        return FundamentalUnit(name="Mole", unit_kind=UnitKind.Mole)
-
-    @classproperty
-    def candela_unit(self) -> FundamentalUnit:
-        return FundamentalUnit(name="Candela", unit_kind=UnitKind.Candela)
-
-    @classproperty
-    def pascal_unit(self) -> FundamentalUnit:
-        return FundamentalUnit(name="Pascal", unit_kind=UnitKind.Pascal)
-
-    @classproperty
-    def joule_unit(self) -> FundamentalUnit:
-        return FundamentalUnit(name="Joule", unit_kind=UnitKind.Joule)
-
-    # TODO si unit is kilogram. unitKind has gram but could include ton
-    @classproperty
-    def ton_unit(self) -> FundamentalUnit:
-        return FundamentalUnit(name="Ton", unit_prefix=UnitPrefix.Mega, unit_kind=UnitKind.Gram)
-
-
-class FundamentalType(Type):
-    """
-    A single class for all fundamental types. They are distinguished via the kind field.
-    """
-
-    def __init__(self, name: str, base_types=[], type_kind=TypeKind.Unknown):
-        super().__init__(name=name, base_types=base_types, kind=type_kind)
-
-    @classproperty
-    def integer_type(self) -> FundamentalType:
-        return FundamentalType(name="integer", type_kind=TypeKind.Integer)
-
-    @classproperty
-    def real_type(self) -> FundamentalType:
-        return FundamentalType(name="real", type_kind=TypeKind.Float)
-
-    @classproperty
-    def float_type(self) -> FundamentalType:
-        return FundamentalType(name="float", type_kind=TypeKind.Float)
-
-    @classproperty
-    def string_type(self) -> FundamentalType:
-        return FundamentalType(name="string", type_kind=TypeKind.String)
-
-    @classproperty
-    def bool_type(self) -> FundamentalType:
-        return FundamentalType(name="bool", type_kind=TypeKind.Boolean)
-
-
-def get_fundamental_type(type: str = "") -> Type | FundamentalType:
-    """
-    Return FundamentalType of type or, if non-existent, new Type of type
-    :param type: Type name to return
-    :return: FundamentalType of type or, if non-existent, new Type of type
-    """
-    for key in FundamentalType.__dict__.keys():
-        if type:
-            if key == type.lower() + "_type":
-                return getattr(FundamentalType, key)
-
-            return Type(name=type.lower(), base_types=None, kind=None)
-        else:
-            return None
 
 
 class Symbol:
@@ -290,6 +47,9 @@ class Symbol:
     # The name of the scope or empty if anonymous.
     name: str
 
+    # The configuration Trees
+    configuration = []
+
     # Reference to the parse tree which contains this symbol.
     context: Optional[ParseTree]
 
@@ -297,13 +57,12 @@ class Symbol:
     def modifiers(self) -> Set[int]:
         return set()
 
-    visibility: MemberVisibility = MemberVisibility.Unknown
-
     __the_parent: Optional[ScopedSymbol] = None
 
     def __init__(self, name: str = ""):
         self.name = name
         self.context = None
+        self.configuration = []
 
     def parent(self) -> Optional[ScopedSymbol]:
         return self.__the_parent
@@ -454,6 +213,7 @@ class Symbol:
 
         return None
 
+    # TODO <anonymous> special string for empty scope names
     def qualified_name(self, separator=".", full=False, include_anonymous=False) -> str:
         """
         Creates a qualified identifier from this symbol and its parent. If `full` is true then all parents are traversed
@@ -480,10 +240,8 @@ class Symbol:
 
         return result
 
-
 P = ParamSpec("P")
 T = TypeVar("T", bound=Symbol)
-
 
 class TypedSymbol(Symbol):
     """
@@ -511,30 +269,12 @@ class UnitSymbol(TypedSymbol):
     A symbol with an attached unit (physical units such as second, metre, gram etc.).
     """
     attached_unit: Optional[Unit]
+    attached_description: Optional[str]
 
-    def __init__(self, name: str, attached_type: Type = None, attached_keys=None, attached_unit: Unit = None):
+    def __init__(self, name: str, attached_description: str, attached_keys=None, attached_unit: Unit = None, attached_type: Type = None):
         super().__init__(name, attached_type, attached_keys)
         self.attached_unit = attached_unit
-
-
-class TypeAlias( Symbol, Type ):
-    """
-    An alias for another type.
-    """
-    __targetType: Type
-
-    def __init__( self, name: str, target: Type ):
-        super( ).__init__( name )
-        self.__targetType = target
-
-    def baseTypes( self ) -> List[ Type ]:
-        return [ self.__targetType ]
-
-    def kind( self ) -> TypeKind:
-        return TypeKind.Alias
-
-    def reference( self ) -> ReferenceKind:
-        return ReferenceKind.Irrelevant
+        self.attached_description = attached_description
 
 
 class ScopedSymbol(Symbol):
@@ -606,7 +346,7 @@ class ScopedSymbol(Symbol):
         symbol_table = self.symbol_table()
         if symbol_table is None or not symbol_table.options.allow_duplicate_symbols:
             for child in self.children():
-                if child is symbol or ( type(symbol) is type(child) and child.name == symbol.name) and isinstance(child, type(symbol)):
+                if child is symbol or ( type(symbol) == type(child) and child.name == symbol.name) and isinstance(child, type(symbol)):
                     symbol_name = symbol.name if symbol.name else "<anonymous>"
                     scope_name = self.name if self.name else "<anonymous>"
                     msg: str = f"Attempt to add duplicate symbol \"{symbol_name}\" to \"{scope_name}\""
@@ -620,7 +360,6 @@ class ScopedSymbol(Symbol):
         if symbol in self.children():
             self.children().remove(symbol)
             symbol.set_parent(None)
-
 
     async def get_nested_symbols_of_type(self, t: type) -> List[T]:
         """
@@ -642,6 +381,25 @@ class ScopedSymbol(Symbol):
         child_symbols = await asyncio.gather(*child_promises)
         for entry in child_symbols:
             result.extend(entry)
+
+        return result
+
+    def get_nested_symbols_of_type_and_name_sync(self, t: type, name: str = None) -> List[T]:
+        """
+        Synchronously retrieves child symbols of a given type and name from this symbol.
+
+        :param t: The type of the objects to return.
+        :param name: If given only returns symbols with that name.
+        :return: A list of all (nested) children of the given type.
+        """
+        result: List[T] = []
+
+        for child in self.children():
+            if isinstance(child, t) and (name is None or child.name == name):
+                result.append(child)
+
+            if isinstance(child, ScopedSymbol):
+                result.extend(child.get_nested_symbols_of_type_and_name_sync(t, name))
 
         return result
 
@@ -807,6 +565,7 @@ class ScopedSymbol(Symbol):
 
         return result
 
+    # TODO: add optional position dependency (only symbols defined before a given caret pos are viable).
     async def get_all_symbols(self, t: type, local_only: bool = False, callers: List[T] = []) -> List[T]:
         """
         :param callers: List of visited scopes, that should not be visited again
@@ -844,6 +603,7 @@ class ScopedSymbol(Symbol):
 
         return result
 
+    # TODO: add optional position dependency (only symbols defined before a given caret pos are viable).
     def get_all_symbols_sync(self, t: type, local_only: bool = False, callers: List[T] = []) -> List[T]:
         """
         :param callers: List of visited scopes, that should not be visited again
@@ -893,7 +653,7 @@ class ScopedSymbol(Symbol):
         """
         for child in self.children():
             if child.name == name:
-                if not t or (not type_only and isinstance(child, t)) or (type_only and type(child) is t):
+                if not t or (not type_only and isinstance(child, t)) or (type_only and type(child) == t):
                     return child
 
         # Nothing found locally. Let the parent continue.
@@ -922,7 +682,7 @@ class ScopedSymbol(Symbol):
         """
         for child in self.children():
             if child.name == name:
-                if not t or (not type_only and isinstance(child, t)) or (type_only and type(child) is t):
+                if not t or (not type_only and isinstance(child, t)) or (type_only and type(child) == t):
                     return child
 
         # Nothing found locally. the parent continues.
@@ -1076,216 +836,6 @@ class ScopedSymbol(Symbol):
         return self.parent().next_of(self)
 
 
-class NamespaceSymbol( ScopedSymbol ):
-    pass
-
-
-class BlockSymbol( ScopedSymbol ):
-    pass
-
-
-class VariableSymbol( UnitSymbol ):
-
-    def __init__( self, name: str, value = None, attached_type: Type = None ):
-        super( ).__init__( name, attached_type )
-
-        self.value = value
-
-
-class LiteralSymbol( UnitSymbol ):
-
-    def __init__( self, name: str, value = None, attached_type: Type = None ):
-        super( ).__init__( name, attached_type )
-
-        self._value = value
-
-    @property
-    def value( self ):
-        return self._value
-
-
-class ParameterSymbol( VariableSymbol ):
-    pass
-
-
-class RoutineSymbol(ScopedSymbol):
-    """
-    A standalone procedure rule.
-    """
-
-    def __init__(self, name: str, is_generated: bool = False):
-        super().__init__(name)
-        self.__is_generated = is_generated
-
-    @property
-    def is_generated(self) -> bool:
-        return self.__is_generated
-
-    def get_variables(self, local_only=True) -> Coroutine[List[T]]:
-        return self.get_symbols_of_type(VariableSymbol, local_only)
-
-    def get_parameters(self, local_only=True) -> Coroutine[List[T]]:
-        return self.get_symbols_of_type(ParameterSymbol, local_only)
-
-
-class FunctionSymbol(RoutineSymbol):
-    """
-    A standalone function rule.
-    """
-    __return_type: Optional[Type]  # Can be null if result is void.
-
-    def __init__(self, name: str, return_type: Type = None, is_generated: bool = False):
-        super().__init__(name, is_generated)
-        self.__return_type = return_type
-
-    @property
-    def return_type(self) -> Type | None:
-        return self.__return_type
-
-
-class MethodFlags( Enum ):
-    NoneFL = 0
-    Virtual = 1
-    Const = 2
-    Overwritten = 4
-
-    # Distinguished by the return type.
-    SetterOrGetter = 8
-
-    # Special flag used e.g. in C++ for explicit c-tors.
-    Explicit = 16
-
-
-class MethodSymbol( RoutineSymbol ):
-    """
-    A function which belongs to a class or other outer container structure.
-    """
-    methodFlags = MethodFlags.NoneFL
-
-
-class FieldSymbol( VariableSymbol ):
-    """
-    A field which belongs to a class or other outer container structure.
-    """
-    setter: Optional[ MethodSymbol ] = None
-    getter: Optional[ MethodSymbol ] = None
-
-
-class ClassSymbol( ScopedSymbol, Type ):
-    """
-    Classes and structs.
-    """
-    isStruct: bool
-    reference: ReferenceKind
-
-    @property
-    def extends( self ) -> List[ ClassSymbol ]:
-        """
-        Usually only one member, unless the language supports multiple inheritance (like C++).
-        """
-        return self._extends
-
-    @property
-    def implements( self ) -> List[ tuple[ ClassSymbol, InterfaceSymbol ] ]:
-        """
-        Typescript allows a class to implement a class, not only interfaces.
-        """
-        return self._implements
-
-    def __init__( self, name: str, ext: List[ ClassSymbol ], impl: List[ tuple[ ClassSymbol, InterfaceSymbol ] ] ):
-        super( ).__init__( name )
-        self._extends = ext
-        self._implements = impl
-
-        self.isStruct = False
-        self.reference = ReferenceKind.Irrelevant
-
-    def baseTypes( self ) -> List[ Type ]:
-        return self._extends
-
-    def kind( self ) -> TypeKind:
-        return TypeKind.Class
-
-    def getMethods( self, includeInherited = False ) -> Coroutine[ List[ T ] ]:
-        """
-
-        :param includeInherited: Not used.
-        :return: a list of all methods.
-        """
-        return self.get_symbols_of_type( MethodSymbol )
-
-    def getFields( self, includeInherited = False ) -> Coroutine[ List[ T ] ]:
-        """
-        :param includeInherited: Not used.
-        :return: all fields.
-        """
-        return self.get_symbols_of_type( FieldSymbol )
-
-
-class InterfaceSymbol( ScopedSymbol, Type ):
-    reference: ReferenceKind
-
-    def __init__( self, name: str, ext: List[ tuple[ ClassSymbol, InterfaceSymbol ] ] ):
-        super( ).__init__( name )
-        self._extends = ext
-
-        self.reference = ReferenceKind.Irrelevant
-
-    @property
-    def extends( self ) -> List[ tuple[ ClassSymbol, InterfaceSymbol ] ]:
-        """
-        Typescript allows an interface to extend a class, not only interfaces.
-        """
-        return self._extends
-
-    def baseTypes( self ) -> List[ Type ]:
-        return self._extends
-
-    def kind( self ) -> TypeKind:
-        return TypeKind.Interface
-
-    def getMethods( self, includeInherited = False ) -> Coroutine[ List[ MethodSymbol ] ]:
-        """
-        :param includeInherited: Not used.
-        :return: a list of all methods.
-        """
-        return self.get_symbols_of_type( MethodSymbol )
-
-    def getFields( self, includeInherited = False ) -> Coroutine[ List[ T ] ]:
-        """
-        :param includeInherited: Not used.
-        :return: all fields.
-        """
-        return self.get_symbols_of_type( FieldSymbol )
-
-
-class ArrayType( Symbol, Type ):
-    __referenceKind: ReferenceKind
-
-    def __init__( self, name: str, referenceKind: ReferenceKind, elemType: Type, size = 0 ):
-        super( ).__init__( name )
-        self.__referenceKind = referenceKind
-        self._elementType = elemType
-        self._size = size
-
-    @property
-    def elementType( self ) -> Type:
-        return self._elementType
-
-    @property
-    def size( self ) -> int:
-        return self._size  # > 0 if fixed length.
-
-    def baseTypes( self ) -> List[ Type ]:
-        return [ ]
-
-    def kind( self ) -> TypeKind:
-        return TypeKind.Array
-
-    def reference( self ) -> ReferenceKind:
-        return self.__referenceKind
-
-
 @dataclass
 class SymbolTableInfo:
     dependency_count: int
@@ -1335,9 +885,9 @@ class SymbolTable(ScopedSymbol):
         return result
 
     async def add_new_namespace_from_path(
-            self, parent: Optional[ ScopedSymbol ], path: str,
-            delimiter = "."
-            ) -> NamespaceSymbol:
+            self, parent: Optional[ScopedSymbol], path: str,
+            delimiter="."
+    ) -> ScopedSymbol:
         """
         Asynchronously adds a new namespace to the symbol table or the given parent. The path parameter specifies a
         single namespace name or a chain of namespaces (which can be e.g. "outer.intermittent.inner.final"). If any of
@@ -1349,20 +899,20 @@ class SymbolTable(ScopedSymbol):
         :param delimiter: The delimiter used in the path.
         :return: The new symbol.
         """
-        parts = path.split( delimiter )
+        parts = path.split(delimiter)
         i = 0
         currentParent = self if parent is None else parent
-        while i < len( parts ) - 1:
-            namespace: NamespaceSymbol = await currentParent.resolve( parts[ i ], True )
+        while i < len(parts) - 1:
+            namespace: ScopedSymbol = await currentParent.resolve(parts[i], True)
             if namespace is None:
-                namespace = self.add_new_symbol_of_type( NamespaceSymbol, currentParent, parts[ i ] )
+                namespace = self.add_new_symbol_of_type(ScopedSymbol, currentParent, parts[i])
 
             currentParent = namespace
             i += 1
 
-        return self.add_new_symbol_of_type( NamespaceSymbol, currentParent, parts[ len( parts ) - 1 ] )
+        return self.addNewSymbolOfType(ScopedSymbol, currentParent, parts[len(parts) - 1])
 
-    def add_new_namespace_from_path_sync( self, parent: Optional[ ScopedSymbol ], path: str, delimiter = "." ) -> NamespaceSymbol:
+    def add_new_namespace_from_path_sync(self, parent: Optional[ScopedSymbol], path: str, delimiter=".") -> ScopedSymbol:
         """
         Synchronously adds a new namespace to the symbol table or the given parent. The path parameter specifies a
         single namespace name or a chain of namespaces (which can be e.g. "outer.intermittent.inner.final"). If any of
@@ -1374,19 +924,19 @@ class SymbolTable(ScopedSymbol):
         :param delimiter: The delimiter used in the path.
         :return: The new symbol.
         """
-        parts = path.split( delimiter )
+        parts = path.split(delimiter)
         i = 0
         currentParent = self if parent is None else parent
 
-        while i < len( parts ) - 1:
-            namespace: NamespaceSymbol = currentParent.resolve_sync( parts[ i ], True )
+        while i < len(parts) - 1:
+            namespace: ScopedSymbol = currentParent.resolveSync(parts[i], True)
             if namespace is None:
-                namespace = self.add_new_symbol_of_type( NamespaceSymbol, currentParent, parts[ i ] )
+                namespace = self.addNewSymbolOfType(ScopedSymbol, currentParent, parts[i])
 
             currentParent = namespace
             i += 1
 
-        return self.add_new_symbol_of_type( NamespaceSymbol, currentParent, parts[ len( parts ) - 1 ] )
+        return self.addNewSymbolOfType(ScopedSymbol, currentParent, parts[len(parts) - 1])
 
     async def get_all_symbols(self, t: type, local_only: bool = False, callers: List[T] = []) -> List[T]:
         """
@@ -1399,6 +949,8 @@ class SymbolTable(ScopedSymbol):
         result: List[T] = await super().get_all_symbols(t, local_only, callers)
 
         if not local_only and self.parent() not in callers:
+            # TODO alternative
+            # dependencyResults = await asyncio.gather(*[x.get_all_symbols(t, local_only) for x in self.dependencies])
             dependencyResults = await asyncio.gather(
                 *(map((lambda x: x.get_all_symbols(t, local_only, callers + [self])), self.dependencies))
             )

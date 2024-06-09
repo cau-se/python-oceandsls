@@ -49,4 +49,3 @@ class StandardCodeGenerator():
         """generate method that uses jinja templates to write files into output path
         """
         print("GIVE THE GENERATOR A TEMPLATE AND DATA TO WORK WITH")
-
