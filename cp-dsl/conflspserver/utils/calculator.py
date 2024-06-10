@@ -27,8 +27,8 @@ from dcllspserver.utils.calculator import DeclarationCalculator
 class ConfigurationCalculator(DeclarationCalculator):
     '''A calculator for configured values of parameters'''
 
-    def __init__(self, symbol_table: SymbolTable, configuration_list: list):
-        super().__init__(symbol_table)
+    def __init__(self, symbol_table: SymbolTable, configuration_list: list, logger):
+        super().__init__(symbol_table, logger)
         self.configuration_list = configuration_list
 
     def calculate(self) -> SymbolTable:

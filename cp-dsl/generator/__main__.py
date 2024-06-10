@@ -15,7 +15,7 @@
 from antlr4 import InputStream, CommonTokenStream, FileStream
 import argparse
 import os
-from enum import Enum
+from common.configuration import CompileFlags
 
 # relative imports
 from conflspserver.gen.python.Configuration.ConfigurationLexer import ConfigurationLexer
@@ -30,20 +30,16 @@ from generators.uvic.code_generator import UvicCodeGenerator
 from generators.mitgcm.code_generator import MitGcmCodeGenerator
 from generators.eval.code_generator import EvalCodeGenerator
 from model.symbol_table import SymbolTable, SymbolTableOptions
+from common.logger import GeneratorLogger
 
-class CompileFlags(Enum):
-    RELAX = "relax"
-    STRICT = "strict"
-    IGNORE = "ignore"
+logger: GeneratorLogger
 
 def parse_configuration_file(configuration_path:str) -> ConfigurationParser:
-    with open(configuration_path) as configuration_file:
-        data = configuration_file.read()
-        input_stream = InputStream(data)
-        lexer = ConfigurationLexer(input_stream)
-        stream = CommonTokenStream(lexer)
+    input_stream = FileStream(configuration_path, "utf-8")
+    lexer = ConfigurationLexer(input_stream)
+    stream = CommonTokenStream(lexer)
 
-        return ConfigurationParser(stream)
+    return ConfigurationParser(stream)
 
 def parse_declaration_file(declaration_path:str) -> DeclarationParser:
     input_stream = FileStream(declaration_path, "utf-8")
@@ -58,7 +54,7 @@ def compute_declaration(symbol_table: SymbolTable, input_path: str):
     DeclarationCPVisitor(symbol_table).visit(tree.declarationModel())
     print("Compute declaration")
     try:
-        calculator = DeclarationCalculator(symbol_table)
+        calculator = DeclarationCalculator(symbol_table, logger)
         result = calculator.calculate()
         print("Computed declaration")
         return result
@@ -97,6 +93,8 @@ if __name__ == '__main__':
                     compile_mode = CompileFlags.RELAX
                 case CompileFlags.STRICT.value:
                     compile_mode = CompileFlags.STRICT
+
+    logger = GeneratorLogger(compile_mode)
 
     print(f"compile mode {compile_mode.name}")
 
@@ -148,7 +146,7 @@ if __name__ == '__main__':
     configuration_tree = parse_configuration_file(input_configuration_path)
     configuration_visitor.visit(configuration_tree.configurationModel())
     print("Compute configuration")
-    table = ConfigurationCalculator(declaration_result, configuration_visitor.configuration_list).calculate()
+    table = ConfigurationCalculator(declaration_result, configuration_visitor.configuration_list, logger).calculate()
     print("Completed")
     # 5 provide model to generator
     if used_declaration_model == 'uvic':

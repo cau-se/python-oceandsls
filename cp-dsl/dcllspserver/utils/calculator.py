@@ -22,14 +22,16 @@ import operator as op
 from model.model import ParameterSymbol, ArraySymbol, ScopedSymbol, EnumSymbol
 from ..gen.python.Declaration.DeclarationParser import DeclarationParser
 from model.symbol_table import SymbolTable
+from common.logger import GeneratorLogger
 
 
 class DeclarationCalculator():
     '''A calculator for default values of parameter'''
 
-    def __init__(self, symbol_table: SymbolTable) -> None:
+    def __init__(self, symbol_table: SymbolTable, logger) -> None:
         self._symbol_table = symbol_table
         self._scope = symbol_table
+        self.logger = logger
 
     def calc_parameter(self, parameter_symbol: ParameterSymbol):
         '''calculates a variable or a array and writes its value'''
@@ -42,7 +44,7 @@ class DeclarationCalculator():
                 parameter_symbol.is_tree = False
             else:
                 parameter_symbol.value = None
-                print(f"WARNING: {context.start.source[1].fileName}:{context.start.line} no default value defined for array parameter {parameter_symbol.name}")
+                self.logger.relax(context, f"no default value defined for array parameter {parameter_symbol.name}")
         else:
             # simple value
             if context.defaultValue:
@@ -50,7 +52,7 @@ class DeclarationCalculator():
                 parameter_symbol.is_tree = False
             else:
                 parameter_symbol.value = None
-                print(f"WARNING: {context.start.source[1].fileName}:{context.start.line} no default value defined for scalar parameter {parameter_symbol.name}")
+                self.logger.relax(context,f"no default value defined for scalar parameter {parameter_symbol.name}")
 
     def calc_arithmetic_expression_array(
             self,
@@ -77,7 +79,7 @@ class DeclarationCalculator():
                 return
             index = 0
             if not isinstance(calc_list, list):
-                print(f"Warning: {context.start.source[1].fileName}:{context.start.line} Array Value is not a list, proceed to convert it in to one")
+                self.logger.relax(context,f"Array value is not a list, proceed to convert it in to one")
                 if isinstance(calc_list, str):
                     if calc_list.startswith("'"):
                         calc_list = calc_list.strip("'")
@@ -163,7 +165,7 @@ class DeclarationCalculator():
             return self.calc_array_expression(context.arrayExpression(), parameter_symbol)
         if context.literalExpression():
             return self.calc_literal_expression(context.literalExpression())
-        print("INTERNAL ValueExpressionError: No given Token to proceed in calculation")
+        self.logger.error(context, "INTERNAL ValueExpressionError: No given Token to proceed in calculation")
         return None
 
     def calc_parenthesis_expression(self, context: DeclarationParser.ParenthesisExpressionContext, parameter_symbol: ParameterSymbol):
@@ -175,7 +177,7 @@ class DeclarationCalculator():
         # what is attribute? element is maybe a group
         element_attribute = context.attribute.text if context.attribute else None
         if context.element.text == "true" or context.element.text == "false":
-            print(f"WARNING: {context.start.source[1].fileName}:{context.start.line} wrong parsing in variable {parameter_symbol.name} try to compensate to value {context.element.text}")
+            self.logger.relax(context,f"wrong parsing in variable {parameter_symbol.name} try to compensate to value {context.element.text}")
             if context.element.text == "false":
                 parameter_symbol.value = False
             else:
@@ -189,7 +191,7 @@ class DeclarationCalculator():
                     for index, value in element_value.enums:
                         if index == element_attribute:
                             return value
-                    print(f"ERROR {context.start.source[1].fileName}:{context.start.line} EnumError: Enum definition could not be found")
+                    self.logger.error(context,f"Enumeral definition could not be found.")
                     return 0
                 for i in element_value.children():
                     if i.name == element_attribute:
@@ -207,9 +209,9 @@ class DeclarationCalculator():
                     if isinstance(elem, EnumSymbol):
                         for i, j in elem.enums:
                             if i == context.element.text:
-                                print(f"WARNING: {context.start.source[1].fileName}:{context.start.line} EnumType not given for variable {parameter_symbol.name} resolving may result in wrong reference")
+                                self.logger.relax(context,f"EnumType not given for variable {parameter_symbol.name} resolving may result in wrong reference")
                                 return i, j
-        print(f"INTERNAL: Named Element {context.element.text} could not be resolved")
+        self.logger.error(context,f"INTERNAL: Named Element {context.element.text} could not be resolved")
 
     def calc_array_expression(self, context: DeclarationParser.ArrayExpressionContext, parameter_symbol: ParameterSymbol):
         '''calculates a array expression'''
