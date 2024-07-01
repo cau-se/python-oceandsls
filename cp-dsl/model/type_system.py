@@ -42,19 +42,16 @@ class TypeKind(Enum):
 
 @dataclass
 class Type:
+    pass
+
+@dataclass
+class NamedType(Type):
     """
     The root type. Used for typed symbols and type aliases.
     """
     name: str
 
-    # The super type of this type or empty if this is a fundamental type.
-    # Also used as the target type for type aliases.
-    base_types: Optional[List[Type]]
-    kind: Optional[TypeKind]
-    # reference: Optional[ReferenceKind]
-
-
-class FundamentalType(Type):
+class FundamentalType(NamedType):
     """
     A single class for all fundamental types. They are distinguished via the kind field.
     """
@@ -83,6 +80,42 @@ class FundamentalType(Type):
     @classproperty
     def bool_type(self) -> FundamentalType:
         return FundamentalType(name="bool", type_kind=TypeKind.Boolean)
+
+
+class EnumType(NamedType):
+    '''
+    a class for enums of cp-dsl language
+    '''
+
+    def __init__(self, name: str = "", enums={}):
+        super().__init__(name)
+        self.enums = enums
+
+
+class RangeType(NamedType):
+    '''
+    a class for ranges in cp-dsl
+    '''
+
+    def __init__(self, name, type, minimum, maximum):
+        super().__init__(name)
+        self.type = type
+        self.minimum = minimum
+        self.maximum = maximum
+
+class Dimension:
+
+    def __init__(self, lower:int, upper:int) -> None:
+        self.lower = lower
+        self.upper = upper
+
+    def get_size(self):
+        return self.upper - self.lower
+class ArrayType(Type):
+
+    def __init__(self, type:NamedType, dimensions:List[Dimension]):
+        self.type = type
+        self.dimensions = dimensions
 
 
 def get_fundamental_type(type: str = "") -> Type | FundamentalType:

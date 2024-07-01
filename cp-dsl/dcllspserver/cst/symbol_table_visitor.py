@@ -24,7 +24,7 @@ from antlr4.tree.Tree import ParseTree
 from antlr4.Token import CommonToken
 
 # user relative imports
-from model.symbol_table import SymbolTable, P, T, DuplicateSymbolError
+from model.symbol_table import DeclarationModel, P, T, DuplicateSymbolError
 from model.model import GroupSymbol, FeatureSymbol, ParameterSymbol, \
     EnumSymbol, ArraySymbol, RangeSymbol
 from model.units import FundamentalUnit, UnitPrefix, UnitKind, ComposedUnit, UnitSpecification
@@ -37,9 +37,9 @@ from ..gen.python.Declaration.DeclarationVisitor import DeclarationVisitor
 
 class DeclarationCPVisitor(DeclarationVisitor, Generic[T]):
 
-    _symbol_table: SymbolTable
+    _symbol_table: DeclarationModel
 
-    def __init__(self, symbol_table:SymbolTable):
+    def __init__(self, symbol_table:DeclarationModel):
         super().__init__()
         # creates a new symboltable with no duplicate symbols
         self._symbol_table = symbol_table
@@ -50,10 +50,10 @@ class DeclarationCPVisitor(DeclarationVisitor, Generic[T]):
         self._enumIndex = 0
 
     @property
-    def symbol_table(self) -> SymbolTable:
+    def symbol_table(self) -> DeclarationModel:
         return self._symbol_table
 
-    def default_result(self) -> SymbolTable:
+    def default_result(self) -> DeclarationModel:
         return self._symbol_table
 
     # Visit a parse tree produced by DeclarationParser#paramAssignStat.

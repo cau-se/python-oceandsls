@@ -18,8 +18,8 @@ import os
 __author__ = 'Reiner Jung'
 
 # Relative imports
-from model.symbol_table import SymbolTable
-from model.model import GroupSymbol, ParameterSymbol, FeatureSymbol, EnumSymbol
+from model.symbol_table import DeclarationModel
+from model.model import GroupSymbol, ParameterSymbol, FeatureSymbol
 from ..code_generator import StandardCodeGenerator
 
 
@@ -30,7 +30,7 @@ class MitGcmCodeGenerator(StandardCodeGenerator):
         StandardCodeGenerator (_type_): _description_
     """
 
-    def __init__(self, symbolTable: SymbolTable, outputPath: str) -> None:
+    def __init__(self, symbolTable: DeclarationModel, outputPath: str) -> None:
         super().__init__(symbolTable, outputPath)
         self.template_loader = j.PackageLoader(str(self.__module__), "jinja-templates/mitgcm")
         self.template_environment = j.Environment(loader=self.template_loader)

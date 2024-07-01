@@ -19,19 +19,19 @@ __author__ = "stu222808"
 import operator as op
 
 # Relative Imports
-from model.symbol_table import SymbolTable
-from model.model import ParameterSymbol, ArraySymbol, ScopedSymbol, EnumSymbol
+from model.symbol_table import DeclarationModel
+from model.model import ParameterSymbol, ArraySymbol, ScopedSymbol
 from ..gen.python.Configuration.ConfigurationParser import ConfigurationParser
 from dcllspserver.utils.calculator import DeclarationCalculator
 
 class ConfigurationCalculator(DeclarationCalculator):
     '''A calculator for configured values of parameters'''
 
-    def __init__(self, symbol_table: SymbolTable, configuration_list: list, logger):
+    def __init__(self, symbol_table: DeclarationModel, configuration_list: list, logger):
         super().__init__(symbol_table, logger)
         self.configuration_list = configuration_list
 
-    def calculate(self) -> SymbolTable:
+    def calculate(self) -> DeclarationModel:
         '''writes the calculated values into value parameters of every (in order) configured parameter'''
         for elem, index in self.configuration_list:
             if isinstance(elem, ScopedSymbol):

@@ -3,10 +3,10 @@ model eval
 types
 	enum Color { red, green, blue }
 	range Temperature float [ 0 : 373 ]
-	
+
 feature general : "feature general description" {
 	group settings : "group settings" {
-		def color Color : "color"
+		def color Color : "color" = red
 	}
 	sub multiple
 		feature pump : "pumping station" {

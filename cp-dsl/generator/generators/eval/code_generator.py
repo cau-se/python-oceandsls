@@ -18,8 +18,7 @@ import os
 __author__ = 'Reiner Jung'
 
 # Relative imports
-from model.symbol_table import SymbolTable
-from model.model import GroupSymbol, ParameterSymbol, FeatureSymbol, EnumSymbol
+from model.symbol_table import DeclarationModel
 from ..code_generator import StandardCodeGenerator
 
 
@@ -30,7 +29,7 @@ class EvalCodeGenerator(StandardCodeGenerator):
         StandardCodeGenerator (_type_): _description_
     """
 
-    def __init__(self, symbol_table: SymbolTable, output_path: str) -> None:
+    def __init__(self, symbol_table: DeclarationModel, output_path: str) -> None:
         super().__init__(symbol_table, output_path)
         self.template_loader = j.PackageLoader(str(self.__module__), "templates")
         self.template_environment = j.Environment(loader=self.template_loader)

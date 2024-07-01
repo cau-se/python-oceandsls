@@ -18,8 +18,7 @@ import os
 __author__ = 'stu222808'
 
 # Relative imports
-from model.symbol_table import SymbolTable
-from model.model import GroupSymbol, ParameterSymbol, FeatureSymbol, EnumSymbol
+from model.symbol_table import DeclarationModel
 
 
 class StandardCodeGenerator():
@@ -27,8 +26,8 @@ class StandardCodeGenerator():
     a simple code generator representing a simple structure and helpful functions
     """
 
-    def __init__(self, symbol_table: SymbolTable, output_path: str, template_path="") -> None:
-        self._symbol_table: SymbolTable = symbol_table
+    def __init__(self, symbol_table: DeclarationModel, output_path: str, template_path="") -> None:
+        self._symbol_table: DeclarationModel = symbol_table
         self.output_path = output_path
         if not template_path == "":
             self.template_loader = j.PackageLoader(str(self.__module__), template_path)

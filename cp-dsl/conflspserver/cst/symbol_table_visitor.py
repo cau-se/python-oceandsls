@@ -28,7 +28,7 @@ from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationPar
 from dcllspserver.gen.python.Declaration.DeclarationLexer import DeclarationLexer
 # user relative imports
 from dcllspserver.cst.symbol_table_visitor import DeclarationCPVisitor
-from model.symbol_table import SymbolTable, P, T, SymbolTableOptions
+from model.symbol_table import DeclarationModel, P, T
 from model.model import GroupSymbol, FeatureSymbol, ParameterSymbol, EnumSymbol, ArraySymbol
 from model.units import FundamentalUnit, UnitPrefix, UnitKind
 from ..gen.python.Configuration.ConfigurationParser import ConfigurationParser
@@ -43,11 +43,11 @@ import os
 
 
 class ConfigurationCPVisitor(ConfigurationVisitor, Generic[T]):
-    _symbol_table: SymbolTable
+    _symbol_table: DeclarationModel
 
     _generator_selector: str
 
-    def __init__(self, symbol_table:SymbolTable, cwd: str = "."):
+    def __init__(self, symbol_table:DeclarationModel, cwd: str = "."):
         super().__init__()
         # creates a new symboltable with no duplicate symbols
         self._symbol_table = symbol_table
@@ -58,42 +58,25 @@ class ConfigurationCPVisitor(ConfigurationVisitor, Generic[T]):
         self.configuration_list = []
 
     @property
-    def symbol_table(self) -> SymbolTable:
+    def symbol_table(self) -> DeclarationModel:
         return self._symbol_table
 
     @property
     def generator_selector(self) -> str:
         return self._generator_selector
 
-    def default_result(self) -> SymbolTable:
+    def default_result(self) -> DeclarationModel:
         return self._symbol_table
 
     def visitConfigurationModel(self, ctx: ConfigurationParser.ConfigurationModelContext):
-        # Symboltable has to be filled with Declaration Defaults
-        #table = self.visitDeclarationTable(ctx.declarationModel.text)
-        # add all symbols to symboltable
-        #self._symbol_table = table
         return super().visitConfigurationModel(ctx)
-
-#    def visitDeclarationTable(self, declarationName: str):
-#        # we should not do this here
-#        declaration_visitor = DeclarationCPVisitor(declarationName + "_ConfDeclVisit")
-#        self._generator_selector = declarationName
-#        with open(os.path.join(self.cwd, declarationName + ".decl")) as dcl_file:
-#            data = dcl_file.read()
-#            input_stream = InputStream(data)
-#            lexer = DeclarationLexer(input_stream)
-#            stream = CommonTokenStream(lexer)
-#            dcl_parsed = DeclarationParser(stream).declarationModel()
-#            declaration_visitor.visit(dcl_parsed)
-#        return declaration_visitor.symbol_table
 
     def visitParameterAssignment(self, ctx: ConfigurationParser.ParameterAssignmentContext):
         # define the given Parameter
-        varName = ctx.declaration.getText()  # set and get the variable name here
+        var_name = ctx.declaration.getText()  # set and get the variable name here
         prefix = self.visit(ctx.unit) if ctx.unit is not None else UnitPrefix.NoP
         # isArray = True if len(ctx.selectors) > 0 else False
-        symbol = self._scope.get_all_nested_symbols_sync(varName)[0]
+        symbol = self._scope.get_all_nested_symbols_sync(var_name)[0]
         if prefix != UnitPrefix.NoP:
             symbol.unit.prefix = prefix
         symbol.configuration.append(ctx)

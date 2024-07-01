@@ -22,14 +22,14 @@ from conflspserver.gen.python.Configuration.ConfigurationLexer import Configurat
 from conflspserver.gen.python.Configuration.ConfigurationParser import ConfigurationParser
 from dcllspserver.gen.python.Declaration.DeclarationLexer import DeclarationLexer
 from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
-from conflspserver.cst.symbol_table_visitor import ConfigurationCPVisitor, ConfigurationVisitor
-from dcllspserver.cst.symbol_table_visitor import DeclarationCPVisitor
+from visitors.configuration_visitor import GeneratorConfigurationVisitor
+from visitors.declaration_visitor import GeneratorDeclarationVisitor
 from conflspserver.utils.calculator import ConfigurationCalculator
 from dcllspserver.utils.calculator import DeclarationCalculator
 from generators.uvic.code_generator import UvicCodeGenerator
 from generators.mitgcm.code_generator import MitGcmCodeGenerator
 from generators.eval.code_generator import EvalCodeGenerator
-from model.symbol_table import SymbolTable, SymbolTableOptions
+from model.symbol_table import DeclarationModel
 from common.logger import GeneratorLogger
 
 logger: GeneratorLogger
@@ -48,10 +48,10 @@ def parse_declaration_file(declaration_path:str) -> DeclarationParser:
 
     return DeclarationParser(stream)
 
-def compute_declaration(symbol_table: SymbolTable, input_path: str):
+def compute_declaration(symbol_table: DeclarationModel, input_path: str):
     tree = parse_declaration_file(input_path)
     print("Visit declaration model")
-    DeclarationCPVisitor(symbol_table).visit(tree.declarationModel())
+    GeneratorDeclarationVisitor(symbol_table, logger).visit(tree.declarationModel())
     print("Compute declaration")
     try:
         calculator = DeclarationCalculator(symbol_table, logger)
@@ -115,7 +115,6 @@ if __name__ == '__main__':
         if i and not i.endswith(".oconf"):
             estimated_working_directory += os.sep
             estimated_working_directory += i
-    configuration_visitor = ConfigurationCPVisitor(SymbolTable("check_1", SymbolTableOptions(False)), estimated_working_directory)
     output_path = args.output_path if args.output_path else os.path.join(estimated_working_directory, "gen")
     if not os.path.isdir(output_path):
         os.mkdir(output_path)
@@ -133,16 +132,17 @@ if __name__ == '__main__':
     # 4 compute model
     # 4.1 creates a new symboltable with no duplicate symbols
     print("Create symbol table")
-    symbol_table = SymbolTable("root_1", SymbolTableOptions(False))
+    symbol_table = DeclarationModel()
     # 4.2 declaration
     declaration_result = compute_declaration(symbol_table, input_declaration_path)
+    exit(2)
     if declaration_result is None:
         print("Declaration error")
         exit(1)
 
     # 4.3 configuration
     print("Visit configuration")
-    configuration_visitor = ConfigurationCPVisitor(symbol_table, estimated_working_directory)
+    configuration_visitor = GeneratorConfigurationVisitor(symbol_table, estimated_working_directory)
     configuration_tree = parse_configuration_file(input_configuration_path)
     configuration_visitor.visit(configuration_tree.configurationModel())
     print("Compute configuration")

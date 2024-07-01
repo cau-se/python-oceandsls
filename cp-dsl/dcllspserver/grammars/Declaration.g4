@@ -1,7 +1,7 @@
 /*******************************************************************************
  * TODO License
 
- Grammars always start with a grammar header. This grammer is called Declaration
+ Grammars always start with a grammar header. This grammar is called Declaration
  and must match the filename: Declaration.g4
  *******************************************************************************/
 grammar Declaration; //
@@ -47,9 +47,9 @@ eKind                       :   alternative = 'alternative'
 /**
  * Typing
  */
-paramType                   :   typeReference 
-                            |   inlineEnumerationType 
-                            |   arrayType 
+paramType                   :   typeReference
+                            |   inlineEnumerationType
+                            |   arrayType
                             ;
 
 inlineEnumerationType       :   '(' values+=enumeral ( ',' values+=enumeral)* ')' ;
@@ -98,7 +98,7 @@ basicUnit                   :   sIUnit
                             |   '(' unitSpecification ')'
                             ;
 
-sIUnit                      :   (prefix=ePrefix)? type=eSIUnitType #siunit; 
+sIUnit                      :   (prefix=ePrefix)? type=eSIUnitType #siunit;
 
 //TODO {CustomUnit} enforce Type and return object of CustomUnit
 customUnit                  :   name=STRING #customunit;

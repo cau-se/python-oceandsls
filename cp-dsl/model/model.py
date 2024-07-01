@@ -15,16 +15,15 @@
 from __future__ import annotations
 from enum import Enum
 from dataclasses import dataclass
-from typing import Optional, Coroutine, TypeVar, List
+from typing import Optional, Coroutine, TypeVar, List, Dict
 
 # Antlr4
 from antlr4.tree.Tree import ParseTree
 
-from .symbol_table import ScopedSymbol, Symbol, UnitSymbol
-from .type_system import Type
+from .symbol_table import Scope
+from .symbols import ScopedSymbol, Symbol, UnitSymbol
+from .type_system import NamedType
 from .units import UnitSpecification
-
-T = TypeVar("T", bound=Symbol)
 
 #
 # Model elements of the DSL
@@ -40,27 +39,11 @@ T = TypeVar("T", bound=Symbol)
 #
 # Types
 #
+class TypeSymbol(Symbol):
 
-class EnumSymbol(Symbol):
-    '''
-    a class for enums of cp-dsl language
-    '''
-
-    def __init__(self, name: str = "", enums=None):
-        super().__init__(name)
-        self.enums = enums
-
-
-class RangeSymbol(Symbol):
-    '''
-    a class for ranges in cp-dsl
-    '''
-
-    def __init__(self, name, type, minimum, maximum):
+    def __init__(self, name:str, type:NamedType):
         super().__init__(name)
         self.type = type
-        self.minimum = minimum
-        self.maximum = maximum
 
 #
 # Parameter
@@ -71,17 +54,15 @@ class GroupSymbol(ScopedSymbol):
     A Class for Group Declarations
     """
     description: Optional[str]
-    group_type: Optional[T]
+    parameters: Dict[ParameterSymbol]
 
-    def __init__(self, name: str, groupType: T, description: str = ""):
-        super().__init__(name)
+    def __init__(self, name: str, description: str = "", parent:Scope = None):
+        super().__init__(name, parent)
         self.description = description
-        self.group_type = groupType
+        self.parameters = {}
 
-    def get_group_variables(self, localOnly=True) -> Coroutine[List[T]]:
-        return self.get_symbols_of_type(self.group_type)
-
-
+    def resolve_symbol(self, name: str):
+        return self.parameters.get(name, None)
 
 class ParameterSymbol(Symbol):
     """a class for parameter of cp-dsl

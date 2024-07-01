@@ -19,16 +19,17 @@ __author__ = "stu222808, reiner"
 import operator as op
 
 # Relative Imports
-from model.model import ParameterSymbol, ArraySymbol, ScopedSymbol, EnumSymbol
+from model.model import ParameterSymbol, ArraySymbol, ScopedSymbol
+from model.type_system import EnumType
 from ..gen.python.Declaration.DeclarationParser import DeclarationParser
-from model.symbol_table import SymbolTable
+from model.symbol_table import DeclarationModel
 from common.logger import GeneratorLogger
 
 
 class DeclarationCalculator():
     '''A calculator for default values of parameter'''
 
-    def __init__(self, symbol_table: SymbolTable, logger) -> None:
+    def __init__(self, symbol_table: DeclarationModel, logger) -> None:
         self._symbol_table = symbol_table
         self._scope = symbol_table
         self.logger = logger
@@ -187,7 +188,7 @@ class DeclarationCalculator():
         if element_value:
             # just return the value here should work due to scoping
             if element_attribute:
-                if isinstance(element_value, EnumSymbol):
+                if isinstance(element_value, EnumType):
                     for index, value in element_value.enums:
                         if index == element_attribute:
                             return value
@@ -199,14 +200,14 @@ class DeclarationCalculator():
             else:
                 return element_value.value
         else:
-            if isinstance(parameter_symbol.type, EnumSymbol):
+            if isinstance(parameter_symbol.type, EnumType):
                 for i, j in parameter_symbol.type.enums:
                     if i == context.element.text:
                         # just return the enums value
                         return i, j
             else:
                 for elem in self._symbol_table.get_all_nested_symbols_sync():
-                    if isinstance(elem, EnumSymbol):
+                    if isinstance(elem, EnumType):
                         for i, j in elem.enums:
                             if i == context.element.text:
                                 self.logger.relax(context,f"EnumType not given for variable {parameter_symbol.name} resolving may result in wrong reference")
@@ -237,7 +238,7 @@ class DeclarationCalculator():
                 return False
             return True
 
-    def calculate(self) -> SymbolTable:
+    def calculate(self) -> DeclarationModel:
         '''writes the calculated values in the value parameter of every parameter found in symbol_table'''
 
         def recursion_helper(element):
