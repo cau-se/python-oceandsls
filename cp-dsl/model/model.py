@@ -56,7 +56,7 @@ class GroupSymbol(ScopedSymbol):
     description: Optional[str]
     parameters: Dict[ParameterSymbol]
 
-    def __init__(self, name: str, description: str = "", parent:Scope = None):
+    def __init__(self, name: str, description: str, parent:Scope):
         super().__init__(name, parent)
         self.description = description
         self.parameters = {}
@@ -88,31 +88,28 @@ class ParameterSymbol(Symbol):
 #
 
 class FeatureSymbol(ScopedSymbol):
-    """
-    A standalone function/procedure/rule.
-    """
-    return_type: Optional[Type]  # Can be null if result is void.
+
     is_activated: bool = False  # set if the feature is activated
 
-    def __init__(self, name: str, description: str = "", return_type: Type = None):
-        super().__init__(name)
-        self.return_type = return_type
+
+    def __init__(self, name: str, description: str, parent:Scope):
+        super().__init__(name, parent)
         self.is_activated = False
         self.description = description
+        self._groups = {}
+        self._feature_groups = {}
 
-    def get_variables(self, localOnly=True) -> Coroutine[List[T]]:
-        return self.getNestedSymbolsOfTypeSync(ParameterSymbol)
+class EKind(Enum):
+    ALTERNATIVE = 0
+    MULTIPLE = 1
 
-    def get_parameters(self, localOnly=True) -> Coroutine[List[T]]:
-        return self.getNestedSymbolsOfTypeSync(ParameterSymbol)
+class FeatureGroup():
 
-    def get_units(self, localOnly=True) -> Coroutine[List[T]]:
-        return self.getNestedSymbolsOfTypeSync(UnitSymbol)
+    kind : EKind
 
-    def get_features(self, localOnly=True) -> Coroutine[List[T]]:
-        return self.getNestedSymbolsOfTypeSync(FeatureSymbol)
-
-
+    def __init__(self, name: str, parent: Scope):
+        self.parent = parent
+        self._features = {}
 #
 # Expression
 #
