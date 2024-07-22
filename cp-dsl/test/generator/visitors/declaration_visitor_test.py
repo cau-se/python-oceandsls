@@ -7,7 +7,7 @@
 #      http://www.apache.org/licenses/LICENSE-2.0
 #
 #  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
+#  distributed under the License is distributedBaseType on an "AS IS" BASIS,
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
@@ -16,8 +16,9 @@ __author__ = "reiner"
 
 import unittest
 from generator.visitors.declaration_visitor import GeneratorDeclarationVisitor
-from model.declaration_model import DeclarationModel, ParameterGroup
-from model.type_system import EnumeralType, Enumeral, RangeType
+from model.declaration_model import DeclarationModel, ParameterGroup, Parameter
+from model.type_system import EnumeralType, Enumeral, RangeType, BaseType
+from model.unit_model import UnitSpecification, UnitKind, UnitPrefix, SIUnit, CustomUnit, DivisionUnit, ExponentUnit
 from antlr4 import InputStream, CommonTokenStream
 from antlr4.Token import CommonToken
 
@@ -43,7 +44,7 @@ class TestGeneratorDeclarationVisitor(unittest.TestCase):
         self.assertEqual(model.name, "eval", "Name not set")
 
     def test_visitDeclaredType(self):
-        pass
+        self.fail()
 
     def test_visitRangeType(self):
         model = self.parse_code("model eval types range Temperature int [0: 273]")
@@ -80,89 +81,188 @@ class TestGeneratorDeclarationVisitor(unittest.TestCase):
 
     def test_visitParamGroupAssignStat(self):
         ctx = DeclarationParser.ParamGroupAssignStatContext(parser=None, ctx=DeclarationParser.DeclarationModelContext(parser=None))
-        ctx.name = self.set_token("param_name")
-        ctx.description = self.set_token("param description")
+        ctx.name = self.set_token("group_name")
+        ctx.description = self.set_token("\"group description\"")
 
         result = self.make_visitor().visitParamGroupAssignStat(ctx)
 
         self.assertIsInstance(result, ParameterGroup, f"Wrong type {type(result)}")
-        self.assertEqual(result.name, "param_name", "Wrong name")
-        self.assertEqual(result._description, "param description", "Wrong description")
+        self.assertEqual(result.name, "group_name", "Wrong name")
+        self.assertEqual(result._description, "group description", "Wrong description")
 
     def test_visitParamAssignStat(self):
-        pass
+        model = self.parse_code("model eval group g : \"group description\" { def param1 int : meter = 0 }")
+
+        group:ParameterGroup = model._groups.get("g")
+
+        self.assertIsInstance(group, ParameterGroup, f"Wrong type {type(group)}")
+        self.assertEqual(group.name, "g", "Wrong name")
+        self.assertEqual(group._description, "group description", "Wrong description")
+
+        t = BaseType("int")
+        for p in group._parameters.values():
+            self.assertEqual(p.name, "param1", "Wrong param name")
+            self.assertEqual(p._type, t, "Wrong type")
+            # TODO
+#            self.assertEqual(p._unit, u, "Should be meter")
+            self.assertEqual(p._default_value.value, 0, "Wrong value")
+            self.assertEqual(p._description, "", "Wrong description")
+
 
     def test_visitParamType(self):
-        pass
+        self.fail()
 
     def test_visitArrayType(self):
-        pass
+        self.fail()
 
     def test_visitSizeDimension(self):
-        pass
+        self.fail()
 
     def test_visitRangeDimension(self):
-        pass
+        self.fail()
 
     def test_visitTypeReference(self):
-        pass
+        self.fail()
 
     def test_visitFeatureAssignStat(self):
-        pass
+        self.fail()
 
     def test_visitFeatureGroupAssignStat(self):
-        pass
+        self.fail()
 
     def test_visitEKind(self):
-        pass
+        self.fail()
 
     def test_visitArithmeticExpression(self):
-        pass
+        self.fail()
 
     def test_visitMultiplicationExpression(self):
-        pass
+        self.fail()
 
     def test_visitValueExpression(self):
-        pass
+        self.fail()
 
     def test_visitParenthesisExpression(self):
-        pass
+        self.fail()
 
     def test_visitLiteralExpression(self):
-        pass
+        self.fail()
 
     def test_visitLiteral(self):
-        pass
+        self.fail()
 
     def test_visitLongValue(self):
-        pass
+        self.fail()
 
     def test_visitDoubleValue(self):
-        pass
+        self.fail()
 
     def test_visitStringValue(self):
-        pass
+        self.fail()
 
     def test_visitNamedElementReference(self):
-        pass
+        self.fail()
 
-    def test_visitSiunit(self):
-        pass
+    def test_visitSiunit_no_prefix(self):
+        # sIUnit                      :   (prefix=ePrefix)? type=eSIUnitType #siunit;
+        ctx = DeclarationParser.SiunitContext(parser=None, ctx = DeclarationParser.SIUnitContext(parent=None, parser=None))
+        ctx.prefix = None
+        ctx.type_ = DeclarationParser.ESIUnitTypeContext(parser=None, parent=ctx)
+        ctx.type_.meter = self.set_token("meter")
+
+        result = self.make_visitor().visitSiunit(ctx)
+        unit = SIUnit(kind=UnitKind.Meter, prefix=None)
+
+        self.assertIsInstance(result, SIUnit, "Wrong type")
+        self.assertEqual(result.prefix, None, "Wrong prefix")
+        self.assertEqual(result.kind, UnitKind.Meter, "Wrong unit kind")
+
+    def test_visitSiunit_prefix(self):
+        # sIUnit                      :   (prefix=ePrefix)? type=eSIUnitType #siunit;
+        ctx = DeclarationParser.SiunitContext(parser=None, ctx = DeclarationParser.SIUnitContext(parent=None, parser=None))
+        ctx.prefix = DeclarationParser.EPrefixContext(parser=None, parent=ctx)
+        ctx.prefix.kilo = self.set_token("kilo")
+        ctx.type_ = DeclarationParser.ESIUnitTypeContext(parser=None, parent=ctx)
+        ctx.type_.meter = self.set_token("meter")
+
+        result = self.make_visitor().visitSiunit(ctx)
+        unit = SIUnit(kind=UnitKind.Meter, prefix=None)
+
+        self.assertIsInstance(result, SIUnit, "Wrong type")
+        self.assertEqual(result.prefix, UnitPrefix.Kilo, "Wrong prefix")
+        self.assertEqual(result.kind, UnitKind.Meter, "Wrong unit kind")
 
     def test_visitCustomunit(self):
-        pass
+        ctx = DeclarationParser.CustomunitContext(parser=None, ctx = DeclarationParser.CustomUnitContext(parser=None))
+        ctx.name = self.set_token("gini")
 
-    def test_visitBasicUnit(self):
-        pass
+        result = self.make_visitor().visitCustomunit(ctx)
+
+        self.assertIsInstance(result, CustomUnit, "Wrong type")
+        self.assertEqual(result.name, "gini", "Wrong type")
+
+    def test_visitUnitSpecification_one(self):
+        ctx = DeclarationParser.UnitSpecificationContext(parser=None, parent=None)
+        ctx_si = DeclarationParser.SIUnitContext(parser=None, parent=ctx)
+        ctx_meter = DeclarationParser.SiunitContext(parser=None, ctx=ctx_si)
+        ctx_meter.type_ = DeclarationParser.ESIUnitTypeContext(parser=None, parent=ctx_meter)
+        ctx_meter.type_.meter = self.set_token("meter")
+        ctx.units.append(ctx_si)
+
+        result:SIUnit = self.make_visitor().visitUnitSpecification(ctx)
+
+        self.assertIsInstance(result, SIUnit, "Wrong type")
+        self.assertEqual(result.kind, UnitKind.Meter, "Wrong unit kind")
 
     def test_visitUnitSpecification(self):
-        pass
+        model = self.parse_code("model eval group a : \"bla\" { def param int : meter * \"gini\" } ")
+        group:ParameterGroup = model._groups.get("a")
+        parameter:Parameter = group._parameters.get("param")
+
+        unit_meter = SIUnit(kind=UnitKind.Meter, prefix=None)
+        unit_gini = CustomUnit(name="gini")
+
+        p_unit:UnitSpecification = parameter._unit
+        self.assertIsInstance(p_unit, UnitSpecification, "Wrong type")
+        p_unit_meter = p_unit.units[0]
+        p_unit_gini = p_unit.units[1]
+        self.assertEqual(p_unit_meter, unit_meter, "Wrong unit")
+        self.assertEqual(p_unit_gini, unit_gini, "Wrong unit")
+
+    def test_visitUnitSpecification_two(self):
+        ctx = DeclarationParser.UnitSpecificationContext(parser=None, parent=None)
+        ctx_si = DeclarationParser.SIUnitContext(parser=None, parent=ctx)
+        ctx_meter = DeclarationParser.SiunitContext(parser=None, ctx=ctx_si)
+        ctx_meter.type_ = DeclarationParser.ESIUnitTypeContext(parser=None, parent=ctx_meter)
+        ctx_meter.type_.meter = self.set_token("meter")
+        ctx.units.append(ctx)
+        ctx_g = DeclarationParser.CustomUnitContext(parser=None, parent=ctx)
+        ctx_gini = DeclarationParser.CustomunitContext(parser=None, ctx = ctx_g)
+        ctx_gini.name = self.set_token("gini")
+        ctx.units.append(ctx_gini)
+
+        result:UnitSpecification = self.make_visitor().visitUnitSpecification(ctx)
+
+        self.assertIsInstance(result, UnitSpecification, "Wrong type")
+        self.assertEqual(len(result.units),2, "Wrong number of units")
+        unit1:SIUnit = result.units[0]
+        self.assertIsInstance(unit1, SIUnit, "Wrong type")
+        self.assertEqual(unit1.kind, UnitKind.Meter, "Wrong unit kind")
+        unit2:CustomUnit = result.units[1]
+        self.assertIsInstance(unit2, CustomUnit, "Wrong type")
+        self.assertEqual(unit2.name, "gini", "Wrong kind")
+
 
     def test_visitComposedUnit(self):
-        pass
+        self.fail()
 
     def test_visitInlineEnumerationType(self):
-        pass
+        self.fail()
+
+    #########################################
+    # Utility functions
+    #########################################
+    # TODO move to a general and abstract test class
 
     def make_visitor(self) -> GeneratorDeclarationVisitor:
         model = DeclarationModel()

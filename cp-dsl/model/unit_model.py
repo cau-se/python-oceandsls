@@ -15,6 +15,7 @@
 from __future__ import annotations
 from enum import Enum
 from dataclasses import dataclass
+from typing import List
 
 from .utils import classproperty
 
@@ -28,7 +29,7 @@ class UnitKind(Enum):
     """
     Unknown = 0
     Second = 1
-    Metre = 2
+    Meter = 2
     # TODO si unit is kilogram | added to FundamentalUnit
     Gram = 3
     Ampere = 4
@@ -72,106 +73,29 @@ class UnitPrefix(Enum):
     Quecto = 24
 
 
-@dataclass
 class Unit:
-    """
-    The root unit. Used for unit symbols
-    """
-    name: str
+    pass
 
-    # The super unit of this unit or empty if this is a SI unit such as second.
-    # TODO add units
-    # TODO add aliases?
-    base_types: List[Unit]
-    prefix: UnitPrefix
-    kind: UnitKind
-    # reference: ReferenceKind
+@dataclass
+class SIUnit(Unit):
+    prefix:UnitPrefix
+    kind:UnitKind
 
-class FundamentalUnit(Unit):
-    """
-    A single class for all fundamental units which are mostly SI units. They are distinguished via the kind field.
-    """
+@dataclass
+class CustomUnit(Unit):
+    name:str
 
-    def __init__(self, name: str, base_types=[], unit_prefix=UnitPrefix.NoP, unit_kind=UnitKind.Unknown):
-        super().__init__(name=name, base_types=base_types, kind=unit_kind, prefix=unit_prefix)
+@dataclass
+class DivisionUnit(Unit):
+    numerator:Unit
+    denominator:Unit
 
-    @classproperty
-    def second_unit(self) -> FundamentalUnit:
-        return FundamentalUnit(name="second", unit_kind=UnitKind.Second)
+@dataclass
+class ExponentUnit(Unit):
+    unit:Unit
+    exponent:int
 
-    @classproperty
-    def metre_unit(self) -> FundamentalUnit:
-        return FundamentalUnit(name="metre", unit_kind=UnitKind.Metre)
-
-    # TODO si unit is kilogram but unitKind has gram
-    @classproperty
-    def gram_unit(self) -> FundamentalUnit:
-        return FundamentalUnit(name="gram", unit_kind=UnitKind.Gram)
-
-    # TODO si unit is kilogram but unitKind has gram
-    @classproperty
-    def kilogram_unit(self) -> FundamentalUnit:
-        return FundamentalUnit(name="kilogram", unit_prefix=UnitPrefix.Kilo, unit_kind=UnitKind.Gram)
-
-    @classproperty
-    def ampere_unit(self) -> FundamentalUnit:
-        return FundamentalUnit(name="ampere", unit_kind=UnitKind.Ampere)
-
-    @classproperty
-    def kelvin_unit(self) -> FundamentalUnit:
-        return FundamentalUnit(name="Kelvin", unit_kind=UnitKind.Kelvin)
-
-    @classproperty
-    def mole_unit(self) -> FundamentalUnit:
-        return FundamentalUnit(name="Mole", unit_kind=UnitKind.Mole)
-
-    @classproperty
-    def candela_unit(self) -> FundamentalUnit:
-        return FundamentalUnit(name="Candela", unit_kind=UnitKind.Candela)
-
-    @classproperty
-    def pascal_unit(self) -> FundamentalUnit:
-        return FundamentalUnit(name="Pascal", unit_kind=UnitKind.Pascal)
-
-    @classproperty
-    def joule_unit(self) -> FundamentalUnit:
-        return FundamentalUnit(name="Joule", unit_kind=UnitKind.Joule)
-
-    # TODO si unit is kilogram. unitKind has gram but could include ton
-    @classproperty
-    def ton_unit(self) -> FundamentalUnit:
-        return FundamentalUnit(name="Ton", unit_prefix=UnitPrefix.Mega, unit_kind=UnitKind.Gram)
-
-
-
-class ComposedUnit():
-    """The composed Unit Representation of the Declaration-DSL"""
-    numerator: FundamentalUnit
-    denominator: FundamentalUnit
-    exponent: FundamentalUnit
-    basicUnit: FundamentalUnit
-
-    def __init__(self, basicUnit: FundamentalUnit = None, numerator: FundamentalUnit = None,
-                 denominator: FundamentalUnit = None, exponent: FundamentalUnit = None) -> None:
-        self.basicUnit = basicUnit
-        self.numerator = numerator
-        self.denominator = denominator
-        self.exponent = exponent
-
-
-
-class UnitSpecification():
-    """CP-DSL Declaration UnitSpecification Representation Class"""
-    prefix: UnitPrefix
-
-    def __init__(self) -> None:
-        self.composedUnitList = []
-        self.prefix = None
-
-    def add(self, unit: ComposedUnit):
-        self.composedUnitList.append(unit)
-
-    def get_units(self):
-        return self.composedUnitList
-
+@dataclass
+class UnitSpecification(Unit):
+    units:List[Unit]
 

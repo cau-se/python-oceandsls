@@ -25,7 +25,7 @@ from antlr4.Token import CommonToken
 from model.symbols import Scope, T, P
 from model.declaration_model import DeclarationModel, Parameter, ParameterGroup, Feature, FeatureGroup, EKind
 from model.type_system import GenericEnumeralType, EnumeralType, Enumeral, RangeType, ArrayType, Dimension, BaseType, base_types
-from model.unit_model import FundamentalUnit, UnitPrefix, UnitKind, ComposedUnit, UnitSpecification
+from model.unit_model import Unit, UnitPrefix, UnitKind, UnitSpecification, SIUnit, CustomUnit, DivisionUnit, ExponentUnit
 from common.logger import GeneratorLogger
 from model.arithmetic_model import ArithmeticExpression, Value
 
@@ -124,7 +124,7 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
     def visitParamGroupAssignStat(self, ctx: DeclarationParser.ParamGroupAssignStatContext):
         parent_scope = self._scope
         name = ctx.name.text if ctx.name else "<ERROR>"
-        description = ctx.description.text if ctx.description else ""
+        description = ctx.description.text[1:-1] if ctx.description else ""
 
         try:
             group = self._scope._groups[name]
@@ -288,10 +288,10 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
             return None
 
     def visitLongValue(self, ctx: DeclarationParser.LongValueContext):
-        return Value(ctx, ctx.value.text, base_types["long"])
+        return Value(ctx, int(ctx.value.text), base_types["long"])
 
     def visitDoubleValue(self, ctx: DeclarationParser.DoubleValueContext):
-        return Value(ctx, ctx.value.text, base_types["double"])
+        return Value(ctx, float(ctx.value.text), base_types["double"])
 
     def visitStringValue(self, ctx: DeclarationParser.StringValueContext):
         return Value(ctx, ctx.value.text, base_types["string"])
@@ -312,6 +312,92 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
                 return type._enumerals.get(ctx.attribute.text)
             self._logger.strict(ctx,f"Name {ctx.element.text}.{ctx.attribute.text} cannot be resolved to a parameter or enumeral")
             return None
+
+    ##################################
+    # Units
+    ##################################
+
+    def visitUnitSpecification(self, ctx: DeclarationParser.UnitSpecificationContext):
+        if len(ctx.units) == 1:
+            return self.visit(ctx.units[0])
+        else:
+            units = []
+            for u in ctx.units:
+                units.append(self.visit(u))
+            return UnitSpecification(units)
+
+    def visitSiunit(self, ctx: DeclarationParser.SiunitContext):
+        print(f"PARENT {type(ctx.parentCtx)}")
+        prefix = None
+        if ctx.prefix is not None:
+            prefix = self.visitEPrefix(ctx.prefix)
+
+        kind = self.visitESIUnitType(ctx.type_)
+        return SIUnit(prefix=prefix, kind=kind)
+
+    def visitESIUnitType(self, ctx: DeclarationParser.ESIUnitTypeContext):
+        if ctx.ampere is not None: return UnitKind.Ampere
+        if ctx.candela is not None: return UnitKind.Candela
+        if ctx.gram is not None: return UnitKind.Gram
+        if ctx.joul is not None: return UnitKind.Joule
+        if ctx.kelvin is not None: return UnitKind.Kelvin
+        if ctx.meter is not None: return UnitKind.Meter
+        if ctx.mole is not None: return UnitKind.Mole
+        if ctx.pascal is not None: return UnitKind.Pascal
+        if ctx.second is not None: return UnitKind.Second
+
+        if ctx.ton is not None: return UnitKind.ton
+
+        self._logger.strict(ctx, f"Unknown unit kind {ctx}")
+        return UnitKind.Unknown
+
+    def visitEPrefix(self, ctx: DeclarationParser.EPrefixContext):
+        # Quetta = 1
+        # Ronna = 2
+        if ctx.yotta is not None: return UnitPrefix.Yotta
+        if ctx.zetta is not None: return UnitPrefix.Zetta
+        if ctx.exa is not None: return UnitPrefix.Exa
+        if ctx.peta is not None: return UnitPrefix.Peta
+        if ctx.tera is not None: return UnitPrefix.Tera
+        if ctx.giga is not None: return UnitPrefix.Giga
+        if ctx.mega is not None: return UnitPrefix.Mega
+        if ctx.kilo is not None: return UnitPrefix.Kilo
+        if ctx.hecto is not None: return UnitPrefix.Hecto
+        if ctx.deca is not None: return UnitPrefix.Deca
+        if ctx.deci is not None: return UnitPrefix.Deci
+        if ctx.centi is not None: return UnitPrefix.Centi
+        if ctx.mili is not None: return UnitPrefix.Mili
+        if ctx.micro is not None: return UnitPrefix.Micro
+        if ctx.nano is not None: return UnitPrefix.Nano
+        if ctx.pico is not None: return UnitPrefix.Pico
+        if ctx.femto is not None: return UnitPrefix.Femto
+        if ctx.atto is not None: return UnitPrefix.Atto
+        if ctx.zepto is not None: return UnitPrefix.Zepto
+        if ctx.yocto is not None: return UnitPrefix.Yocto
+        #if ctx.ronto is not None: return UnitPrefix.Ronto
+        #if ctx.quecto is not None: return UnitPrefix.Quecto
+
+        self._logger.strict(ctx, f"Unknown prefix {ctx}")
+        return UnitPrefix.NoP
+
+    def visitCustomunit(self, ctx: DeclarationParser.CustomunitContext):
+        return CustomUnit(name=ctx.name.text[1:-1])
+
+    def visitComposedUnit(self, ctx: DeclarationParser.ComposedUnitContext):
+        if ctx.numerator is None:
+            return self.visitBasicUnit(ctx.basicUnit(0))
+        numerator = self.visit(ctx.numerator)
+        if ctx.denominator is not None:
+            denominator = self.visit(ctx.denominator)
+            return DivisionUnit(numerator=numerator, denominator=denominator)
+        if ctx.exponent is not None:
+            return ExponentUnit(unit=numerator, exponent=ctx.exponent.value.text)
+
+        self._logger.strict(ctx, "Illegal unit")
+
+    ##################################
+    # Utility functions
+    ##################################
 
     # Find model elements that contain types, i.e., the root element
     def resolve_type(self, node:Scope, type_name:str):
@@ -337,52 +423,6 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
     #
     #
     #
-
-    def stringToPrefix(self, input: str):
-        for prefix in UnitPrefix:
-            if vars(prefix)["_name_"].lower() == input.lower():
-                return prefix
-        return UnitPrefix.NoP
-
-    def stringToUnitType(self, input: str):
-        for kind in UnitKind:
-            if vars(kind)["_name_"].lower() == input.lower():
-                return kind
-        return UnitKind.Unknown
-
-    # sIUnit                      :   (prefix=ePrefix)? type=eSIUnitType #siUnit;
-    def visitSiunit(self, ctx: DeclarationParser.SIUnitContext):
-        return FundamentalUnit(name=ctx.type_.getText() if ctx.type_ else "",
-            unit_prefix=self.stringToPrefix(ctx.prefix.getText() if ctx.prefix else ""),
-            unit_kind=self.stringToUnitType(ctx.type_.getText() if ctx.type_ else ""))
-
-    # customUnit                  :   name=STRING #customunit;
-    def visitCustomunit(self, ctx: DeclarationParser.CustomUnitContext):
-        # TODO: Set Prefix and type in customUnit either
-        return FundamentalUnit(name=ctx.name.text if ctx.name.text else "")
-
-    def visitBasicUnit(self, ctx: DeclarationParser.BasicUnitContext):
-        if isinstance(ctx, CommonToken):
-            return float(ctx.text)
-        if ctx.sIUnit():
-            return self.visit(ctx.sIUnit())
-        if ctx.customUnit():
-            return self.visit(ctx.customUnit())
-        if ctx.unitSpecification():
-            return self.visit(ctx.unitSpecification())
-
-    def visitUnitSpecification(self, ctx: DeclarationParser.UnitSpecificationContext):
-        retVal = UnitSpecification()
-        for elem in ctx.units:
-            retVal.add(self.visit(elem))
-        return retVal
-
-    def visitComposedUnit(self, ctx: DeclarationParser.ComposedUnitContext):
-        if ctx.denominator:
-            return ComposedUnit(numerator=self.visitBasicUnit(ctx.numerator), denominator=self.visitBasicUnit(ctx.denominator))
-        if ctx.exponent:
-            return ComposedUnit(numerator=self.visitBasicUnit(ctx.numerator), exponent=self.visitBasicUnit(ctx.exponent))
-        return ComposedUnit(basicUnit=self.visitChildren(ctx))
 
     def find_next_enum_number(self, enumerals:Dict[str,int]) -> int:
         index = -1

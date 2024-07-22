@@ -139,5 +139,5 @@ eSIUnitType                 :   meter      = 'meter'
                             |   mole       = 'mole'
                             |   candela    = 'candela'
                             |   pascal     = 'pascal'
-                            |   joul       = 'Joul'
+                            |   joule      = 'Joule'
                             ;
