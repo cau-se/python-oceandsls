@@ -18,7 +18,7 @@ import os
 __author__ = 'Reiner Jung'
 
 # Relative imports
-from model.symbol_table import DeclarationModel
+from model.declaration_model import DeclarationModel
 from ..code_generator import StandardCodeGenerator
 
 

@@ -19,10 +19,9 @@ __author__ = "stu222808, reiner"
 import operator as op
 
 # Relative Imports
-from model.model import ParameterSymbol, ArraySymbol, ScopedSymbol
-from model.type_system import EnumType
+from model.declaration_model import DeclarationModel, Parameter, ScopedSymbol
+from model.type_system import EnumeralType
 from ..gen.python.Declaration.DeclarationParser import DeclarationParser
-from model.symbol_table import DeclarationModel
 from common.logger import GeneratorLogger
 
 
@@ -34,7 +33,7 @@ class DeclarationCalculator():
         self._scope = symbol_table
         self.logger = logger
 
-    def calc_parameter(self, parameter_symbol: ParameterSymbol):
+    def calc_parameter(self, parameter_symbol: Parameter):
         '''calculates a variable or a array and writes its value'''
         # check if the context is a Array or a simple Value
         context = parameter_symbol.context
@@ -59,7 +58,7 @@ class DeclarationCalculator():
             self,
             var_context: DeclarationParser.ParamAssignStatContext,
             context: DeclarationParser.ArithmeticExpressionContext,
-            array_symbol: ArraySymbol
+            array_symbol: None # must be array symbol
     ):
         '''calculates a array in decl language'''
 
@@ -101,7 +100,7 @@ class DeclarationCalculator():
         calcList = self.calc_arithmetic_expression(context, array_symbol)
 
         range_list = []
-        for i in varcontext.type_.arrayType().dimensions:
+        for i in var_context.type_.arrayType().dimensions:
             if i.rangeDimension():
                 j = i.rangeDimension()
                 range_list.append(range(int(j.lowerBound.text), int(j.upperBound.text) + 1))
@@ -112,7 +111,7 @@ class DeclarationCalculator():
         vector = []
         convertToTupleList(range_list, calcList, vector, 0)
 
-    def calc_arithmetic_expression(self, context: DeclarationParser.ArithmeticExpressionContext, parameter_symbol: ParameterSymbol):
+    def calc_arithmetic_expression(self, context: DeclarationParser.ArithmeticExpressionContext, parameter_symbol: Parameter):
         '''calculates a normal arithmetic expression for parameter'''
         if context.getChildCount() == 1:
             # must be a multiplication Expression
@@ -132,7 +131,7 @@ class DeclarationCalculator():
             rightValue = rightValue[1] if isinstance(rightValue, tuple) else rightValue
             return operator(leftValue, rightValue)
 
-    def calc_multiplication_expression(self, context: DeclarationParser.MultiplicationExpressionContext, parameter_symbol: ParameterSymbol):
+    def calc_multiplication_expression(self, context: DeclarationParser.MultiplicationExpressionContext, parameter_symbol: Parameter):
         '''calculates a multiplication expression'''
         if context.getChildCount() == 1:
             return self.calc_value_expression(context.valueExpression(), parameter_symbol)
@@ -156,7 +155,7 @@ class DeclarationCalculator():
                 operator = op.mod
             return operator(left_value, right_value)
 
-    def calc_value_expression(self, context: DeclarationParser.ValueExpressionContext, parameter_symbol: ParameterSymbol):
+    def calc_value_expression(self, context: DeclarationParser.ValueExpressionContext, parameter_symbol: Parameter):
         '''calculates a value expression'''
         if context.parenthesisExpression():
             return self.calc_parenthesis_expression(context.parenthesisExpression(), parameter_symbol)
@@ -169,11 +168,11 @@ class DeclarationCalculator():
         self.logger.error(context, "INTERNAL ValueExpressionError: No given Token to proceed in calculation")
         return None
 
-    def calc_parenthesis_expression(self, context: DeclarationParser.ParenthesisExpressionContext, parameter_symbol: ParameterSymbol):
+    def calc_parenthesis_expression(self, context: DeclarationParser.ParenthesisExpressionContext, parameter_symbol: Parameter):
         '''calculates a parenthesis expression (expression = arithmetic expression)'''
         return self.calc_arithmetic_expression(context.expression, parameter_symbol)
 
-    def calc_named_element_reference(self, context: DeclarationParser.NamedElementReferenceContext, parameter_symbol: ParameterSymbol):
+    def calc_named_element_reference(self, context: DeclarationParser.NamedElementReferenceContext, parameter_symbol: Parameter):
         '''resolves a named element reference (Enums, Parameter, etc.) also can handle wrong parser choice to handle true or false'''
         # what is attribute? element is maybe a group
         element_attribute = context.attribute.text if context.attribute else None
@@ -188,7 +187,7 @@ class DeclarationCalculator():
         if element_value:
             # just return the value here should work due to scoping
             if element_attribute:
-                if isinstance(element_value, EnumType):
+                if isinstance(element_value, EnumeralType):
                     for index, value in element_value.enums:
                         if index == element_attribute:
                             return value
@@ -200,21 +199,21 @@ class DeclarationCalculator():
             else:
                 return element_value.value
         else:
-            if isinstance(parameter_symbol.type, EnumType):
+            if isinstance(parameter_symbol.type, EnumeralType):
                 for i, j in parameter_symbol.type.enums:
                     if i == context.element.text:
                         # just return the enums value
                         return i, j
             else:
                 for elem in self._symbol_table.get_all_nested_symbols_sync():
-                    if isinstance(elem, EnumType):
+                    if isinstance(elem, EnumeralType):
                         for i, j in elem.enums:
                             if i == context.element.text:
                                 self.logger.relax(context,f"EnumType not given for variable {parameter_symbol.name} resolving may result in wrong reference")
                                 return i, j
         self.logger.error(context,f"INTERNAL: Named Element {context.element.text} could not be resolved")
 
-    def calc_array_expression(self, context: DeclarationParser.ArrayExpressionContext, parameter_symbol: ParameterSymbol):
+    def calc_array_expression(self, context: DeclarationParser.ArrayExpressionContext, parameter_symbol: Parameter):
         '''calculates a array expression'''
         valueList = []
         for i in context.elements:
@@ -242,7 +241,7 @@ class DeclarationCalculator():
         '''writes the calculated values in the value parameter of every parameter found in symbol_table'''
 
         def recursion_helper(element):
-            if isinstance(element, ParameterSymbol):
+            if isinstance(element, Parameter):
                 self.calc_parameter(element)
             elif not hasattr(element, "children"):
                 pass

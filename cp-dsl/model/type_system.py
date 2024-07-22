@@ -15,30 +15,14 @@
 from __future__ import annotations
 from enum import Enum
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, Dict
 from .utils import classproperty
 
 #
 # Type system
 #
 
-class TypeKind(Enum):
-    """
-    Primitive types.
-    """
-    Unknown = 0
-    Integer = 1
-    Float = 2
-    Number = 3
-    String = 4
-    Char = 5
-    Boolean = 6
-    Class = 7
-    Interface = 8
-    Array = 9
-    Map = 10
-    Enum = 11
-    Alias = 12
+base_type_names = ["byte", "ubyte", "short", "ushort", "int", "unit", "long", "ulong", "single", "float", "double", "boolean", "string"]
 
 @dataclass
 class Type:
@@ -51,45 +35,33 @@ class NamedType(Type):
     """
     name: str
 
-class FundamentalType(NamedType):
-    """
-    A single class for all fundamental types. They are distinguished via the kind field.
-    """
+@dataclass
+class BaseType(NamedType):
+    pass
 
-    # , reference_kind=ReferenceKind.Irrelevant
-    def __init__(self, name: str, base_types=[], type_kind=TypeKind.Unknown):
-        # , reference=reference_kind
-        super().__init__(name=name, base_types=base_types, kind=type_kind)
+base_types = {}
 
-    @classproperty
-    def integer_type(self) -> FundamentalType:
-        return FundamentalType(name="integer", type_kind=TypeKind.Integer)
+for name in base_type_names:
+    base_types[name] = BaseType(name)
 
-    @classproperty
-    def real_type(self) -> FundamentalType:
-        return FundamentalType(name="real", type_kind=TypeKind.Float)
+@dataclass
+class Enumeral:
+    name:str
+    value:int
 
-    @classproperty
-    def float_type(self) -> FundamentalType:
-        return FundamentalType(name="float", type_kind=TypeKind.Float)
+class GenericEnumeralType(Type):
 
-    @classproperty
-    def string_type(self) -> FundamentalType:
-        return FundamentalType(name="string", type_kind=TypeKind.String)
+    _enumerals: Dict[int,Enumeral] = {}
 
-    @classproperty
-    def bool_type(self) -> FundamentalType:
-        return FundamentalType(name="bool", type_kind=TypeKind.Boolean)
+    def __init__(self) -> None:
+        pass
 
+class EnumeralType(GenericEnumeralType, NamedType):
 
-class EnumType(NamedType):
-    '''
-    a class for enums of cp-dsl language
-    '''
-
-    def __init__(self, name: str = "", enums={}):
-        super().__init__(name)
-        self.enums = enums
+    def __init__(self, name: str = "", enumerals={}):
+        super().__init__()
+        self.name = name
+        self._enumerals = enumerals
 
 
 class RangeType(NamedType):
@@ -97,7 +69,7 @@ class RangeType(NamedType):
     a class for ranges in cp-dsl
     '''
 
-    def __init__(self, name, type, minimum, maximum):
+    def __init__(self, name, type:NamedType, minimum, maximum):
         super().__init__(name)
         self.type = type
         self.minimum = minimum
@@ -113,9 +85,12 @@ class Dimension:
         return self.upper - self.lower
 class ArrayType(Type):
 
+    _type:NamedType
+    _dimensions:List[Dimension]
+
     def __init__(self, type:NamedType, dimensions:List[Dimension]):
-        self.type = type
-        self.dimensions = dimensions
+        self._type = type
+        self._dimensions = dimensions
 
 
 def get_fundamental_type(type: str = "") -> Type | FundamentalType:

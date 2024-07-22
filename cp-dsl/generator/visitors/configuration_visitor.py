@@ -25,9 +25,8 @@ from antlr4 import InputStream, CommonTokenStream
 
 # user relative imports
 from model.symbols import T
-from model.symbol_table import DeclarationModel
-from model.model import GroupSymbol, FeatureSymbol
-from model.units import UnitPrefix
+from model.declaration_model import DeclarationModel, ParameterGroup, Feature
+from model.unit_model import UnitPrefix
 
 from conflspserver.gen.python.Configuration.ConfigurationLexer import ConfigurationLexer
 from conflspserver.gen.python.Configuration.ConfigurationParser import ConfigurationParser
@@ -76,7 +75,7 @@ class GeneratorConfigurationVisitor(ConfigurationVisitor, Generic[T]):
         self.configuration_list.append((symbol, len(symbol.configuration) - 1))
 
     def visitParameterGroup(self, ctx: ConfigurationParser.ParameterGroupContext):
-        self.withScope(GroupSymbol, ctx, ctx.declaration.text, lambda: self.visitChildren(ctx))
+        self.withScope(ParameterGroup, ctx, ctx.declaration.text, lambda: self.visitChildren(ctx))
 
     def visitSelector(self, ctx: ConfigurationParser.SelectorContext):
         vector = []
@@ -93,10 +92,10 @@ class GeneratorConfigurationVisitor(ConfigurationVisitor, Generic[T]):
         return self.stringToPrefix(ctx.unit.text)
 
     def visitFeatureConfiguration(self, ctx: ConfigurationParser.FeatureConfigurationContext):
-        self.withScope(FeatureSymbol, ctx, ctx.declaration.text, lambda: self.visitChildren(ctx))
+        self.withScope(Feature, ctx, ctx.declaration.text, lambda: self.visitChildren(ctx))
 
     def visitFeatureActivation(self, ctx: ConfigurationParser.FeatureActivationContext):
-        for feature in self._scope.get_nested_symbols_of_type_sync(FeatureSymbol):
+        for feature in self._scope.get_nested_symbols_of_type_sync(Feature):
             if feature.name == ctx.declaration.text:
                 try:
                     # if is_activated is set to false it is not none
@@ -149,7 +148,7 @@ class GeneratorConfigurationVisitor(ConfigurationVisitor, Generic[T]):
                     break
         else:
             scope = scope[0]
-        if type == FeatureSymbol:
+        if type == Feature:
             scope.is_activated = True
         scope.configuration.append(tree)
         current_scope = self._scope

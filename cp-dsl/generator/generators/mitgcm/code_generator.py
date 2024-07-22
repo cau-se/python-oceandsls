@@ -18,8 +18,7 @@ import os
 __author__ = 'Reiner Jung'
 
 # Relative imports
-from model.symbol_table import DeclarationModel
-from model.model import GroupSymbol, ParameterSymbol, FeatureSymbol
+from model.declaration_model import DeclarationModel, ParameterGroup, Parameter, Feature
 from ..code_generator import StandardCodeGenerator
 
 
@@ -35,7 +34,7 @@ class MitGcmCodeGenerator(StandardCodeGenerator):
         self.template_loader = j.PackageLoader(str(self.__module__), "jinja-templates/mitgcm")
         self.template_environment = j.Environment(loader=self.template_loader)
 
-    def isConfigurated(self, elem: FeatureSymbol) -> bool:
+    def isConfigurated(self, elem: Feature) -> bool:
         """function to lookup if any parameter in elem was configurated
 
         Args:
@@ -44,7 +43,7 @@ class MitGcmCodeGenerator(StandardCodeGenerator):
         Returns:
             bool: if one parameter was configurated
         """
-        groupSymbol = elem.get_nested_symbols_of_type_sync(GroupSymbol)
+        groupSymbol = elem.get_nested_symbols_of_type_sync(ParameterGroup)
         for param in groupSymbol:
             if len(param.configuration) > 0:
                 return True
@@ -90,7 +89,7 @@ class MitGcmCodeGenerator(StandardCodeGenerator):
         featureTemplate = self.template_environment.get_template("data.feature.template")
 
         def checkFeature(elem):
-            """a function to check if the givben feature is activated -> write the mitgcm file
+            """a function to check if the given feature is activated -> write the mitgcm file
 
             Args:
                 elem (GroupSymbol, FeatureSymbol): a feature from mitgcm
@@ -110,11 +109,11 @@ class MitGcmCodeGenerator(StandardCodeGenerator):
                         eeparmsTemplate.render(
                             group=elem,
                             isinstance=isinstance,
-                            variableSymbol=ParameterSymbol,
+                            variableSymbol=Parameter,
                             float=float,
                             int=int,
                             bool=bool,
-                            groupSymbol=GroupSymbol,
+                            groupSymbol=ParameterGroup,
                             none=None,
                             str=str,
                             enumerate=enumerate,
@@ -125,15 +124,15 @@ class MitGcmCodeGenerator(StandardCodeGenerator):
                     return
                 fileName = dataList[1]
                 alreadyDone[elem.name] = [True, fileName]
-                self.writeFile(featureTemplate.render(feature=elem, isinstance=isinstance, variableSymbol=ParameterSymbol, float=float, int=int,
-                               bool=bool, groupSymbol=GroupSymbol, none=None, str=str, enumerate=enumerate, firstNotNoneElem=self.firstNotNoneElem), fileName)
+                self.writeFile(featureTemplate.render(feature=elem, isinstance=isinstance, variableSymbol=Parameter, float=float, int=int,
+                               bool=bool, groupSymbol=ParameterGroup, none=None, str=str, enumerate=enumerate, firstNotNoneElem=self.firstNotNoneElem), fileName)
             except IndexError:
                 pass
 
         for elem in self._symbol_table.getAllNestedSymbolsSync():
-            if isinstance(elem, GroupSymbol):
+            if isinstance(elem, ParameterGroup):
                 groupList[elem.name] = elem
-            if isinstance(elem, FeatureSymbol):
+            if isinstance(elem, Feature):
                 featureList[elem.name] = elem
             # check and use template for group(EEPARMS), feature(MNC, GMRedi, RBCS, Layers, PTRACERS, Shap, obcs, GCHEM, offline)
             checkFeature(elem)
@@ -149,7 +148,7 @@ class MitGcmCodeGenerator(StandardCodeGenerator):
         if layer_size:
             # TODO: still buggy
             layerSizeTemplate = self.template_environment.get_template("layer_size.template")
-            self.writeFile(layerSizeTemplate.render(groups=groupList, variableSymbol=ParameterSymbol, groupSymbol=GroupSymbol,
+            self.writeFile(layerSizeTemplate.render(groups=groupList, variableSymbol=Parameter, groupSymbol=ParameterGroup,
                            none=None, str=str, enumerate=enumerate, firstNotNoneElem=self.firstNotNoneElem), "LAYERS_SIZE.h")
 
         # packages.conf check for feature diagnostics
@@ -161,11 +160,11 @@ class MitGcmCodeGenerator(StandardCodeGenerator):
         self.writeFile(packagesTemplate.render(features=activatedList), "packages.conf")
 
         dataTemplate = self.template_environment.get_template("data.template")
-        self.writeFile(dataTemplate.render(groups=groupList, isinstance=isinstance, variableSymbol=ParameterSymbol, float=float, int=int,
-                       bool=bool, groupSymbol=GroupSymbol, none=None, str=str, enumerate=enumerate, firstNotNoneElem=self.firstNotNoneElem), "data")
+        self.writeFile(dataTemplate.render(groups=groupList, isinstance=isinstance, variableSymbol=Parameter, float=float, int=int,
+                       bool=bool, groupSymbol=ParameterGroup, none=None, str=str, enumerate=enumerate, firstNotNoneElem=self.firstNotNoneElem), "data")
 
         sizeTemplate = self.template_environment.get_template("size.template")
-        self.writeFile(sizeTemplate.render(groups=groupList, variableSymbol=ParameterSymbol, groupSymbol=GroupSymbol,
+        self.writeFile(sizeTemplate.render(groups=groupList, variableSymbol=Parameter, groupSymbol=ParameterGroup,
                        none=None, str=str, enumerate=enumerate, firstNotNoneElem=self.firstNotNoneElem), "SIZE.h")
 
         for elem in self._symbol_table.getAllNestedSymbolsSync("tRef"):

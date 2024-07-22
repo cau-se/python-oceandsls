@@ -7,6 +7,7 @@ types
 feature general : "feature general description" {
 	group settings : "group settings" {
 		def color Color : "color" = red
+		def background Color : "background color" = Color.blue
 	}
 	sub multiple
 		feature pump : "pumping station" {
@@ -20,6 +21,6 @@ feature offline : "the disabled one" {
 }
 
 group common : "Common Description" {
-	def ground_temp Temperature : kelvin
+	def ground_temp Temperature : kelvin = 273
 	def ground_color Color : ""
 }

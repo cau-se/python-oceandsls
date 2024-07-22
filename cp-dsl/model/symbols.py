@@ -17,14 +17,40 @@ from __future__ import annotations
 __author__ = "stu222808,sgu,reiner"
 
 from typing import Coroutine, List, Optional, ParamSpec, Set, TypeVar
-from model.symbol_table import DeclarationModel
-from model.symbol_table import DuplicateSymbolError, Scope
 from model.type_system import Type
-from model.units import Unit
+from model.unit_model import Unit
 
 
 # Antlr4
 from antlr4.tree.Tree import ParseTree
+
+
+class DuplicateSymbolError(Exception):
+    pass
+
+import abc
+
+# TODO should be renamed to ModelObject or SymbolObject or ModelSymbol
+# The generic scope interface that manages access to types and data
+class Scope:
+
+    parent:Scope
+
+    def __init__(self, parent = None) -> None:
+        self.parent = parent
+
+    def resolve_symbol(self, name:str):
+        raise NotImplementedError(f"Name {name} not found {self}")
+
+class NamedElement(Scope):
+
+    name:str
+
+    def __init__(self, name:str, parent=None) -> None:
+        super().__init__(parent)
+        self.name = name
+
+
 
 class Symbol:
     """
@@ -102,22 +128,22 @@ class Symbol:
         """
         run: Optional[Symbol] = self.__the_parent
         while run is not None:
-            if run.parent() is None or isinstance(run.parent(), DeclarationModel):
+            if run.parent() is None or isinstance(run.parent(), None):
                 return run
             run = run.parent()
 
         return run
 
-    def symbol_table(self) -> Optional[DeclarationModel]:
+    def symbol_table(self) -> Optional[None]:
         """
         :return: the symbol table we belong too or undefined if we are not yet assigned.
         """
-        if isinstance(self, DeclarationModel):
+        if isinstance(self, None):
             return self
 
         run: Optional[Symbol] = self.__the_parent
         while run is not None:
-            if isinstance(run, DeclarationModel):
+            if isinstance(run, None):
                 return run
             run = run.parent()
 
@@ -273,7 +299,7 @@ class ScopedSymbol(Symbol, Scope):
 
     def parent(self) -> Optional[ScopedSymbol]:
         s_parent: Symbol = super().parent()
-        if not isinstance(s_parent, DeclarationModel):
+        if not isinstance(s_parent, None):
             return s_parent
         else:
             return None

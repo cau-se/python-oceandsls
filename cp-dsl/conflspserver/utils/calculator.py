@@ -19,8 +19,7 @@ __author__ = "stu222808"
 import operator as op
 
 # Relative Imports
-from model.symbol_table import DeclarationModel
-from model.model import ParameterSymbol, ArraySymbol, ScopedSymbol
+from model.declaration_model import DeclarationModel, Parameter, ScopedSymbol
 from ..gen.python.Configuration.ConfigurationParser import ConfigurationParser
 from dcllspserver.utils.calculator import DeclarationCalculator
 
@@ -41,7 +40,7 @@ class ConfigurationCalculator(DeclarationCalculator):
             self.calc_variable(elem, index)
         return self._symbol_table
 
-    def calc_variable(self, parameter_symbol: ParameterSymbol, index: int):
+    def calc_variable(self, parameter_symbol: Parameter, index: int):
         '''calculates a parameter or an array'''
         context = parameter_symbol.configuration[index]
         # check if the context is a Array or a simple Value
@@ -56,7 +55,7 @@ class ConfigurationCalculator(DeclarationCalculator):
     def calc_arithmetic_expression_array(self,
         var_context: ConfigurationParser.ParameterAssignmentContext,
         context: ConfigurationParser.ArithmeticExpressionContext,
-        array_symbol: ArraySymbol):
+        array_symbol: None):
         '''calculates a array configuration'''
 
         # tupleList representation: list[2:4,5] = [range(2,4), range(5)]

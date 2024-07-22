@@ -29,7 +29,7 @@ from dcllspserver.utils.calculator import DeclarationCalculator
 from generators.uvic.code_generator import UvicCodeGenerator
 from generators.mitgcm.code_generator import MitGcmCodeGenerator
 from generators.eval.code_generator import EvalCodeGenerator
-from model.symbol_table import DeclarationModel
+from model.declaration_model import DeclarationModel
 from common.logger import GeneratorLogger
 
 logger: GeneratorLogger

@@ -25,9 +25,9 @@ from antlr4.Token import CommonToken
 
 # user relative imports
 from model.symbol_table import DeclarationModel, P, T, DuplicateSymbolError
-from model.model import GroupSymbol, FeatureSymbol, ParameterSymbol, \
+from model.declaration_model import GroupSymbol, FeatureSymbol, ParameterSymbol, \
     EnumSymbol, ArraySymbol, RangeSymbol
-from model.units import FundamentalUnit, UnitPrefix, UnitKind, ComposedUnit, UnitSpecification
+from model.unit_model import FundamentalUnit, UnitPrefix, UnitKind, ComposedUnit, UnitSpecification
 
 from ..gen.python.Declaration.DeclarationParser import DeclarationParser
 from ..gen.python.Declaration.DeclarationVisitor import DeclarationVisitor

@@ -18,9 +18,9 @@ import os
 __author__ = 'stu222808'
 
 # Relative imports
-from model.symbol_table import DeclarationModel
-from model.type_system import EnumType
-from model.model import GroupSymbol, ParameterSymbol, FeatureSymbol
+from model.declaration_model import DeclarationModel
+from model.type_system import EnumeralType
+from model.declaration_model import ParameterGroup, Parameter, Feature
 from ..code_generator import StandardCodeGenerator
 
 
@@ -43,8 +43,8 @@ class UvicCodeGenerator(StandardCodeGenerator):
         template_control = self.template_environment.get_template("control.in.template")
         control_path = os.path.join(self.output_path, "control.in")
         control = open(control_path, "w")
-        control.write(template_control.render(symbols=self._symbol_table.children(), groupSymbol=GroupSymbol, paramSymbol=ParameterSymbol,
-                      featureSymbol=FeatureSymbol, isinstance=isinstance, enumSymbol=EnumType, enumerate=enumerate, bool=bool))
+        control.write(template_control.render(symbols=self._symbol_table.children(), groupSymbol=ParameterGroup, paramSymbol=Parameter,
+                      featureSymbol=Feature, isinstance=isinstance, enumSymbol=EnumeralType, enumerate=enumerate, bool=bool))
         control.close()
         # mk in template
         template_mk = self.template_environment.get_template("mk.in.template")
@@ -68,5 +68,5 @@ class UvicCodeGenerator(StandardCodeGenerator):
         mkPath = os.path.join(self.output_path, "mk.in")
         mk = open(mkPath, "w")
         mk.write(template_mk.render(general=general_group, source=source_group,
-                 features=self._symbol_table.get_nested_symbols_of_type_sync(FeatureSymbol), isinstance=isinstance, tuple=tuple))
+                 features=self._symbol_table.get_nested_symbols_of_type_sync(Feature), isinstance=isinstance, tuple=tuple))
         mk.close()
