@@ -20,6 +20,7 @@ from typing import Generic, Callable, Dict
 # antlr4
 from antlr4.tree.Tree import ParseTree
 from antlr4.Token import CommonToken
+from antlr4 import ParserRuleContext,TerminalNode
 
 # user relative imports
 from model.symbols import Scope, T, P
@@ -86,10 +87,18 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
             self._logger.strict(ctx, "Redefining ranges")
         type = self.resolve_type(self._symbol_table, ctx.type_.text)
         if type is not None:
-            if type.name in ["byte", "short", "int", "long"]:
-                return RangeType(range_name, type, int(ctx.minimum.longValue().value.text), int(ctx.maximum.longValue().value.text))
+            if ctx.minimum.longValue() is not None:
+                minimum = ctx.minimum.longValue().value.text
             else:
-                return RangeType(range_name, type, float(ctx.minimum.floatValue().value.text), float(ctx.maximum.floatValue().value.text))
+                minimum = ctx.minimum.doubleValue().value.text
+            if ctx.maximum.longValue() is not None:
+                maximum = ctx.maximum.longValue().value.text
+            else:
+                maximum = ctx.maximum.doubleValue().value.text
+            if type.name in ["byte", "short", "int", "long"]:
+                return RangeType(range_name, type, int(minimum), int(maximum))
+            else:
+                return RangeType(range_name, type, float(minimum), float(maximum))
         else:
             self._logger.strict(ctx, f"Unknown type {ctx.type_}")
             return None
@@ -317,7 +326,14 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
     # Units
     ##################################
 
-    def visitUnitSpecification(self, ctx: DeclarationParser.UnitSpecificationContext):
+    def print_tree(self, ctx:ParserRuleContext, indent:str):
+        print(f"V {indent} NODE {ctx} {type(ctx)}")
+        if isinstance(ctx,TerminalNode):
+            return
+        for c in ctx.children:
+            self.print_tree(c,indent + "  ")
+
+    def visitUnitSpecification(self, ctx:DeclarationParser.UnitSpecificationContext):
         if len(ctx.units) == 1:
             return self.visit(ctx.units[0])
         else:
@@ -327,7 +343,6 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
             return UnitSpecification(units)
 
     def visitSiunit(self, ctx: DeclarationParser.SiunitContext):
-        print(f"PARENT {type(ctx.parentCtx)}")
         prefix = None
         if ctx.prefix is not None:
             prefix = self.visitEPrefix(ctx.prefix)
@@ -339,7 +354,7 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
         if ctx.ampere is not None: return UnitKind.Ampere
         if ctx.candela is not None: return UnitKind.Candela
         if ctx.gram is not None: return UnitKind.Gram
-        if ctx.joul is not None: return UnitKind.Joule
+        if ctx.joule is not None: return UnitKind.Joule
         if ctx.kelvin is not None: return UnitKind.Kelvin
         if ctx.meter is not None: return UnitKind.Meter
         if ctx.mole is not None: return UnitKind.Mole

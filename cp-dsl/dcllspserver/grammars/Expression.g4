@@ -1,7 +1,7 @@
 /*******************************************************************************
  * TODO License
 
- Grammars always start with a grammar header. This grammer is called Expression
+ Grammars always start with a grammar header. This grammar is called Expression
  and must match the filename: Expression.g4
  *******************************************************************************/
 grammar Expression; //

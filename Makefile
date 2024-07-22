@@ -1,5 +1,5 @@
 # enable ANTLR support
-antlr4 := java -jar /usr/local/lib/antlr-4.13.1-complete.jar
+antlr4 := java -jar /home/reiner/Projects/OceanDSL/python-oceandsls/antlr-4.13.1-complete.jar
 
 #########################################################
 #                    example DSL

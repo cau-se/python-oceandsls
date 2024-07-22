@@ -64,7 +64,7 @@ public class DeclarationParser extends Parser {
 			"'peta'", "'tera'", "'giga'", "'mega'", "'kilo'", "'hecto'", "'deca'", 
 			"'deci'", "'centi'", "'mili'", "'micro'", "'nano'", "'pico'", "'femto'", 
 			"'atto'", "'zepto'", "'yocto'", "'meter'", "'gram'", "'ton'", "'second'", 
-			"'ampere'", "'kelvin'", "'mole'", "'candela'", "'pascal'", "'Joul'", 
+			"'ampere'", "'kelvin'", "'mole'", "'candela'", "'pascal'", "'Joule'", 
 			"'+'", "'-'", "'%'", "'.'"
 		};
 	}
@@ -2169,7 +2169,7 @@ public class DeclarationParser extends Parser {
 		public Token mole;
 		public Token candela;
 		public Token pascal;
-		public Token joul;
+		public Token joule;
 		public ESIUnitTypeContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
@@ -2263,7 +2263,7 @@ public class DeclarationParser extends Parser {
 				enterOuterAlt(_localctx, 10);
 				{
 				setState(311);
-				((ESIUnitTypeContext)_localctx).joul = match(T__55);
+				((ESIUnitTypeContext)_localctx).joule = match(T__55);
 				}
 				break;
 			default:

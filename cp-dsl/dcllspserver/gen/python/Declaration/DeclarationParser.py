@@ -170,7 +170,7 @@ class DeclarationParser ( Parser ):
                      "'mili'", "'micro'", "'nano'", "'pico'", "'femto'", 
                      "'atto'", "'zepto'", "'yocto'", "'meter'", "'gram'", 
                      "'ton'", "'second'", "'ampere'", "'kelvin'", "'mole'", 
-                     "'candela'", "'pascal'", "'Joul'", "'+'", "'-'", "'%'", 
+                     "'candela'", "'pascal'", "'Joule'", "'+'", "'-'", "'%'", 
                      "'.'" ]
 
     symbolicNames = [ "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
@@ -2329,7 +2329,7 @@ class DeclarationParser ( Parser ):
             self.mole = None # Token
             self.candela = None # Token
             self.pascal = None # Token
-            self.joul = None # Token
+            self.joule = None # Token
 
 
         def getRuleIndex(self):
@@ -2408,7 +2408,7 @@ class DeclarationParser ( Parser ):
             elif token in [56]:
                 self.enterOuterAlt(localctx, 10)
                 self.state = 311
-                localctx.joul = self.match(DeclarationParser.T__55)
+                localctx.joule = self.match(DeclarationParser.T__55)
                 pass
             else:
                 raise NoViableAltException(self)

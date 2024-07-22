@@ -21,6 +21,8 @@ from model.type_system import EnumeralType, Enumeral, RangeType, BaseType
 from model.unit_model import UnitSpecification, UnitKind, UnitPrefix, SIUnit, CustomUnit, DivisionUnit, ExponentUnit
 from antlr4 import InputStream, CommonTokenStream
 from antlr4.Token import CommonToken
+from antlr4 import ParserRuleContext, TerminalNode
+from antlr4.tree.Tree import TerminalNodeImpl
 
 from dcllspserver.gen.python.Declaration.DeclarationLexer import DeclarationLexer
 from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
@@ -201,20 +203,25 @@ class TestGeneratorDeclarationVisitor(unittest.TestCase):
         self.assertIsInstance(result, CustomUnit, "Wrong type")
         self.assertEqual(result.name, "gini", "Wrong type")
 
-    def test_visitUnitSpecification_one(self):
-        ctx = DeclarationParser.UnitSpecificationContext(parser=None, parent=None)
-        ctx_si = DeclarationParser.SIUnitContext(parser=None, parent=ctx)
-        ctx_meter = DeclarationParser.SiunitContext(parser=None, ctx=ctx_si)
-        ctx_meter.type_ = DeclarationParser.ESIUnitTypeContext(parser=None, parent=ctx_meter)
-        ctx_meter.type_.meter = self.set_token("meter")
-        ctx.units.append(ctx_si)
+    def print_tree(self, ctx:ParserRuleContext, indent:str):
+        print(f"T{indent} NODE {ctx} {type(ctx)}")
+        if isinstance(ctx,TerminalNode):
+            return
+        for c in ctx.children:
+            self.print_tree(c,indent + "  ")
 
-        result:SIUnit = self.make_visitor().visitUnitSpecification(ctx)
+    def test_visitUnitSpecification_code_one(self):
+        model = self.parse_code("model eval group a : \"bla\" { def param int : meter } ")
+        group:ParameterGroup = model._groups.get("a")
+        parameter:Parameter = group._parameters.get("param")
 
-        self.assertIsInstance(result, SIUnit, "Wrong type")
-        self.assertEqual(result.kind, UnitKind.Meter, "Wrong unit kind")
+        unit_meter = SIUnit(kind=UnitKind.Meter, prefix=None)
 
-    def test_visitUnitSpecification(self):
+        p_unit:SIUnit = parameter._unit
+        self.assertIsInstance(p_unit, SIUnit, "Wrong type")
+        self.assertEqual(p_unit, unit_meter, "Wrong unit")
+
+    def test_visitUnitSpecification_code_two(self):
         model = self.parse_code("model eval group a : \"bla\" { def param int : meter * \"gini\" } ")
         group:ParameterGroup = model._groups.get("a")
         parameter:Parameter = group._parameters.get("param")
@@ -229,17 +236,53 @@ class TestGeneratorDeclarationVisitor(unittest.TestCase):
         self.assertEqual(p_unit_meter, unit_meter, "Wrong unit")
         self.assertEqual(p_unit_gini, unit_gini, "Wrong unit")
 
+    def test_visitUnitSpecification_one(self):
+        ctx = DeclarationParser.UnitSpecificationContext(parser=None, parent=None)
+        ctx_composed = DeclarationParser.ComposedUnitContext(parser=None, parent=ctx)
+        ctx.addChild(ctx_composed)
+        ctx.units.append(ctx_composed)
+        ctx_si = DeclarationParser.BasicUnitContext(parser=None, parent=ctx_composed)
+        ctx_composed.addChild(ctx_si)
+        ctx_meter = DeclarationParser.SiunitContext(parser=None, ctx=ctx_si)
+        ctx_si.addChild(ctx_meter)
+        ctx_t = DeclarationParser.ESIUnitTypeContext(parser=None, parent=ctx_meter)
+        ctx_meter.addChild(ctx_t)
+        ctx_meter.type_ = ctx_t
+        meter = self.set_terminal("meter")
+        ctx_t.addChild(meter)
+        ctx_t.meter = meter
+
+        result:SIUnit = self.make_visitor().visitUnitSpecification(ctx)
+
+        self.assertIsInstance(result, SIUnit, "Wrong type")
+        self.assertEqual(result.kind, UnitKind.Meter, "Wrong unit kind")
+
     def test_visitUnitSpecification_two(self):
         ctx = DeclarationParser.UnitSpecificationContext(parser=None, parent=None)
-        ctx_si = DeclarationParser.SIUnitContext(parser=None, parent=ctx)
+        ctx_composed_meter = DeclarationParser.ComposedUnitContext(parser=None, parent=ctx)
+        ctx.addChild(ctx_composed_meter)
+        ctx.units.append(ctx_composed_meter)
+        ctx_si = DeclarationParser.BasicUnitContext(parser=None, parent=ctx_composed_meter)
+        ctx_composed_meter.addChild(ctx_si)
         ctx_meter = DeclarationParser.SiunitContext(parser=None, ctx=ctx_si)
-        ctx_meter.type_ = DeclarationParser.ESIUnitTypeContext(parser=None, parent=ctx_meter)
-        ctx_meter.type_.meter = self.set_token("meter")
-        ctx.units.append(ctx)
-        ctx_g = DeclarationParser.CustomUnitContext(parser=None, parent=ctx)
-        ctx_gini = DeclarationParser.CustomunitContext(parser=None, ctx = ctx_g)
-        ctx_gini.name = self.set_token("gini")
-        ctx.units.append(ctx_gini)
+        ctx_si.addChild(ctx_meter)
+        ctx_t = DeclarationParser.ESIUnitTypeContext(parser=None, parent=ctx_meter)
+        ctx_meter.addChild(ctx_t)
+        ctx_meter.type_ = ctx_t
+        meter = self.set_terminal("meter")
+        ctx_t.addChild(meter)
+        ctx_t.meter = meter
+
+        ctx_composed_gini = DeclarationParser.ComposedUnitContext(parser=None, parent=ctx)
+        ctx.addChild(ctx_composed_gini)
+        ctx.units.append(ctx_composed_gini)
+        ctx_basic = DeclarationParser.BasicUnitContext(parser=None, parent=ctx_composed_gini)
+        ctx_composed_gini.addChild(ctx_basic)
+        ctx_gini = DeclarationParser.CustomunitContext(parser=None, ctx=ctx_basic)
+        ctx_basic.addChild(ctx_gini)
+        gini:TerminalNodeImpl = self.set_terminal("\"gini\"")
+        ctx_gini.addChild(gini)
+        ctx_gini.name = gini.getSymbol()
 
         result:UnitSpecification = self.make_visitor().visitUnitSpecification(ctx)
 
@@ -267,6 +310,9 @@ class TestGeneratorDeclarationVisitor(unittest.TestCase):
     def make_visitor(self) -> GeneratorDeclarationVisitor:
         model = DeclarationModel()
         return GeneratorDeclarationVisitor(model, self.logger)
+
+    def set_terminal(self, value:str) -> TerminalNode:
+        return TerminalNodeImpl(self.set_token(value))
 
     def set_token(self, value:str) -> CommonToken:
         token = CommonToken()
