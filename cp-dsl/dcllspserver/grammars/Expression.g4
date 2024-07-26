@@ -21,7 +21,7 @@ eAdditionOperator           : '+'
                             | '-'
                             ;
 
-//TODO pradicates: ->
+//TODO predicates: ->
 multiplicationExpression    : left=valueExpression op=eMultiplicationOperator right=multiplicationExpression
                             | valueExpression
                             ;

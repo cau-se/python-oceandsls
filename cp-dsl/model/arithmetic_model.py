@@ -27,8 +27,21 @@ class ArithmeticExpression(AbstractExpression):
         pass
 
 @dataclass
-class Value(AbstractExpression):
+class AbstractTypedValue(AbstractExpression):
 
-    value: int
     type: Type
 
+@dataclass
+class IntValue(AbstractTypedValue):
+
+    value:int
+
+@dataclass
+class FloatValue(AbstractTypedValue):
+
+    value:float
+
+@dataclass
+class StringValue(AbstractTypedValue):
+
+    value:str

@@ -19,6 +19,7 @@ from generator.visitors.declaration_visitor import GeneratorDeclarationVisitor
 from model.declaration_model import DeclarationModel, ParameterGroup, Parameter
 from model.type_system import EnumeralType, Enumeral, RangeType, BaseType
 from model.unit_model import UnitSpecification, UnitKind, UnitPrefix, SIUnit, CustomUnit, DivisionUnit, ExponentUnit
+from model.arithmetic_model import IntValue, StringValue, FloatValue
 from antlr4 import InputStream, CommonTokenStream
 from antlr4.Token import CommonToken
 from antlr4 import ParserRuleContext, TerminalNode
@@ -124,7 +125,13 @@ class TestGeneratorDeclarationVisitor(unittest.TestCase):
         self.fail()
 
     def test_visitTypeReference(self):
-        self.fail()
+        typeReference = DeclarationParser.TypeReferenceContext(parent=None, parser=None)
+        typeReference.type_ = self.set_token("r")
+
+        result = self.make_visitor(type=RangeType(name="r", type=int, minimum=0, maximum=10)).visitTypeReference(typeReference)
+
+        self.assertIsInstance(result, RangeType, "wrong type")
+        self.assertEqual(result.name, "r", "wrong type name")
 
     def test_visitFeatureAssignStat(self):
         self.fail()
@@ -141,26 +148,148 @@ class TestGeneratorDeclarationVisitor(unittest.TestCase):
     def test_visitMultiplicationExpression(self):
         self.fail()
 
-    def test_visitValueExpression(self):
-        self.fail()
+    def test_visitValueExpression_parenthesis(self):
+        ctx = DeclarationParser.ValueExpressionContext(parser=None, parent=None)
+        parenthesisExpression = DeclarationParser.ParenthesisExpressionContext(parent=ctx, parser=None)
+        ctx.addChild(parenthesisExpression)
+        arithmeticExpression = DeclarationParser.ArithmeticExpressionContext(parent=parenthesisExpression, parser=None)
+        parenthesisExpression.addChild(arithmeticExpression)
+        multiplicationExpression = DeclarationParser.MultiplicationExpressionContext(parent=arithmeticExpression, parser=None)
+        arithmeticExpression.addChild(multiplicationExpression)
+        valueExpression = DeclarationParser.ValueExpressionContext(parser=multiplicationExpression, parent=None)
+        multiplicationExpression.addChild(valueExpression)
+        literalExpression = DeclarationParser.LiteralExpressionContext(parent=valueExpression, parser=None)
+        valueExpression.addChild(literalExpression)
+        literal = DeclarationParser.LiteralContext(parent=literalExpression, parser=None)
+        literalExpression.addChild(literal)
+        value = DeclarationParser.LongValueContext(parent=literal, parser=None)
+        literal.addChild(value)
+        value.value = self.set_token("10")
+
+        result = self.make_visitor().visitValueExpression(ctx)
+        self.assertIsInstance(result, IntValue, "Should be an IntValue")
+        self.assertIsInstance(result.value, int, "Wrong value type")
+        self.assertEqual(result.value, 10, "Incorrect value")
+
+    def prepare_value_expression(self):
+        ctx = DeclarationParser.ValueExpressionContext(parser=None, parent=None)
+        literalExpression = DeclarationParser.LiteralExpressionContext(parent=ctx, parser=None)
+        ctx.addChild(literalExpression)
+        literal = DeclarationParser.LiteralContext(parent=literalExpression, parser=None)
+        literalExpression.addChild(literal)
+
+        return (ctx, literal)
+
+    def test_visitValueExpression_int(self):
+        r = self.prepare_value_expression()
+        ctx = r[0]
+        literal = r[1]
+        value = DeclarationParser.LongValueContext(parent=literal, parser=None)
+        literal.addChild(value)
+        value.value = self.set_token("10")
+
+        result = self.make_visitor().visitValueExpression(ctx)
+        self.assertIsInstance(result, IntValue, "Should be an IntValue")
+        self.assertIsInstance(result.value, int, "Wrong value type")
+        self.assertEqual(result.value, 10, "Incorrect value")
+
+    def test_visitValueExpression_float(self):
+        r = self.prepare_value_expression()
+        ctx = r[0]
+        literal = r[1]
+        value = DeclarationParser.DoubleValueContext(parent=literal, parser=None)
+        literal.addChild(value)
+        value.value = self.set_token("10.0")
+
+        result = self.make_visitor().visitValueExpression(ctx)
+        self.assertIsInstance(result, FloatValue, "Should be an FloatValue")
+        self.assertIsInstance(result.value, float, "Wrong value type")
+        self.assertEqual(result.value, 10, "Incorrect value")
+
+    def test_visitValueExpression_str(self):
+        r = self.prepare_value_expression()
+        ctx = r[0]
+        literal = r[1]
+        value = DeclarationParser.StringValueContext(parent=literal, parser=None)
+        literal.addChild(value)
+        value.value = self.set_token("\"text message\"")
+
+        result = self.make_visitor().visitValueExpression(ctx)
+        self.assertIsInstance(result, StringValue, "Should be an StringValue")
+        self.assertIsInstance(result.value, str, "Wrong value type")
+        self.assertEqual(result.value, "text message", "Incorrect value")
 
     def test_visitParenthesisExpression(self):
-        self.fail()
+        parenthesisExpression = DeclarationParser.ParenthesisExpressionContext(parent=None, parser=None)
+        arithmeticExpression = DeclarationParser.ArithmeticExpressionContext(parent=parenthesisExpression, parser=None)
+        parenthesisExpression.addChild(arithmeticExpression)
+        multiplicationExpression = DeclarationParser.MultiplicationExpressionContext(parent=arithmeticExpression, parser=None)
+        arithmeticExpression.addChild(multiplicationExpression)
+        valueExpression = DeclarationParser.ValueExpressionContext(parser=multiplicationExpression, parent=None)
+        multiplicationExpression.addChild(valueExpression)
+        literalExpression = DeclarationParser.LiteralExpressionContext(parent=valueExpression, parser=None)
+        valueExpression.addChild(literalExpression)
+        literal = DeclarationParser.LiteralContext(parent=literalExpression, parser=None)
+        literalExpression.addChild(literal)
+        value = DeclarationParser.LongValueContext(parent=literal, parser=None)
+        literal.addChild(value)
+        value.value = self.set_token("10")
+
+        result = self.make_visitor().visitParenthesisExpression(parenthesisExpression)
+        self.assertIsInstance(result, IntValue, "Should be an IntValue")
+        self.assertIsInstance(result.value, int, "Wrong value type")
+        self.assertEqual(result.value, 10, "Incorrect value")
 
     def test_visitLiteralExpression(self):
-        self.fail()
+        literalExpression = DeclarationParser.LiteralExpressionContext(parent=None, parser=None)
+        literal = DeclarationParser.LiteralContext(parent=literalExpression, parser=None)
+        literalExpression.addChild(literal)
+        value = DeclarationParser.LongValueContext(parent=literal, parser=None)
+        literal.addChild(value)
+        value.value = self.set_token("10")
+
+        result = self.make_visitor().visitLiteral(literal)
+        self.assertIsInstance(result, IntValue, "Should be an IntValue")
+        self.assertIsInstance(result.value, int, "Wrong value type")
+        self.assertEqual(result.value, 10, "Incorrect value")
 
     def test_visitLiteral(self):
-        self.fail()
+        literal = DeclarationParser.LiteralContext(parent=None, parser=None)
+        value = DeclarationParser.LongValueContext(parent=literal, parser=None)
+        literal.addChild(value)
+        value.value = self.set_token("10")
+
+        result = self.make_visitor().visitLiteral(literal)
+        self.assertIsInstance(result, IntValue, "Should be an IntValue")
+        self.assertIsInstance(result.value, int, "Wrong value type")
+        self.assertEqual(result.value, 10, "Incorrect value")
 
     def test_visitLongValue(self):
-        self.fail()
+        value = DeclarationParser.LongValueContext(parent=None, parser=None)
+        value.value = self.set_token("10")
+
+        result = self.make_visitor().visitLongValue(value)
+        self.assertIsInstance(result, IntValue, "Should be an IntValue")
+        self.assertIsInstance(result.value, int, "Wrong value type")
+        self.assertEqual(result.value, 10, "Incorrect value")
 
     def test_visitDoubleValue(self):
-        self.fail()
+        value = DeclarationParser.DoubleValueContext(parent=None, parser=None)
+        value.value = self.set_token("10.0")
+
+        result = self.make_visitor().visitDoubleValue(value)
+        self.assertIsInstance(result, FloatValue, "Should be an FloatValue")
+        self.assertIsInstance(result.value, float, "Wrong value type")
+        self.assertEqual(result.value, 10, "Incorrect value")
 
     def test_visitStringValue(self):
-        self.fail()
+        value = DeclarationParser.StringValueContext(parent=None, parser=None)
+        value.value = self.set_token("\"text message\"")
+
+        result = self.make_visitor().visitStringValue(value)
+        self.assertIsInstance(result, StringValue, "Should be an StringValue")
+        self.assertIsInstance(result.value, str, "Wrong value type")
+        self.assertEqual(result.value, "text message", "Incorrect value")
 
     def test_visitNamedElementReference(self):
         self.fail()
@@ -307,8 +436,10 @@ class TestGeneratorDeclarationVisitor(unittest.TestCase):
     #########################################
     # TODO move to a general and abstract test class
 
-    def make_visitor(self) -> GeneratorDeclarationVisitor:
+    def make_visitor(self, type=None) -> GeneratorDeclarationVisitor:
         model = DeclarationModel()
+        if type is not None:
+            model._types[type.name] = type
         return GeneratorDeclarationVisitor(model, self.logger)
 
     def set_terminal(self, value:str) -> TerminalNode:

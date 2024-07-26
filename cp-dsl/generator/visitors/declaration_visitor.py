@@ -28,7 +28,7 @@ from model.declaration_model import DeclarationModel, Parameter, ParameterGroup,
 from model.type_system import GenericEnumeralType, EnumeralType, Enumeral, RangeType, ArrayType, Dimension, BaseType, base_types
 from model.unit_model import Unit, UnitPrefix, UnitKind, UnitSpecification, SIUnit, CustomUnit, DivisionUnit, ExponentUnit
 from common.logger import GeneratorLogger
-from model.arithmetic_model import ArithmeticExpression, Value
+from model.arithmetic_model import ArithmeticExpression, IntValue, FloatValue, StringValue
 
 from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
 from dcllspserver.gen.python.Declaration.DeclarationVisitor import DeclarationVisitor
@@ -197,7 +197,7 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
         return Dimension(ctx.lowerBound, ctx.upperBound)
 
     def visitTypeReference(self, ctx: DeclarationParser.TypeReferenceContext):
-        return self.resolve_type(self._scope, ctx.getText())
+        return self.resolve_type(self._scope, ctx.type_.text)
 
     def visitFeatureAssignStat(self, ctx: DeclarationParser.FeatureAssignStatContext):
         name = ctx.name.text
@@ -283,7 +283,7 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
             return None
 
     def visitParenthesisExpression(self, ctx: DeclarationParser.ParenthesisExpressionContext):
-        return self.visitArithmeticExpression(ctx.arithmeticExpression)
+        return self.visitArithmeticExpression(ctx.arithmeticExpression())
 
     def visitLiteralExpression(self, ctx: DeclarationParser.LiteralExpressionContext):
         return self.visitLiteral(ctx.literal())
@@ -297,13 +297,13 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
             return None
 
     def visitLongValue(self, ctx: DeclarationParser.LongValueContext):
-        return Value(ctx, int(ctx.value.text), base_types["long"])
+        return IntValue(ctx, base_types["long"], int(ctx.value.text))
 
     def visitDoubleValue(self, ctx: DeclarationParser.DoubleValueContext):
-        return Value(ctx, float(ctx.value.text), base_types["double"])
+        return FloatValue(ctx, base_types["double"], float(ctx.value.text))
 
     def visitStringValue(self, ctx: DeclarationParser.StringValueContext):
-        return Value(ctx, ctx.value.text, base_types["string"])
+        return StringValue(ctx, base_types["string"], ctx.value.text[1:-1])
 
     def visitNamedElementReference(self, ctx: DeclarationParser.NamedElementReferenceContext):
         if ctx.attribute is None: # enum or local reference

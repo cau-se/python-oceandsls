@@ -22,7 +22,7 @@
       "request": "launch",
       "program": "test/generator/visitors/declaration_visitor_test.py",
       "args": [
-        "TestGeneratorDeclarationVisitor.test_visitUnitSpecification_two"
+        "TestGeneratorDeclarationVisitor.test_visitTypeReference"
       ],
       "console": "integratedTerminal",
       "env": {
