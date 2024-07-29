@@ -40,36 +40,41 @@ from .arithmetic_model import ArithmeticExpression
 #
 # Declaration Model
 #
+
+
 class DeclarationModel(Scope):
 
-    def __init__(self, name:str = None):
-        super().__init__(None) # DeclarationModel has no parent
+    def __init__(self, name: str = None):
+        super().__init__(None)  # DeclarationModel has no parent
         self._name = name
         self._groups = {}
         self._features = {}
         self._types = {}
 
-    def add_new_type(self, type:Type):
-        if isinstance(type,NamedType):
+    def add_new_type(self, type: Type):
+        if isinstance(type, NamedType):
             self._types[type.name] = type
         else:
             self._types[type.__hash__] = type
 
-    def resolve_type(self, name:str):
+    def resolve_type(self, name: str):
         return self._types.get(name, None)
 
 #
 # Types
 #
 
+
 class InlineEnumerationType(GenericEnumeralType):
 
     def __init__(self) -> None:
-            super().__init__()
+        super().__init__()
 
 #
 # Parameter Groups
 #
+
+
 class Parameter(NamedElement):
 
     _type: NamedType
@@ -78,18 +83,19 @@ class Parameter(NamedElement):
     _default_value: ArithmeticExpression = None
     _value = None
 
-    def __init__(self, name:str, type: NamedType, unit:UnitSymbol, description:str = None, parent=None) -> None:
+    def __init__(self, name: str, type: NamedType, unit: UnitSymbol, description: str = None, parent=None) -> None:
         super().__init__(name, parent)
         self._type = type
         self._unit = unit
         self._description = description
+
 
 class ParameterGroup(NamedElement):
 
     _description: str
     _parameters: Dict[str, Parameter]
 
-    def __init__(self, name: str, description: str, parent:Scope):
+    def __init__(self, name: str, description: str, parent: Scope):
         super().__init__(name, parent)
         self._description = description
         self._parameters = {}
@@ -100,30 +106,33 @@ class ParameterGroup(NamedElement):
 #
 # Features
 #
+
+
 class EKind(Enum):
     ALTERNATIVE = 0
     MULTIPLE = 1
 
+
 class FeatureGroup(Scope):
 
-    _kind:EKind
+    _kind: EKind
     _features = {}
 
     def __init__(self, name: str, parent: Scope):
         super().__init__(parent)
 
+
 class Feature(NamedElement):
 
     _is_activated: bool = False  # set if the feature is activated
-    _required:bool = False
-    _description:str = None
-    _requires:List[Feature] = []
-    _excludes:List[Feature] = []
+    _required: bool = False
+    _description: str = None
+    _requires: List[Feature] = []
+    _excludes: List[Feature] = []
 
-    _groups:Dict[str, ParameterGroup] = {}
-    _features:Dict[str, FeatureGroup] = {}
+    _groups: Dict[str, ParameterGroup] = {}
+    _features: Dict[str, FeatureGroup] = {}
 
-    def __init__(self, name: str, description: str, parent:Scope):
+    def __init__(self, name: str, description: str, parent: Scope):
         super().__init__(name, parent)
         self._description = description
-

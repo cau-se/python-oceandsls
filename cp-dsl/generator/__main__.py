@@ -34,19 +34,22 @@ from common.logger import GeneratorLogger
 
 logger: GeneratorLogger
 
-def parse_configuration_file(configuration_path:str) -> ConfigurationParser:
+
+def parse_configuration_file(configuration_path: str) -> ConfigurationParser:
     input_stream = FileStream(configuration_path, "utf-8")
     lexer = ConfigurationLexer(input_stream)
     stream = CommonTokenStream(lexer)
 
     return ConfigurationParser(stream)
 
-def parse_declaration_file(declaration_path:str) -> DeclarationParser:
+
+def parse_declaration_file(declaration_path: str) -> DeclarationParser:
     input_stream = FileStream(declaration_path, "utf-8")
     lexer = DeclarationLexer(input_stream)
     stream = CommonTokenStream(lexer)
 
     return DeclarationParser(stream)
+
 
 def compute_declaration(symbol_table: DeclarationModel, input_path: str):
     tree = parse_declaration_file(input_path)
@@ -62,6 +65,7 @@ def compute_declaration(symbol_table: DeclarationModel, input_path: str):
         print("ERROR: Could not parse Declaration-File correctly")
         print(e)
         return None
+
 
 if __name__ == '__main__':
     compile_mode: CompileFlags = CompileFlags.RELAX

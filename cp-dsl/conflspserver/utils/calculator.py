@@ -23,6 +23,7 @@ from model.declaration_model import DeclarationModel, Parameter, ScopedSymbol
 from ..gen.python.Configuration.ConfigurationParser import ConfigurationParser
 from dcllspserver.utils.calculator import DeclarationCalculator
 
+
 class ConfigurationCalculator(DeclarationCalculator):
     '''A calculator for configured values of parameters'''
 
@@ -53,9 +54,9 @@ class ConfigurationCalculator(DeclarationCalculator):
             parameter_symbol.is_tree = False
 
     def calc_arithmetic_expression_array(self,
-        var_context: ConfigurationParser.ParameterAssignmentContext,
-        context: ConfigurationParser.ArithmeticExpressionContext,
-        array_symbol: None):
+                                         var_context: ConfigurationParser.ParameterAssignmentContext,
+                                         context: ConfigurationParser.ArithmeticExpressionContext,
+                                         array_symbol: None):
         '''calculates a array configuration'''
 
         # tupleList representation: list[2:4,5] = [range(2,4), range(5)]

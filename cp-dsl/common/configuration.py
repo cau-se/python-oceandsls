@@ -14,8 +14,8 @@
 
 from enum import Enum
 
+
 class CompileFlags(Enum):
     RELAX = "relax"
     STRICT = "strict"
     IGNORE = "ignore"
-

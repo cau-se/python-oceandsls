@@ -35,11 +35,12 @@ from ..gen.python.Declaration.DeclarationVisitor import DeclarationVisitor
 # NOTE: Method names starting with visit are required to look like this, as parts of the grammar
 # are named in that way
 
+
 class DeclarationCPVisitor(DeclarationVisitor, Generic[T]):
 
     _symbol_table: DeclarationModel
 
-    def __init__(self, symbol_table:DeclarationModel):
+    def __init__(self, symbol_table: DeclarationModel):
         super().__init__()
         # creates a new symboltable with no duplicate symbols
         self._symbol_table = symbol_table
@@ -107,8 +108,8 @@ class DeclarationCPVisitor(DeclarationVisitor, Generic[T]):
     # sIUnit                      :   (prefix=ePrefix)? type=eSIUnitType #siUnit;
     def visitSiunit(self, ctx: DeclarationParser.SIUnitContext):
         return FundamentalUnit(name=ctx.type_.getText() if ctx.type_ else "",
-            unit_prefix=self.stringToPrefix(ctx.prefix.getText() if ctx.prefix else ""),
-            unit_kind=self.stringToUnitType(ctx.type_.getText() if ctx.type_ else ""))
+                               unit_prefix=self.stringToPrefix(ctx.prefix.getText() if ctx.prefix else ""),
+                               unit_kind=self.stringToUnitType(ctx.type_.getText() if ctx.type_ else ""))
 
     # customUnit                  :   name=STRING #customunit;
     def visitCustomunit(self, ctx: DeclarationParser.CustomUnitContext):

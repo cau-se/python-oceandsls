@@ -47,7 +47,7 @@ class ConfigurationCPVisitor(ConfigurationVisitor, Generic[T]):
 
     _generator_selector: str
 
-    def __init__(self, symbol_table:DeclarationModel, cwd: str = "."):
+    def __init__(self, symbol_table: DeclarationModel, cwd: str = "."):
         super().__init__()
         # creates a new symboltable with no duplicate symbols
         self._symbol_table = symbol_table

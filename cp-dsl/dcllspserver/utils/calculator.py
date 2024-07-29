@@ -52,13 +52,13 @@ class DeclarationCalculator():
                 parameter_symbol.is_tree = False
             else:
                 parameter_symbol.value = None
-                self.logger.relax(context,f"no default value defined for scalar parameter {parameter_symbol.name}")
+                self.logger.relax(context, f"no default value defined for scalar parameter {parameter_symbol.name}")
 
     def calc_arithmetic_expression_array(
             self,
             var_context: DeclarationParser.ParamAssignStatContext,
             context: DeclarationParser.ArithmeticExpressionContext,
-            array_symbol: None # must be array symbol
+            array_symbol: None  # must be array symbol
     ):
         '''calculates a array in decl language'''
 
@@ -79,7 +79,7 @@ class DeclarationCalculator():
                 return
             index = 0
             if not isinstance(calc_list, list):
-                self.logger.relax(context,f"Array value is not a list, proceed to convert it in to one")
+                self.logger.relax(context, f"Array value is not a list, proceed to convert it in to one")
                 if isinstance(calc_list, str):
                     if calc_list.startswith("'"):
                         calc_list = calc_list.strip("'")
@@ -177,7 +177,7 @@ class DeclarationCalculator():
         # what is attribute? element is maybe a group
         element_attribute = context.attribute.text if context.attribute else None
         if context.element.text == "true" or context.element.text == "false":
-            self.logger.relax(context,f"wrong parsing in variable {parameter_symbol.name} try to compensate to value {context.element.text}")
+            self.logger.relax(context, f"wrong parsing in variable {parameter_symbol.name} try to compensate to value {context.element.text}")
             if context.element.text == "false":
                 parameter_symbol.value = False
             else:
@@ -191,7 +191,7 @@ class DeclarationCalculator():
                     for index, value in element_value.enums:
                         if index == element_attribute:
                             return value
-                    self.logger.error(context,f"Enumeral definition could not be found.")
+                    self.logger.error(context, f"Enumeral definition could not be found.")
                     return 0
                 for i in element_value.children():
                     if i.name == element_attribute:
@@ -209,9 +209,9 @@ class DeclarationCalculator():
                     if isinstance(elem, EnumeralType):
                         for i, j in elem.enums:
                             if i == context.element.text:
-                                self.logger.relax(context,f"EnumType not given for variable {parameter_symbol.name} resolving may result in wrong reference")
+                                self.logger.relax(context, f"EnumType not given for variable {parameter_symbol.name} resolving may result in wrong reference")
                                 return i, j
-        self.logger.error(context,f"INTERNAL: Named Element {context.element.text} could not be resolved")
+        self.logger.error(context, f"INTERNAL: Named Element {context.element.text} could not be resolved")
 
     def calc_array_expression(self, context: DeclarationParser.ArrayExpressionContext, parameter_symbol: Parameter):
         '''calculates a array expression'''

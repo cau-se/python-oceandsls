@@ -16,32 +16,38 @@ from .type_system import Type
 from dataclasses import dataclass
 from antlr4.ParserRuleContext import ParserRuleContext
 
+
 @dataclass
 class AbstractExpression:
 
     ctx: ParserRuleContext
+
 
 class ArithmeticExpression(AbstractExpression):
 
     def __init__(self) -> None:
         pass
 
+
 @dataclass
 class AbstractTypedValue(AbstractExpression):
 
     type: Type
 
+
 @dataclass
 class IntValue(AbstractTypedValue):
 
-    value:int
+    value: int
+
 
 @dataclass
 class FloatValue(AbstractTypedValue):
 
-    value:float
+    value: float
+
 
 @dataclass
 class StringValue(AbstractTypedValue):
 
-    value:str
+    value: str

@@ -13,6 +13,7 @@
 #  limitations under the License.
 
 from __future__ import annotations
+import abc
 
 __author__ = "stu222808,sgu,reiner"
 
@@ -28,28 +29,29 @@ from antlr4.tree.Tree import ParseTree
 class DuplicateSymbolError(Exception):
     pass
 
-import abc
 
 # TODO should be renamed to ModelObject or SymbolObject or ModelSymbol
 # The generic scope interface that manages access to types and data
+
+
 class Scope:
 
-    parent:Scope
+    parent: Scope
 
-    def __init__(self, parent = None) -> None:
+    def __init__(self, parent=None) -> None:
         self.parent = parent
 
-    def resolve_symbol(self, name:str):
+    def resolve_symbol(self, name: str):
         raise NotImplementedError(f"Name {name} not found {self}")
+
 
 class NamedElement(Scope):
 
-    name:str
+    name: str
 
-    def __init__(self, name:str, parent=None) -> None:
+    def __init__(self, name: str, parent=None) -> None:
         super().__init__(parent)
         self.name = name
-
 
 
 class Symbol:
@@ -179,7 +181,7 @@ class Symbol:
             self.__the_parent.remove_symbol(self)
             self.__the_parent = None
 
-    def resolve(self, name: str, t: type= None, type_only: bool = False , local_only: bool = False) -> Optional[Symbol]:
+    def resolve(self, name: str, t: type = None, type_only: bool = False, local_only: bool = False) -> Optional[Symbol]:
         """
         Synchronously looks up a symbol with a given name, in a bottom-up manner.
 
@@ -192,7 +194,7 @@ class Symbol:
         scopes (conditionally).
         """
         if isinstance(self.__the_parent, ScopedSymbol):
-            return self.__the_parent.resolve_sync(name,t, type_only, local_only)
+            return self.__the_parent.resolve_sync(name, t, type_only, local_only)
 
         return None
 
@@ -236,8 +238,10 @@ class Symbol:
 
         return result
 
+
 P = ParamSpec("P")
 T = TypeVar("T", bound=Symbol)
+
 
 class TypedSymbol(Symbol):
     """
@@ -282,7 +286,7 @@ class ScopedSymbol(Symbol, Scope):
     # List of scope symbols extending this symbol
     _include_scopes: List[ScopedSymbol]
 
-    def __init__(self, name: str = "", parent:Scope = None):
+    def __init__(self, name: str = "", parent: Scope = None):
         super().__init__(name)
         self.parent = parent
         self.__child_symbols = []
@@ -343,7 +347,7 @@ class ScopedSymbol(Symbol, Scope):
         symbol_table = self.symbol_table()
         if symbol_table is None or not symbol_table.options.allow_duplicate_symbols:
             for child in self.children():
-                if child is symbol or ( type(symbol) == type(child) and child.name == symbol.name) and isinstance(child, type(symbol)):
+                if child is symbol or (type(symbol) == type(child) and child.name == symbol.name) and isinstance(child, type(symbol)):
                     symbol_name = symbol.name if symbol.name else "<anonymous>"
                     scope_name = self.name if self.name else "<anonymous>"
                     msg: str = f"Attempt to add duplicate symbol \"{symbol_name}\" to \"{scope_name}\""
@@ -500,7 +504,7 @@ class ScopedSymbol(Symbol, Scope):
 
         return result
 
-    def resolve(self, name: str, t: type= None, type_only: bool = False, local_only: bool = False, callers: List[T] = []) -> Optional[Symbol]:
+    def resolve(self, name: str, t: type = None, type_only: bool = False, local_only: bool = False, callers: List[T] = []) -> Optional[Symbol]:
         """
         :param name: The name of the symbol to resolve.
         :param type_only: no subtype
@@ -513,8 +517,9 @@ class ScopedSymbol(Symbol, Scope):
         """
         for child in self.children():
             if child.name == name:
-                if not t or (not type_only and isinstance(child, t)) or (type_only and type(child) == t):
-                    return child
+
+
+if not t or (not type_only and isinstance(child, t)) or (type_only and isinstance(child,                 if not t or (not type_only and isinstance(child, t)) or (type_only and )                    return child
 
         # Nothing found locally. the parent continues.
         if not local_only:
@@ -529,14 +534,14 @@ class ScopedSymbol(Symbol, Scope):
 
         return None
 
-    def get_typed_symbols(self, local_only: bool = True, callers: List[T] = []) -> List[TypedSymbol]:
+    def get_typed_symbols(self, local_only: bool=True, callers: List[T]=[]) -> List[TypedSymbol]:
         """
         :param local_only: If true only child symbols are returned, otherwise also symbols from the parent of this symbol
         (recursively) and scopes that are included.
         :param callers: List of visited scopes, that should not be visited again
         :return: all accessible symbols that have a type assigned.
         """
-        result: List[TypedSymbol] = []
+        result: List[TypedSymbol]=[]
 
         for child in self.children():
             if isinstance(child, TypedSymbol):
@@ -545,18 +550,18 @@ class ScopedSymbol(Symbol, Scope):
         if not local_only:
             # Call parent scope
             if isinstance(self.parent(), ScopedSymbol) and self.parent() not in callers:
-                local_list = self.parent().get_typed_symbols(local_only, callers + [self])
+                local_list=self.parent().get_typed_symbols(local_only, callers + [self])
                 result.extend(local_list)
 
             # Call scopes that are included
             for include_scope in self._include_scopes:
                 if isinstance(include_scope, ScopedSymbol) and include_scope not in callers:
-                    local_list = include_scope.get_typed_symbols(local_only, callers + [self])
+                    local_list=include_scope.get_typed_symbols(local_only, callers + [self])
                     result.extend(local_list)
 
         return result
 
-    def get_typed_symbol_names(self, local_only: bool = True, callers: List[T] = []) -> List[str]:
+    def get_typed_symbol_names(self, local_only: bool=True, callers: List[T]=[]) -> List[str]:
         """
         The names of all accessible symbols with a type.
 
@@ -566,7 +571,7 @@ class ScopedSymbol(Symbol, Scope):
         :return: A list of names.
         :param callers:
         """
-        result: List[str] = []
+        result: List[str]=[]
         for child in self.children():
             if isinstance(child, TypedSymbol):
                 result.append(child.name)
@@ -574,13 +579,13 @@ class ScopedSymbol(Symbol, Scope):
         if not local_only:
             # Call parent scope
             if isinstance(self.parent(), ScopedSymbol) and self.parent() not in callers:
-                local_list = self.parent().get_typed_symbol_names(local_only, callers + [self])
+                local_list=self.parent().get_typed_symbol_names(local_only, callers + [self])
                 result.extend(local_list)
 
             # Call scopes that are included
             for include_scope in self._include_scopes:
                 if isinstance(include_scope, ScopedSymbol) and include_scope not in callers:
-                    local_list = include_scope.get_typed_symbol_names(local_only, callers + [self])
+                    local_list=include_scope.get_typed_symbol_names(local_only, callers + [self])
                     result.extend(local_list)
 
         return result
@@ -591,23 +596,23 @@ class ScopedSymbol(Symbol, Scope):
         :param separator: The character to separate path segments.
         :return: the symbol located at the given path through the symbol hierarchy.
         """
-        elements = path.split(separator)
-        index = 0
+        elements=path.split(separator)
+        index=0
         if elements[0] == self.name or len(elements[0]) == 0:
             index += 1
 
-        result: Symbol = self
+        result: Symbol=self
         while index < len(elements):
             if not isinstance(result, ScopedSymbol):
                 return None
 
-            child: Optional[Symbol] = next(
+            child: Optional[Symbol]=next(
                 filter(lambda candidate: candidate.name == elements[index], result.children()), None
             )
             if child is None:
                 return None
 
-            result = child
+            result=child
             index += 1
 
         return result
@@ -629,7 +634,7 @@ class ScopedSymbol(Symbol, Scope):
         :param child: The reference node.
         :return: the sibling symbol after the given child symbol, if one exists.
         """
-        index = self.index_of_child(child)
+        index=self.index_of_child(child)
         if index == -1 or index >= len(self.children()) - 1:
             return None
 
@@ -640,7 +645,7 @@ class ScopedSymbol(Symbol, Scope):
         :param child: The reference node.
         :return: the sibling symbol before the given child symbol, if one exists.
         """
-        index = self.index_of_child(child)
+        index=self.index_of_child(child)
         if index < 1:
             return None
 
@@ -660,9 +665,8 @@ class ScopedSymbol(Symbol, Scope):
         if isinstance(child, ScopedSymbol) and len(child.children()) > 0:
             return child.children()[0]
 
-        sibling = self.next_sibling_of(child)
+        sibling=self.next_sibling_of(child)
         if sibling is not None:
             return sibling
 
         return self.parent().next_of(self)
-

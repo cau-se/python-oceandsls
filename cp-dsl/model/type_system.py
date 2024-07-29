@@ -24,9 +24,11 @@ from .utils import classproperty
 
 base_type_names = ["byte", "ubyte", "short", "ushort", "int", "unit", "long", "ulong", "single", "float", "double", "boolean", "string"]
 
+
 @dataclass
 class Type:
     pass
+
 
 @dataclass
 class NamedType(Type):
@@ -35,26 +37,31 @@ class NamedType(Type):
     """
     name: str
 
+
 @dataclass
 class BaseType(NamedType):
     pass
+
 
 base_types = {}
 
 for name in base_type_names:
     base_types[name] = BaseType(name)
 
+
 @dataclass
 class Enumeral:
-    name:str
-    value:int
+    name: str
+    value: int
+
 
 class GenericEnumeralType(Type):
 
-    _enumerals: Dict[int,Enumeral] = {}
+    _enumerals: Dict[int, Enumeral] = {}
 
     def __init__(self) -> None:
         pass
+
 
 class EnumeralType(GenericEnumeralType, NamedType):
 
@@ -69,26 +76,29 @@ class RangeType(NamedType):
     a class for ranges in cp-dsl
     '''
 
-    def __init__(self, name, type:NamedType, minimum, maximum):
+    def __init__(self, name, type: NamedType, minimum, maximum):
         super().__init__(name)
         self.type = type
         self.minimum = minimum
         self.maximum = maximum
 
+
 class Dimension:
 
-    def __init__(self, lower:int, upper:int) -> None:
+    def __init__(self, lower: int, upper: int) -> None:
         self.lower = lower
         self.upper = upper
 
     def get_size(self):
         return self.upper - self.lower
+
+
 class ArrayType(Type):
 
-    _type:NamedType
-    _dimensions:List[Dimension]
+    _type: NamedType
+    _dimensions: List[Dimension]
 
-    def __init__(self, type:NamedType, dimensions:List[Dimension]):
+    def __init__(self, type: NamedType, dimensions: List[Dimension]):
         self._type = type
         self._dimensions = dimensions
 
@@ -107,4 +117,3 @@ def get_fundamental_type(type: str = "") -> Type | FundamentalType:
             return Type(name=type.lower(), base_types=None, kind=None)
         else:
             return None
-

@@ -23,6 +23,7 @@ from .utils import classproperty
 # units of datatypes
 #
 
+
 class UnitKind(Enum):
     """
     Rough categorization of a unit from SI units.
@@ -76,26 +77,30 @@ class UnitPrefix(Enum):
 class Unit:
     pass
 
+
 @dataclass
 class SIUnit(Unit):
-    prefix:UnitPrefix
-    kind:UnitKind
+    prefix: UnitPrefix
+    kind: UnitKind
+
 
 @dataclass
 class CustomUnit(Unit):
-    name:str
+    name: str
+
 
 @dataclass
 class DivisionUnit(Unit):
-    numerator:Unit
-    denominator:Unit
+    numerator: Unit
+    denominator: Unit
+
 
 @dataclass
 class ExponentUnit(Unit):
-    unit:Unit
-    exponent:int
+    unit: Unit
+    exponent: int
+
 
 @dataclass
 class UnitSpecification(Unit):
-    units:List[Unit]
-
+    units: List[Unit]

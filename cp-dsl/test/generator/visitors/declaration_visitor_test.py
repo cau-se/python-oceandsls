@@ -31,12 +31,14 @@ from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationPar
 from common.logger import GeneratorLogger
 from common.configuration import CompileFlags
 
+
 class TestStream(InputStream):
 
     fileName = "test"
 
     def __init__(self, data: str) -> None:
         super().__init__(data)
+
 
 class TestGeneratorDeclarationVisitor(unittest.TestCase):
 
@@ -62,7 +64,7 @@ class TestGeneratorDeclarationVisitor(unittest.TestCase):
 
         result = model._types.get("Color")
         self.assertIsInstance(result, EnumeralType, "Not the correct data type")
-        enumerals = {"red":0, "green":1, "blue":2}
+        enumerals = {"red": 0, "green": 1, "blue": 2}
         enums = {}
         for e in enumerals.items():
             enums[e[0]] = Enumeral(e[0], e[1])
@@ -96,7 +98,7 @@ class TestGeneratorDeclarationVisitor(unittest.TestCase):
     def test_visitParamAssignStat(self):
         model = self.parse_code("model eval group g : \"group description\" { def param1 int : meter = 0 }")
 
-        group:ParameterGroup = model._groups.get("g")
+        group: ParameterGroup = model._groups.get("g")
 
         self.assertIsInstance(group, ParameterGroup, f"Wrong type {type(group)}")
         self.assertEqual(group.name, "g", "Wrong name")
@@ -110,7 +112,6 @@ class TestGeneratorDeclarationVisitor(unittest.TestCase):
 #            self.assertEqual(p._unit, u, "Should be meter")
             self.assertEqual(p._default_value.value, 0, "Wrong value")
             self.assertEqual(p._description, "", "Wrong description")
-
 
     def test_visitParamType(self):
         self.fail()
@@ -296,7 +297,7 @@ class TestGeneratorDeclarationVisitor(unittest.TestCase):
 
     def test_visitSiunit_no_prefix(self):
         # sIUnit                      :   (prefix=ePrefix)? type=eSIUnitType #siunit;
-        ctx = DeclarationParser.SiunitContext(parser=None, ctx = DeclarationParser.SIUnitContext(parent=None, parser=None))
+        ctx = DeclarationParser.SiunitContext(parser=None, ctx=DeclarationParser.SIUnitContext(parent=None, parser=None))
         ctx.prefix = None
         ctx.type_ = DeclarationParser.ESIUnitTypeContext(parser=None, parent=ctx)
         ctx.type_.meter = self.set_token("meter")
@@ -310,7 +311,7 @@ class TestGeneratorDeclarationVisitor(unittest.TestCase):
 
     def test_visitSiunit_prefix(self):
         # sIUnit                      :   (prefix=ePrefix)? type=eSIUnitType #siunit;
-        ctx = DeclarationParser.SiunitContext(parser=None, ctx = DeclarationParser.SIUnitContext(parent=None, parser=None))
+        ctx = DeclarationParser.SiunitContext(parser=None, ctx=DeclarationParser.SIUnitContext(parent=None, parser=None))
         ctx.prefix = DeclarationParser.EPrefixContext(parser=None, parent=ctx)
         ctx.prefix.kilo = self.set_token("kilo")
         ctx.type_ = DeclarationParser.ESIUnitTypeContext(parser=None, parent=ctx)
@@ -324,7 +325,7 @@ class TestGeneratorDeclarationVisitor(unittest.TestCase):
         self.assertEqual(result.kind, UnitKind.Meter, "Wrong unit kind")
 
     def test_visitCustomunit(self):
-        ctx = DeclarationParser.CustomunitContext(parser=None, ctx = DeclarationParser.CustomUnitContext(parser=None))
+        ctx = DeclarationParser.CustomunitContext(parser=None, ctx=DeclarationParser.CustomUnitContext(parser=None))
         ctx.name = self.set_token("gini")
 
         result = self.make_visitor().visitCustomunit(ctx)
@@ -332,33 +333,33 @@ class TestGeneratorDeclarationVisitor(unittest.TestCase):
         self.assertIsInstance(result, CustomUnit, "Wrong type")
         self.assertEqual(result.name, "gini", "Wrong type")
 
-    def print_tree(self, ctx:ParserRuleContext, indent:str):
+    def print_tree(self, ctx: ParserRuleContext, indent: str):
         print(f"T{indent} NODE {ctx} {type(ctx)}")
-        if isinstance(ctx,TerminalNode):
+        if isinstance(ctx, TerminalNode):
             return
         for c in ctx.children:
-            self.print_tree(c,indent + "  ")
+            self.print_tree(c, indent + "  ")
 
     def test_visitUnitSpecification_code_one(self):
         model = self.parse_code("model eval group a : \"bla\" { def param int : meter } ")
-        group:ParameterGroup = model._groups.get("a")
-        parameter:Parameter = group._parameters.get("param")
+        group: ParameterGroup = model._groups.get("a")
+        parameter: Parameter = group._parameters.get("param")
 
         unit_meter = SIUnit(kind=UnitKind.Meter, prefix=None)
 
-        p_unit:SIUnit = parameter._unit
+        p_unit: SIUnit = parameter._unit
         self.assertIsInstance(p_unit, SIUnit, "Wrong type")
         self.assertEqual(p_unit, unit_meter, "Wrong unit")
 
     def test_visitUnitSpecification_code_two(self):
         model = self.parse_code("model eval group a : \"bla\" { def param int : meter * \"gini\" } ")
-        group:ParameterGroup = model._groups.get("a")
-        parameter:Parameter = group._parameters.get("param")
+        group: ParameterGroup = model._groups.get("a")
+        parameter: Parameter = group._parameters.get("param")
 
         unit_meter = SIUnit(kind=UnitKind.Meter, prefix=None)
         unit_gini = CustomUnit(name="gini")
 
-        p_unit:UnitSpecification = parameter._unit
+        p_unit: UnitSpecification = parameter._unit
         self.assertIsInstance(p_unit, UnitSpecification, "Wrong type")
         p_unit_meter = p_unit.units[0]
         p_unit_gini = p_unit.units[1]
@@ -381,7 +382,7 @@ class TestGeneratorDeclarationVisitor(unittest.TestCase):
         ctx_t.addChild(meter)
         ctx_t.meter = meter
 
-        result:SIUnit = self.make_visitor().visitUnitSpecification(ctx)
+        result: SIUnit = self.make_visitor().visitUnitSpecification(ctx)
 
         self.assertIsInstance(result, SIUnit, "Wrong type")
         self.assertEqual(result.kind, UnitKind.Meter, "Wrong unit kind")
@@ -409,21 +410,20 @@ class TestGeneratorDeclarationVisitor(unittest.TestCase):
         ctx_composed_gini.addChild(ctx_basic)
         ctx_gini = DeclarationParser.CustomunitContext(parser=None, ctx=ctx_basic)
         ctx_basic.addChild(ctx_gini)
-        gini:TerminalNodeImpl = self.set_terminal("\"gini\"")
+        gini: TerminalNodeImpl = self.set_terminal("\"gini\"")
         ctx_gini.addChild(gini)
         ctx_gini.name = gini.getSymbol()
 
-        result:UnitSpecification = self.make_visitor().visitUnitSpecification(ctx)
+        result: UnitSpecification = self.make_visitor().visitUnitSpecification(ctx)
 
         self.assertIsInstance(result, UnitSpecification, "Wrong type")
-        self.assertEqual(len(result.units),2, "Wrong number of units")
-        unit1:SIUnit = result.units[0]
+        self.assertEqual(len(result.units), 2, "Wrong number of units")
+        unit1: SIUnit = result.units[0]
         self.assertIsInstance(unit1, SIUnit, "Wrong type")
         self.assertEqual(unit1.kind, UnitKind.Meter, "Wrong unit kind")
-        unit2:CustomUnit = result.units[1]
+        unit2: CustomUnit = result.units[1]
         self.assertIsInstance(unit2, CustomUnit, "Wrong type")
         self.assertEqual(unit2.name, "gini", "Wrong kind")
-
 
     def test_visitComposedUnit(self):
         self.fail()
@@ -442,15 +442,15 @@ class TestGeneratorDeclarationVisitor(unittest.TestCase):
             model._types[type.name] = type
         return GeneratorDeclarationVisitor(model, self.logger)
 
-    def set_terminal(self, value:str) -> TerminalNode:
+    def set_terminal(self, value: str) -> TerminalNode:
         return TerminalNodeImpl(self.set_token(value))
 
-    def set_token(self, value:str) -> CommonToken:
+    def set_token(self, value: str) -> CommonToken:
         token = CommonToken()
         token.text = value
         return token
 
-    def parse_code(self, code:str) -> DeclarationModel:
+    def parse_code(self, code: str) -> DeclarationModel:
         model = DeclarationModel()
         visitor = GeneratorDeclarationVisitor(model, self.logger)
 
@@ -463,6 +463,7 @@ class TestGeneratorDeclarationVisitor(unittest.TestCase):
         visitor.visit(parser.declarationModel())
 
         return model
+
 
 if __name__ == '__main__':
     unittest.main()

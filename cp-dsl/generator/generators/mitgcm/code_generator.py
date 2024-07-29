@@ -124,8 +124,20 @@ class MitGcmCodeGenerator(StandardCodeGenerator):
                     return
                 fileName = dataList[1]
                 alreadyDone[elem.name] = [True, fileName]
-                self.writeFile(featureTemplate.render(feature=elem, isinstance=isinstance, variableSymbol=Parameter, float=float, int=int,
-                               bool=bool, groupSymbol=ParameterGroup, none=None, str=str, enumerate=enumerate, firstNotNoneElem=self.firstNotNoneElem), fileName)
+                self.writeFile(
+                    featureTemplate.render(
+                        feature=elem,
+                        isinstance=isinstance,
+                        variableSymbol=Parameter,
+                        float=float,
+                        int=int,
+                        bool=bool,
+                        groupSymbol=ParameterGroup,
+                        none=None,
+                        str=str,
+                        enumerate=enumerate,
+                        firstNotNoneElem=self.firstNotNoneElem),
+                    fileName)
             except IndexError:
                 pass
 

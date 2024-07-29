@@ -16,9 +16,10 @@ from logging import INFO, basicConfig, getLogger
 from .configuration import CompileFlags
 import os
 
+
 class GeneratorLogger:
 
-    def __init__(self, mode:CompileFlags) -> None:
+    def __init__(self, mode: CompileFlags) -> None:
         self.mode = mode
         basicConfig()
         self.logger = getLogger("cpc")
@@ -26,7 +27,7 @@ class GeneratorLogger:
         self.warning = 0
         self.error = 0
 
-    def relax(self, context, message:str):
+    def relax(self, context, message: str):
         if (self.mode == CompileFlags.RELAX):
             self.logger.warn(f"[{self.basename(context.start.source[1].fileName)}:{context.start.line}] {message}")
             self.warning = self.warning + 1
@@ -34,12 +35,8 @@ class GeneratorLogger:
             self.logger.error(f"[{self.basename(context.start.source[1].fileName)}:{context.start.line}] {message}")
             self.error = self.error + 1
 
-    def strict(self, context, message:str):
+    def strict(self, context, message: str):
         self.logger.error(f"[{self.basename(context.start.source[1].fileName)}:{context.start.line}] {message}")
 
-    def basename(self, fileName:str):
+    def basename(self, fileName: str):
         return os.path.basename(fileName)
-
-
-
-

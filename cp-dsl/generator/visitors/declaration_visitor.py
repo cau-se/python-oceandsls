@@ -20,7 +20,7 @@ from typing import Generic, Callable, Dict
 # antlr4
 from antlr4.tree.Tree import ParseTree
 from antlr4.Token import CommonToken
-from antlr4 import ParserRuleContext,TerminalNode
+from antlr4 import ParserRuleContext, TerminalNode
 
 # user relative imports
 from model.symbols import Scope, T, P
@@ -36,11 +36,12 @@ from dcllspserver.gen.python.Declaration.DeclarationVisitor import DeclarationVi
 # NOTE: Method names starting with visit are required to look like this, as parts of the grammar
 # are named in that way
 
+
 class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
 
     _symbol_table: DeclarationModel
 
-    def __init__(self, symbol_table:DeclarationModel, logger:GeneratorLogger):
+    def __init__(self, symbol_table: DeclarationModel, logger: GeneratorLogger):
         super().__init__()
         # creates a new symboltable with no duplicate symbols
         self._symbol_table = symbol_table
@@ -107,7 +108,7 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
         enum_name = ctx.name.text
         enum_type: EnumeralType = self.resolve_type(self._scope, enum_name)
         # create a new type if no old one exists
-        if enum_type == None:
+        if enum_type is None:
             enum_type = EnumeralType(enum_name)
             self._symbol_table.add_new_type(enum_type)
 
@@ -174,7 +175,7 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
             self._type_scope = None
             return parameter
 
-    def visitParamType(self, ctx:DeclarationParser.ParamTypeContext):
+    def visitParamType(self, ctx: DeclarationParser.ParamTypeContext):
         if (ctx.typeReference() is not None):
             return self.visitTypeReference(ctx.typeReference())
         if (ctx.arrayType() is not None):
@@ -183,15 +184,15 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
 
         return None
 
-    def visitArrayType(self, ctx:DeclarationParser.ArrayTypeContext):
+    def visitArrayType(self, ctx: DeclarationParser.ArrayTypeContext):
         base_type = self.resolve_type(self._scope, ctx.type_.getText())
-        dimensions=[]
+        dimensions = []
         for dimension in ctx.dimensions:
             dimensions.append(self.visit(dimension))
         return ArrayType(base_type, dimensions)
 
     def visitSizeDimension(self, ctx: DeclarationParser.SizeDimensionContext):
-        return Dimension(0,ctx.size-1)
+        return Dimension(0, ctx.size - 1)
 
     def visitRangeDimension(self, ctx: DeclarationParser.RangeDimensionContext):
         return Dimension(ctx.lowerBound, ctx.upperBound)
@@ -240,7 +241,7 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
         if ctx.left is not None:
             print("Left")
             if ctx.right is not None:
-               print("Right and left compute")
+                print("Right and left compute")
             else:
                 print("left")
             return None
@@ -256,7 +257,7 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
         if ctx.left is not None:
             print("Left")
             if ctx.right is not None:
-               print("Right and left compute")
+                print("Right and left compute")
             else:
                 print("left")
 
@@ -306,12 +307,12 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
         return StringValue(ctx, base_types["string"], ctx.value.text[1:-1])
 
     def visitNamedElementReference(self, ctx: DeclarationParser.NamedElementReferenceContext):
-        if ctx.attribute is None: # enum or local reference
+        if ctx.attribute is None:  # enum or local reference
             # TODO parameter reference
             # enum
             if isinstance(self._type_scope, GenericEnumeralType):
                 return self._type_scope._enumerals.get(ctx.element.text)
-            self._logger.strict(ctx,f"Name {ctx.element.text} cannot be resolved to a parameter or enumeral")
+            self._logger.strict(ctx, f"Name {ctx.element.text} cannot be resolved to a parameter or enumeral")
             return None
         else:
             # TODO parameter
@@ -319,21 +320,21 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
             type = self._symbol_table.resolve_type(ctx.element.text)
             if type is not None:
                 return type._enumerals.get(ctx.attribute.text)
-            self._logger.strict(ctx,f"Name {ctx.element.text}.{ctx.attribute.text} cannot be resolved to a parameter or enumeral")
+            self._logger.strict(ctx, f"Name {ctx.element.text}.{ctx.attribute.text} cannot be resolved to a parameter or enumeral")
             return None
 
     ##################################
     # Units
     ##################################
 
-    def print_tree(self, ctx:ParserRuleContext, indent:str):
+    def print_tree(self, ctx: ParserRuleContext, indent: str):
         print(f"V {indent} NODE {ctx} {type(ctx)}")
-        if isinstance(ctx,TerminalNode):
+        if isinstance(ctx, TerminalNode):
             return
         for c in ctx.children:
-            self.print_tree(c,indent + "  ")
+            self.print_tree(c, indent + "  ")
 
-    def visitUnitSpecification(self, ctx:DeclarationParser.UnitSpecificationContext):
+    def visitUnitSpecification(self, ctx: DeclarationParser.UnitSpecificationContext):
         if len(ctx.units) == 1:
             return self.visit(ctx.units[0])
         else:
@@ -351,17 +352,27 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
         return SIUnit(prefix=prefix, kind=kind)
 
     def visitESIUnitType(self, ctx: DeclarationParser.ESIUnitTypeContext):
-        if ctx.ampere is not None: return UnitKind.Ampere
-        if ctx.candela is not None: return UnitKind.Candela
-        if ctx.gram is not None: return UnitKind.Gram
-        if ctx.joule is not None: return UnitKind.Joule
-        if ctx.kelvin is not None: return UnitKind.Kelvin
-        if ctx.meter is not None: return UnitKind.Meter
-        if ctx.mole is not None: return UnitKind.Mole
-        if ctx.pascal is not None: return UnitKind.Pascal
-        if ctx.second is not None: return UnitKind.Second
+        if ctx.ampere is not None:
+            return UnitKind.Ampere
+        if ctx.candela is not None:
+            return UnitKind.Candela
+        if ctx.gram is not None:
+            return UnitKind.Gram
+        if ctx.joule is not None:
+            return UnitKind.Joule
+        if ctx.kelvin is not None:
+            return UnitKind.Kelvin
+        if ctx.meter is not None:
+            return UnitKind.Meter
+        if ctx.mole is not None:
+            return UnitKind.Mole
+        if ctx.pascal is not None:
+            return UnitKind.Pascal
+        if ctx.second is not None:
+            return UnitKind.Second
 
-        if ctx.ton is not None: return UnitKind.ton
+        if ctx.ton is not None:
+            return UnitKind.ton
 
         self._logger.strict(ctx, f"Unknown unit kind {ctx}")
         return UnitKind.Unknown
@@ -369,28 +380,48 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
     def visitEPrefix(self, ctx: DeclarationParser.EPrefixContext):
         # Quetta = 1
         # Ronna = 2
-        if ctx.yotta is not None: return UnitPrefix.Yotta
-        if ctx.zetta is not None: return UnitPrefix.Zetta
-        if ctx.exa is not None: return UnitPrefix.Exa
-        if ctx.peta is not None: return UnitPrefix.Peta
-        if ctx.tera is not None: return UnitPrefix.Tera
-        if ctx.giga is not None: return UnitPrefix.Giga
-        if ctx.mega is not None: return UnitPrefix.Mega
-        if ctx.kilo is not None: return UnitPrefix.Kilo
-        if ctx.hecto is not None: return UnitPrefix.Hecto
-        if ctx.deca is not None: return UnitPrefix.Deca
-        if ctx.deci is not None: return UnitPrefix.Deci
-        if ctx.centi is not None: return UnitPrefix.Centi
-        if ctx.mili is not None: return UnitPrefix.Mili
-        if ctx.micro is not None: return UnitPrefix.Micro
-        if ctx.nano is not None: return UnitPrefix.Nano
-        if ctx.pico is not None: return UnitPrefix.Pico
-        if ctx.femto is not None: return UnitPrefix.Femto
-        if ctx.atto is not None: return UnitPrefix.Atto
-        if ctx.zepto is not None: return UnitPrefix.Zepto
-        if ctx.yocto is not None: return UnitPrefix.Yocto
-        #if ctx.ronto is not None: return UnitPrefix.Ronto
-        #if ctx.quecto is not None: return UnitPrefix.Quecto
+        if ctx.yotta is not None:
+            return UnitPrefix.Yotta
+        if ctx.zetta is not None:
+            return UnitPrefix.Zetta
+        if ctx.exa is not None:
+            return UnitPrefix.Exa
+        if ctx.peta is not None:
+            return UnitPrefix.Peta
+        if ctx.tera is not None:
+            return UnitPrefix.Tera
+        if ctx.giga is not None:
+            return UnitPrefix.Giga
+        if ctx.mega is not None:
+            return UnitPrefix.Mega
+        if ctx.kilo is not None:
+            return UnitPrefix.Kilo
+        if ctx.hecto is not None:
+            return UnitPrefix.Hecto
+        if ctx.deca is not None:
+            return UnitPrefix.Deca
+        if ctx.deci is not None:
+            return UnitPrefix.Deci
+        if ctx.centi is not None:
+            return UnitPrefix.Centi
+        if ctx.mili is not None:
+            return UnitPrefix.Mili
+        if ctx.micro is not None:
+            return UnitPrefix.Micro
+        if ctx.nano is not None:
+            return UnitPrefix.Nano
+        if ctx.pico is not None:
+            return UnitPrefix.Pico
+        if ctx.femto is not None:
+            return UnitPrefix.Femto
+        if ctx.atto is not None:
+            return UnitPrefix.Atto
+        if ctx.zepto is not None:
+            return UnitPrefix.Zepto
+        if ctx.yocto is not None:
+            return UnitPrefix.Yocto
+        # if ctx.ronto is not None: return UnitPrefix.Ronto
+        # if ctx.quecto is not None: return UnitPrefix.Quecto
 
         self._logger.strict(ctx, f"Unknown prefix {ctx}")
         return UnitPrefix.NoP
@@ -415,7 +446,7 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
     ##################################
 
     # Find model elements that contain types, i.e., the root element
-    def resolve_type(self, node:Scope, type_name:str):
+    def resolve_type(self, node: Scope, type_name: str):
         type = base_types.get(type_name, None)
         if type is not None:
             return type
@@ -426,7 +457,6 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
             return node.resolve_type(type_name)
         else:
             return self.resolve_type(node.parent, type_name)
-
 
     #
     #
@@ -439,15 +469,15 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
     #
     #
 
-    def find_next_enum_number(self, enumerals:Dict[str,int]) -> int:
+    def find_next_enum_number(self, enumerals: Dict[str, int]) -> int:
         index = -1
         for key in enumerals.keys():
             if index < enumerals[key].value:
                 index = enumerals[key].value
         return index + 1
 
-    def check_enumeral_name(self, enum_item, enumerals:Dict[str,int]) -> bool:
-        return enumerals.get(enum_item.name, None) != None
+    def check_enumeral_name(self, enum_item, enumerals: Dict[str, int]) -> bool:
+        return enumerals.get(enum_item.name, None) is not None
 
     def visitInlineEnumerationType(self, ctx: DeclarationParser.InlineEnumerationTypeContext):
         enumName = ""
@@ -464,4 +494,3 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
         symbol = self._symbol_table.add_new_symbol_of_type(EnumType, self._scope, enumName, enumList)
         symbol.context = ctx
         return symbol
-
