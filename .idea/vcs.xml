@@ -3,5 +3,6 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/bgc-dsl/bgclspserver/other" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/tdd-dsl/tddlspserver/llm" vcs="Git" />
   </component>
 </project>
