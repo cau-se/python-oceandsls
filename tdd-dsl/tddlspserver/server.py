@@ -19,7 +19,7 @@ import logging
 import re
 import uuid
 import os.path
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 # Antlr4
 from antlr4 import CommonTokenStream, FileStream, InputStream, Token
@@ -117,11 +117,8 @@ class TDDLSPServer(LanguageServer):
         super().__init__(*args)
         # Set error listener
         self.error_listener: DiagnosticListener = DiagnosticListener()
-        # Set empty input stream
-        input_stream: InputStream = InputStream(str())
-
-        # Set lexer
-        self.lexer: TestSuiteLexer = TestSuiteLexer(input_stream)
+        # Set lexer from empty input stream
+        self.lexer: InputStream = TestSuiteLexer(InputStream(str()))
         # Set error listener for diagnostics
         self.lexer.removeErrorListeners()
         self.lexer.addErrorListener(self.error_listener)
@@ -139,10 +136,10 @@ class TDDLSPServer(LanguageServer):
         self.parser._errHandler = TDDErrorStrategy()
 
         # Empty attribute init for generated files
-        self.files: dict[str, Tuple[float, str, str]] = {}
+        self.files: Dict[str, Tuple[float, str, str]] = {}
 
         # Default Fxtran system file path can be overwritten
-        self.fxtran_path = "fxtran"
+        self.fxtran_path: str = "fxtran"
 
         # Number of SuT to return for metric calculation
         self.show_n_metrics = 0
@@ -150,21 +147,19 @@ class TDDLSPServer(LanguageServer):
 
 tdd_server = TDDLSPServer("pygls-odsl-tdd-prototype", "v0.8")
 
-logger = logging.getLogger(__name__)
 
-
-def _validate(text_doc: Document):
+def _validate(text_doc: Document) -> None:
     """Validates LSP input."""
 
     # Get file content for lexer input stream
     source: str = text_doc.source
     # Validate format if source is determined
-    diagnostics: List[Diagnostic] = _validate_format(tdd_server, source) if source is not None else []
+    diagnostics: List[Diagnostic] = _validate_format(tdd_server, source) if source else []
     # Return diagnostics
     tdd_server.publish_diagnostics(text_doc.uri, diagnostics)
 
 
-def _validate_format(server: TDDLSPServer, source: str):
+def _validate_format(server: TDDLSPServer, source: str) -> List[Diagnostic]:
     """Validates file format."""
 
     # Get input stream of characters for lexer
@@ -197,11 +192,11 @@ def _validate_format(server: TDDLSPServer, source: str):
 
 
 def get_symbol_name_at_position(uri, position):
-    logger.info("uri: %s\n", uri, "position: %s\n", position)
+    tdd_server.logger.info("uri: %s\n", uri, "position: %s\n", position)
 
 
 def lookup_symbol(uri, name):
-    logger.info("uri: %s\n", uri, "name: %s\n", name)
+    tdd_server.logger.info("uri: %s\n", uri, "name: %s\n", name)
 
 
 @tdd_server.feature(TEXT_DOCUMENT_COMPLETION, CompletionOptions(trigger_characters=[","]))
@@ -255,7 +250,7 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     candidates: CandidatesCollection = core.collectCandidates(token_index.index)
 
     # Resolve candidates for preferred rules
-    if len(candidates.rules) != 0:
+    if candidates.rules:
 
         symbol_types: List[Symbol] = []
 
