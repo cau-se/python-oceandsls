@@ -607,7 +607,7 @@ class Scope:
             return (f"ID: {self.name}{self.debug_seperator}"
                     f"Source: {self.src}{self.debug_seperator}"
                     )
-        elif self.debug_seperator is "\n":
+        elif self.debug_seperator == "\n":
             return (f"Scope: {self.name}{self.debug_seperator}"
                     f"Source: {self.src}{self.debug_seperator}"
                     f"Cyclomatic Complexity: {self.cyclomatic_complexity}{self.debug_seperator}"
