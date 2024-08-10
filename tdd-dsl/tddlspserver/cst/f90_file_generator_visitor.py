@@ -18,6 +18,7 @@ __author__ = "sgu"
 
 # Util
 import os
+from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 
 # Jinja2
@@ -232,7 +233,11 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
             start_stop = None
 
         tag_source: str = ", ".join([self.rel_file_path, start_stop]) if self.rel_file_path is not None and start_stop is not None else None
-        tag: str = "auto-generated, src: " + tag_source if tag_source is not None else "auto-generated, src: unknown"
+
+        current_time = datetime.now()
+        # formatted_time = current_time.timestamp()  # Unix timestamp
+        formatted_time = current_time.strftime('%Y-%m-%d %H:%M:%S')  # human-readable format
+        tag: str = f"auto-generated: {formatted_time}, src: {tag_source}" if tag_source is not None else f"auto-generated {formatted_time}, src: unknown"
 
         # Extract id, optional arguments and inner ops
         self.visit(ctx.input_)
@@ -251,7 +256,7 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
 
         # Generate fortran implementations for operations
         for key, value_list in self.ops.items():
-            # Skip already implemented operations
+            # Skip already implemented operations by checking for implementation field at value_list[5]
             if len(value_list) == 6:
                 continue
 
@@ -280,14 +285,14 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
 
             # Fortran implementation
             value_list.append(
-                template.render(
-                    routineType=routine_type,
-                    tag=tag,
-                    name=name,
-                    argNames=arg_names,
-                    unit=unit,
-                    argsDecl=args_decl,
-                    returnType=return_type))
+                    template.render(
+                            routineType=routine_type,
+                            tag=tag,
+                            name=name,
+                            argNames=arg_names,
+                            unit=unit,
+                            argsDecl=args_decl,
+                            returnType=return_type))
             # Update operation list
             self.ops[key] = value_list
 

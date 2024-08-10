@@ -177,7 +177,7 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
 
         # Determine symbol types based on the rule candidates
         if TestSuiteParser.RULE_reference in candidates.rules:
-            symbol_table_visitor: SymbolTableVisitor = SymbolTableVisitor("completions", getcwd(), tdd_server.fxtran_path, self.files)
+            symbol_table_visitor: SymbolTableVisitor = SymbolTableVisitor("completions", getcwd(), tdd_server.fxtran_path)
             symbol_types.extend([VariableSymbol, RoutineSymbol])  # FunctionSymbol is derived from RoutineSymbol
         elif TestSuiteParser.RULE_testModule in candidates.rules:
             symbol_table_visitor: SymbolTableVisitor = SymbolTableVisitor("completions", getcwd(), tdd_server.fxtran_path)

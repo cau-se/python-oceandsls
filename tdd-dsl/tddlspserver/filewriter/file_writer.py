@@ -123,6 +123,58 @@ def cmake_merge(insert_contents: Dict[str, str], file_content):
 
     return file_content
 
+def remove_fortran_subroutine_or_function(fortran_code, names):
+    # Define regex components
+    whitespace = r'\s*'
+    optional_attribute = r'(elemental|pure)?'  # Matches optional attributes
+    function_or_subroutine = r'(function|subroutine)'  # Matches function or subroutine keywords
+
+    # Create a regex pattern for the function/subroutine removal
+    arguments = r'$.*$'  # Matches the argument list
+    comment = r'(! <<Replace with (return expression|SUBROUTINE body) here>>)'  # Matches the specific comment
+    code_lines_before_comment = r'(.*?\n)*?'  # Matches any lines of code before the comment
+    code_lines_after_comment = r'(.*?\n)*?'  # Matches any lines of code after the comment
+
+    # Remove each specified function or subroutine
+    for name in names:
+        name_pattern = re.escape(name)  # Escape the name to safely include it in the regex
+        end_statement = rf'end\s+(function|subroutine)\s+{name_pattern}\s*$'  # Matches the end statement
+
+        # Combine components into the full regex pattern
+        pattern = (
+                f'^{whitespace}{optional_attribute}{whitespace}{function_or_subroutine}{whitespace}{name_pattern}{whitespace}'
+                f'{arguments}{whitespace}.*\n'
+                f'{code_lines_before_comment}{comment}\s*\n'
+                f'{code_lines_after_comment}{end_statement}'
+        )
+
+        # Remove the specified function or subroutine from the Fortran code
+        modified_code = re.sub(pattern, '', fortran_code, flags=re.MULTILINE | re.DOTALL | re.IGNORECASE)
+
+        # Update the fortran_code for the next iteration
+        fortran_code = modified_code
+
+    # Clean public/private declarations
+    public_pattern = r"(?:(\n *(public|private)(?: *\:\:)? *(.*?))\n)+"
+    modified_code = re.sub(public_pattern, lambda m: clean_public_private(m.group(0), names), fortran_code, flags=re.MULTILINE | re.IGNORECASE)
+
+    # TODO decide if to clean up any extra whitespace or empty lines?
+    # modified_code = re.sub(r'\n\s*\n', '\n', modified_code)  # Remove empty lines
+    return modified_code.strip()  # Return the modified code without leading/trailing whitespace
+
+def clean_public_private(declaration, names):
+    # Loop over each name to remove it from the declaration
+    for name in names:
+        name_pattern = re.escape(name)  # Escape the name to safely include it in the regex
+        # This pattern matches the name and any preceding comma and optional whitespace
+        removal_pattern = rf',?\s*{name_pattern}\s*(?=,|$)'
+        declaration = re.sub(removal_pattern, '', declaration)
+
+    # Remove any empty public/private declarations
+    if re.search(r'public\s*::\s*$', declaration) or re.search(r'private\s*::\s*$', declaration):
+        return ''  # Remove the entire line if it's empty after removal
+
+    return declaration
 
 def fortran_merge(insert_content: Dict[str, List[str]], file_content):
     """
@@ -140,6 +192,8 @@ def fortran_merge(insert_content: Dict[str, List[str]], file_content):
         if ops_names == "" or ops_impls == "":
             # Filter out empty operations
             continue
+
+        remove_fortran_subroutine_or_function(file_content, ops_names)
 
         public_pattern = r"(?:(\n *public(?: *\:\:.*)?)\n)+"
         private_pattern = r"\n(( *)private(?: *\:\:.*)?\n)+"
