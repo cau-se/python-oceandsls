@@ -40,14 +40,13 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
     _symbol_table: SymbolTable
     _test_path: str
 
-    def __init__(self, name: str = "", test_work_path: str = "tdd-dsl/output", fxtran_path: str = "fxtran", files: Dict[str, Tuple[float, str, str]] = {}):
+    def __init__(self, name: str = "", test_work_path: str = "tdd-dsl/output", fxtran_path: str = "fxtran"):
         super().__init__()
         self.fxtran_path = fxtran_path
         self._symbol_table = SymbolTable(name, SymbolTableOptions(False))
         self._scope = None
         self._test_work_path = test_work_path
         self._test_path = ""
-        self._files = files
 
     @property
     def symbol_table(self) -> SymbolTable:
@@ -226,7 +225,7 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
         xml_files = get_files(xml_path, "*.[fF]90.xml")
 
         for path, filename in xml_files:
-            xml_elements = filter_xml(os.path.join(path, filename), True, module_symbols, self._files)
+            xml_elements = filter_xml(os.path.join(path, filename), True, module_symbols)
 
             # Add scopes
             for scope_type, scope_name, scope_args, return_type, parent_scopes, is_generated in xml_elements[1]:
