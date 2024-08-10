@@ -68,13 +68,13 @@ class TDDLSPServer(LanguageServer):
     SHOW_DEBUG_OUTPUT: bool = True
     DEBUG_OUTPUT_SEPERATOR: str = "\t"
     DEBUG_HEADER: str = DEBUG_OUTPUT_SEPERATOR.join([
-            "Scope", "Source", "Cyclomatic Complexity", "Depth", "LOC", "Parameters", "Conditionals", "Loops",
-            "Branches", "Variables", "Returns", "Calls", "Decision Points", "Halstead Complexity", "(d)Operators ηT",
-            "(d)Operands ηD", "(t)Operators NT", "(t)Operands ND", "Operator ratio nNT", "Operands ratio nND",
-            "Vocabulary (ηT + ηD)", "Program Length (NT + ND)", "Calculated Length", "Volume", "Difficulty", "Effort",
-            "Time to program", "delivered bugs", "Test Score", "Testability Difficulty", "Testability Index",
-            "Normalized Testability Difficulty", "Aggregated Testability Difficulty", "Test Index",
-            "Normalized Test Score", "Aggregated Test Score", "Test Factor"
+        "Scope", "Source", "Cyclomatic Complexity", "Depth", "LOC", "Parameters", "Conditionals", "Loops",
+        "Branches", "Variables", "Returns", "Calls", "Decision Points", "Halstead Complexity", "(d)Operators ηT",
+        "(d)Operands ηD", "(t)Operators NT", "(t)Operands ND", "Operator ratio nNT", "Operands ratio nND",
+        "Vocabulary (ηT + ηD)", "Program Length (NT + ND)", "Calculated Length", "Volume", "Difficulty", "Effort",
+        "Time to program", "delivered bugs", "Test Score", "Testability Difficulty", "Testability Index",
+        "Normalized Testability Difficulty", "Aggregated Testability Difficulty", "Test Index",
+        "Normalized Test Score", "Aggregated Test Score", "Test Factor"
     ])
 
     LOG = getLogger(__name__)
@@ -133,7 +133,7 @@ def _validate_format(server: TDDLSPServer, source: str) -> List[Diagnostic]:
             end_pos = Position(parse_tree.stop.line, parse_tree.stop.column)
             eof_range = Range(start=end_pos, end=end_pos)
             server.error_listener.diagnostics.append(
-                    Diagnostic(message="Parser stopped before end of file.", range=eof_range)
+                Diagnostic(message="Parser stopped before end of file.", range=eof_range)
             )
         server.parse_tree = parse_tree
     except OSError as err:
@@ -156,7 +156,7 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
         if token_index is None:
             # Compute the position of the caret in the token stream
             token_index = compute_token_position(
-                    parse_tree, tdd_server.token_stream, CaretPosition(params.position.line + 1, params.position.character)
+                parse_tree, tdd_server.token_stream, CaretPosition(params.position.line + 1, params.position.character)
             )
 
     completion_list = CompletionList(is_incomplete=False, items=[])
@@ -191,9 +191,9 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
         # Suggest symbols based on the identified symbol types
         for symbol_type in symbol_types:
             symbols = suggest_symbols(
-                    symbol_table=symbol_table,
-                    position=token_index,
-                    symbol_type=symbol_type
+                symbol_table=symbol_table,
+                position=token_index,
+                symbol_type=symbol_type
             )
             completion_list.items.extend([CompletionItem(label=s) for s in symbols])
 
@@ -263,17 +263,17 @@ def did_save(server: TDDLSPServer, params: DidSaveTextDocumentParams):
         rel_file_path: str = path.relpath(file_path, getcwd())  # Get relative input path for file generation
         # Generate pf files
         pf_file_generator_visitor: PFFileGeneratorVisitor = PFFileGeneratorVisitor(
-                work_path=getcwd(), files=tdd_server.files, symbol_table=symbol_table, rel_file_path=rel_file_path
+            work_path=getcwd(), files=tdd_server.files, symbol_table=symbol_table, rel_file_path=rel_file_path
         )
         tdd_server.files = pf_file_generator_visitor.visit(server.parseTree)  # Write pf files and save generated files
         # Generate F90 files
         f90_file_generator_visitor: F90FileGeneratorVisitor = F90FileGeneratorVisitor(
-                work_path=getcwd(), files=tdd_server.files, symbol_table=symbol_table, rel_file_path=rel_file_path
+            work_path=getcwd(), files=tdd_server.files, symbol_table=symbol_table, rel_file_path=rel_file_path
         )
         tdd_server.files = f90_file_generator_visitor.visit(server.parseTree)  # Update fortran file and save generated files
         # Generate CMake files
         cmake_file_generator_visitor: CMakeFileGeneratorVisitor = CMakeFileGeneratorVisitor(
-                work_path=getcwd(), files=tdd_server.files, symbol_table=symbol_table
+            work_path=getcwd(), files=tdd_server.files, symbol_table=symbol_table
         )
         tdd_server.files = cmake_file_generator_visitor.visit(server.parseTree)  # Update CMake files and save generated files
         server.show_message("Text Document Did Save")
@@ -303,7 +303,7 @@ def get_text_document(params) -> Document:
 
 
 @tdd_server.feature(
-        TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL, SemanticTokensLegend(token_types=["operator"], token_modifiers=[])
+    TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL, SemanticTokensLegend(token_types=["operator"], token_modifiers=[])
 )
 def semantic_tokens(server: TDDLSPServer, params: SemanticTokensParams) -> SemanticTokens:
     """See https://microsoft.github.io/language-server-protocol/specification#textDocument_semanticTokens
@@ -337,9 +337,9 @@ def semantic_tokens(server: TDDLSPServer, params: SemanticTokensParams) -> Seman
 def recommend_SUT(tdd_server: TDDLSPServer, *args):
     """Calculates the complexity of the SuTs in the path and returns test recommendations."""
     calculate_complexity_visitor = CalculateComplexityVisitor(
-            name="paths", test_work_path=getcwd(), fxtran_path=tdd_server.fxtran_path,
-            sort_metric=tdd_server.sort_metric, debug=tdd_server.SHOW_DEBUG_OUTPUT,
-            debug_seperator=tdd_server.DEBUG_OUTPUT_SEPERATOR
+        name="paths", test_work_path=getcwd(), fxtran_path=tdd_server.fxtran_path,
+        sort_metric=tdd_server.sort_metric, debug=tdd_server.SHOW_DEBUG_OUTPUT,
+        debug_seperator=tdd_server.DEBUG_OUTPUT_SEPERATOR
     )
     symbol_table = calculate_complexity_visitor.visit(tdd_server.parse_tree)
     metric_list = suggest_symbols(symbol_table, position=None, symbol_type=MetricSymbol)
@@ -370,10 +370,10 @@ def debug_file_write(file_path: str = None, content: str = None):
 async def register_completions(server: TDDLSPServer, *args):
     """Register completions method on the client."""
     params = RegistrationParams(
-            registrations=[Registration(
-                    id=str(uuid4()), method=TEXT_DOCUMENT_COMPLETION,
-                    register_options={"triggerCharacters": ","}
-            )]
+        registrations=[Registration(
+            id=str(uuid4()), method=TEXT_DOCUMENT_COMPLETION,
+            register_options={"triggerCharacters": ","}
+        )]
     )
 
     response = await server.register_capability_async(params)
@@ -389,7 +389,7 @@ async def register_completions(server: TDDLSPServer, *args):
 async def unregister_completions(server: TDDLSPServer, *args):
     """Unregister completions method on the client."""
     params = UnregistrationParams(
-            unregisterations=[Unregistration(id=str(uuid4()), method=TEXT_DOCUMENT_COMPLETION)]
+        unregisterations=[Unregistration(id=str(uuid4()), method=TEXT_DOCUMENT_COMPLETION)]
     )
 
     response = await server.unregister_capability_async(params)

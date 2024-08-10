@@ -285,14 +285,14 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
 
             # Fortran implementation
             value_list.append(
-                    template.render(
-                            routineType=routine_type,
-                            tag=tag,
-                            name=name,
-                            argNames=arg_names,
-                            unit=unit,
-                            argsDecl=args_decl,
-                            returnType=return_type))
+                template.render(
+                    routineType=routine_type,
+                    tag=tag,
+                    name=name,
+                    argNames=arg_names,
+                    unit=unit,
+                    argsDecl=args_decl,
+                    returnType=return_type))
             # Update operation list
             self.ops[key] = value_list
 

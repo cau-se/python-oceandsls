@@ -123,6 +123,7 @@ def cmake_merge(insert_contents: Dict[str, str], file_content):
 
     return file_content
 
+
 def remove_fortran_subroutine_or_function(fortran_code, names):
     # Define regex components
     whitespace = r'\s*'
@@ -142,10 +143,10 @@ def remove_fortran_subroutine_or_function(fortran_code, names):
 
         # Combine components into the full regex pattern
         pattern = (
-                f'^{whitespace}{optional_attribute}{whitespace}{function_or_subroutine}{whitespace}{name_pattern}{whitespace}'
-                f'{arguments}{whitespace}.*\n'
-                f'{code_lines_before_comment}{comment}\s*\n'
-                f'{code_lines_after_comment}{end_statement}'
+            f'^{whitespace}{optional_attribute}{whitespace}{function_or_subroutine}{whitespace}{name_pattern}{whitespace}'
+            f'{arguments}{whitespace}.*\n'
+            f'{code_lines_before_comment}{comment}\\s*\n'
+            f'{code_lines_after_comment}{end_statement}'
         )
 
         # Remove the specified function or subroutine from the Fortran code
@@ -162,6 +163,7 @@ def remove_fortran_subroutine_or_function(fortran_code, names):
     # modified_code = re.sub(r'\n\s*\n', '\n', modified_code)  # Remove empty lines
     return modified_code.strip()  # Return the modified code without leading/trailing whitespace
 
+
 def clean_public_private(declaration, names):
     # Loop over each name to remove it from the declaration
     for name in names:
@@ -175,6 +177,7 @@ def clean_public_private(declaration, names):
         return ''  # Remove the entire line if it's empty after removal
 
     return declaration
+
 
 def fortran_merge(insert_content: Dict[str, List[str]], file_content):
     """
