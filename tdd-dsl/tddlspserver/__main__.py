@@ -114,17 +114,14 @@ def fxtran_executable(path: str):
     return path
 
 
-def process_recommended_metrics(metrics_table):
+def process_recommended_metrics(metrics_path):
     """Process the recommended metrics passed from __main__.py."""
-    # Debug output of the recommended metrics
-    print("Debug Output: Recommended Metrics")
-    if not metrics_table:
+
+    # Check for metrics
+    if not metrics_path:
         print("No recommended metrics available.")
         return
-
-    # Print each metric in a structured format
-    for index, metric in enumerate(metrics_table):
-        print(f"Metric {index + 1}: {metric}")  # Adjust formatting as needed
+    readable_file(metrics_path)
 
     # Get the current script's directory
     current_dir = dirname(abspath(__file__))
@@ -133,7 +130,7 @@ def process_recommended_metrics(metrics_table):
     llm_main_path = join(current_dir, 'llm')
 
     # Define the arguments you want to pass to llm
-    args = ['--contextOnly', metrics_table]  # Replace with your actual arguments
+    args = ['--contextOnly', metrics_path]  # Replace with your actual arguments
 
     # Run the llm __main__.py file with arguments
     result = run([executable, '-m', 'llm'] + args, cwd=llm_main_path)
@@ -143,7 +140,6 @@ def process_recommended_metrics(metrics_table):
         print("llm execution failed.")
     else:
         print("llm executed successfully.")
-
 
 def main():
     parser = argparse.ArgumentParser()
@@ -165,9 +161,9 @@ def main():
     elif args.source:
         # Start cli code analysis for input path
         tdd_server.input_path = join(getcwd(), args.source)
-        metrics_table = recommend_software_under_test(tdd_server)
+        metrics_path = recommend_software_under_test(tdd_server)
         # Pass the recommended metrics to the llm analyzer
-        process_recommended_metrics(metrics_table)
+        process_recommended_metrics(metrics_path)
     else:
 
         if args.tcp:

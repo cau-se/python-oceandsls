@@ -324,31 +324,6 @@ def semantic_tokens(server: TDDLSPServer, params: SemanticTokensParams) -> Seman
 
     return SemanticTokens(data=data)
 
-
-def table_to_string(metrics_table, separator):
-    """Converts the list of metric dictionaries into a formatted string."""
-    if not metrics_table:
-        return ""
-
-    # Extract headers from the first dictionary
-    headers = metrics_table[0].keys()
-
-    # Create a list to hold the string representation of the table
-    output_lines = []
-
-    # Add the header line
-    header_line = separator.join(headers)
-    output_lines.append(header_line)
-
-    # Add each row of values
-    for row in metrics_table:
-        row_values = [str(row[header]) for header in headers]  # Convert each value to string
-        output_lines.append(separator.join(row_values))  # Join values with the separator
-
-    # Join all lines with newline characters
-    return "\n".join(output_lines)
-
-
 @tdd_server.command(TDDLSPServer.CMD_RECOMMEND_SUT_BLOCKING)
 def recommend_software_under_test(server: TDDLSPServer, *args):
     """Calculates the complexity of Software Under Test (SuT) in the input path and returns SuTs test recommendations."""
@@ -372,38 +347,17 @@ def recommend_software_under_test(server: TDDLSPServer, *args):
     # Suggest metrics based on the generated symbol table
     recommended_metrics = suggest_symbols(symbol_table, position=None, symbol_type=MetricSymbol)
 
-    # Prepare the metrics table as a list of dictionaries
-    metrics_table = []
+    # Write output to file if debug enabled or passed to llm analysis
+    if tdd_server.SHOW_DEBUG_OUTPUT or not args:
+        recommended_metrics.insert(0, tdd_server.DEBUG_HEADER)
+        file_path = path.join(getcwd(), tdd_server.sort_metric)
+        debug_file_write(file_path, "\n".join(recommended_metrics))
+        return file_path
 
-    # Add the header to the metrics table
-    header = server.DEBUG_HEADER.split(server.DEBUG_OUTPUT_SEPERATOR)  # Split header into list
-    metrics_table.append({header[i]: None for i in range(len(header))})  # Add empty row for headers
+    # Show the top N metrics as determined by the configuration
+    for metric in recommended_metrics[:tdd_server.N_SHOW_METRICS]:
+        tdd_server.show_message(metric)
 
-    # Populate the metrics table with recommended metrics
-    for metric in recommended_metrics:
-        values = metric.split(server.DEBUG_OUTPUT_SEPERATOR)  # Split metric into values
-        metrics_table.append({header[i]: values[i] for i in range(len(values))})  # Create a dictionary for each row
-
-    # If no arguments are given, return the metrics table
-    if not args:
-        return metrics_table  # Return the list of dictionaries
-
-    # Display the top N metrics as configured in the server settings
-    for metric in recommended_metrics[:server.N_SHOW_METRICS]:
-        server.show_message(metric)
-
-    # Write debug output to a file if debugging is enabled
-    if server.SHOW_DEBUG_OUTPUT:
-        debug_file_path = path.join(getcwd(), server.sort_metric)  # Define the debug file path
-        server.show_message(f"Written debug file: {debug_file_path}")
-
-        # Convert the metrics table to a string
-        metrics_string = table_to_string(metrics_table, server.DEBUG_OUTPUT_SEPERATOR)
-
-        # Write the formatted string to the debug file
-        debug_file_write(debug_file_path, metrics_string)
-
-    # Final message indicating the recommendation process is complete
     server.show_message(f"Recommendations for Software Under Test (SuT) based on {server.sort_metric}...")
 
 
