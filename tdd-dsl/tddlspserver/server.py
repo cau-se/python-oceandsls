@@ -40,7 +40,7 @@ from pygls.server import LanguageServer
 from pygls.workspace import Document
 
 # User relative imports
-from .cst.calculate_complexity_visitor import CalculateComplexityVisitor
+from .cst.calculate_complexity_visitor import ComplexityMetricVisitor
 from .cst.cmake_file_generator_visitor import CMakeFileGeneratorVisitor
 from .cst.f90_file_generator_visitor import F90FileGeneratorVisitor
 from .cst.diagnostic_listener import DiagnosticListener
@@ -63,7 +63,7 @@ class TDDLSPServer(LanguageServer):
     CONFIGURATION_SECTION = "ODsl-TDD-DSL-Server"
 
     # Number of SuT to return for metric calculation
-    N_SHOW_METRICS = 0
+    N_SHOW_METRICS = 3
 
     SHOW_DEBUG_OUTPUT: bool = True
     DEBUG_OUTPUT_SEPERATOR: str = "\t"
@@ -242,17 +242,9 @@ def did_close(server: TDDLSPServer, params: DidCloseTextDocumentParams):
 def did_save(server: TDDLSPServer, params: DidSaveTextDocumentParams):
     """Execute file generator and return text document did save notification."""
     # LSP client or cli call
-    input_stream: InputStream
-    file_path: str
-    if params:
-        # LSP client
-        text_doc: Document = get_text_document(params)
-        file_path = path.abspath(text_doc.path)
-        input_stream = InputStream(text_doc.source)
-    else:
-        # cli
-        file_path = tdd_server.input_path
-        input_stream = FileStream(tdd_server.input_path)
+    text_doc: Document = get_text_document(params) if params else None
+    file_path: str = path.abspath(text_doc.path) if params else server.input_path
+    input_stream: InputStream = InputStream(text_doc.source) if params else FileStream(server.input_path)
 
     server.parseTree = parse_stream(input_stream, server)  # Launch parser
     if server.parseTree:
@@ -263,19 +255,19 @@ def did_save(server: TDDLSPServer, params: DidSaveTextDocumentParams):
         rel_file_path: str = path.relpath(file_path, getcwd())  # Get relative input path for file generation
         # Generate pf files
         pf_file_generator_visitor: PFFileGeneratorVisitor = PFFileGeneratorVisitor(
-            work_path=getcwd(), files=tdd_server.files, symbol_table=symbol_table, rel_file_path=rel_file_path
+            work_path=getcwd(), files=server.files, symbol_table=symbol_table, rel_file_path=rel_file_path
         )
-        tdd_server.files = pf_file_generator_visitor.visit(server.parseTree)  # Write pf files and save generated files
+        server.files = pf_file_generator_visitor.visit(server.parseTree)  # Write pf files and save generated files
         # Generate F90 files
         f90_file_generator_visitor: F90FileGeneratorVisitor = F90FileGeneratorVisitor(
-            work_path=getcwd(), files=tdd_server.files, symbol_table=symbol_table, rel_file_path=rel_file_path
+            work_path=getcwd(), files=server.files, symbol_table=symbol_table, rel_file_path=rel_file_path
         )
-        tdd_server.files = f90_file_generator_visitor.visit(server.parseTree)  # Update fortran file and save generated files
+        server.files = f90_file_generator_visitor.visit(server.parseTree)  # Update fortran file and save generated files
         # Generate CMake files
         cmake_file_generator_visitor: CMakeFileGeneratorVisitor = CMakeFileGeneratorVisitor(
-            work_path=getcwd(), files=tdd_server.files, symbol_table=symbol_table
+            work_path=getcwd(), files=server.files, symbol_table=symbol_table
         )
-        tdd_server.files = cmake_file_generator_visitor.visit(server.parseTree)  # Update CMake files and save generated files
+        server.files = cmake_file_generator_visitor.visit(server.parseTree)  # Update CMake files and save generated files
         server.show_message("Text Document Did Save")
 
 
@@ -333,27 +325,86 @@ def semantic_tokens(server: TDDLSPServer, params: SemanticTokensParams) -> Seman
     return SemanticTokens(data=data)
 
 
+def table_to_string(metrics_table, separator):
+    """Converts the list of metric dictionaries into a formatted string."""
+    if not metrics_table:
+        return ""
+
+    # Extract headers from the first dictionary
+    headers = metrics_table[0].keys()
+
+    # Create a list to hold the string representation of the table
+    output_lines = []
+
+    # Add the header line
+    header_line = separator.join(headers)
+    output_lines.append(header_line)
+
+    # Add each row of values
+    for row in metrics_table:
+        row_values = [str(row[header]) for header in headers]  # Convert each value to string
+        output_lines.append(separator.join(row_values))  # Join values with the separator
+
+    # Join all lines with newline characters
+    return "\n".join(output_lines)
+
+
 @tdd_server.command(TDDLSPServer.CMD_RECOMMEND_SUT_BLOCKING)
-def recommend_SUT(tdd_server: TDDLSPServer, *args):
-    """Calculates the complexity of the SuTs in the path and returns test recommendations."""
-    calculate_complexity_visitor = CalculateComplexityVisitor(
-        name="paths", test_work_path=getcwd(), fxtran_path=tdd_server.fxtran_path,
-        sort_metric=tdd_server.sort_metric, debug=tdd_server.SHOW_DEBUG_OUTPUT,
-        debug_seperator=tdd_server.DEBUG_OUTPUT_SEPERATOR
+def recommend_software_under_test(server: TDDLSPServer, *args):
+    """Calculates the complexity of Software Under Test (SuT) in the input path and returns SuTs test recommendations."""
+
+    # Initialize a visitor to calculate complexity metrics
+    complexity_visitor = ComplexityMetricVisitor(
+        name="recommend",
+        source_root_directory=getcwd(),
+        fxtran_command_path=server.fxtran_path,
+        sorting_metric=server.sort_metric,
+        debug_mode=server.SHOW_DEBUG_OUTPUT,
+        debug_separator=server.DEBUG_OUTPUT_SEPERATOR
     )
-    symbol_table = calculate_complexity_visitor.visit(tdd_server.parse_tree)
-    metric_list = suggest_symbols(symbol_table, position=None, symbol_type=MetricSymbol)
 
-    # Show the top N metrics as determined by the configuration
-    for metric in metric_list[:tdd_server.N_SHOW_METRICS]:
-        tdd_server.show_message(metric)
+    # Generate a symbol table based on cli or client call
+    if args:
+        symbol_table = complexity_visitor.visit(server.parse_tree)
+    else:
+        symbol_table = complexity_visitor.calculate_metrics_for(server.input_path)
 
-    # Write debug output to file if enabled
-    if tdd_server.SHOW_DEBUG_OUTPUT:
-        metric_list.insert(0, tdd_server.DEBUG_HEADER)
-        debug_file_write(path.join(getcwd(), tdd_server.sort_metric), "\n".join(metric_list))
+    # Suggest metrics based on the generated symbol table
+    recommended_metrics = suggest_symbols(symbol_table, position=None, symbol_type=MetricSymbol)
 
-    tdd_server.show_message(f"Recommend SuT by {tdd_server.sort_metric}...")
+    # Prepare the metrics table as a list of dictionaries
+    metrics_table = []
+
+    # Add the header to the metrics table
+    header = server.DEBUG_HEADER.split(server.DEBUG_OUTPUT_SEPERATOR)  # Split header into list
+    metrics_table.append({header[i]: None for i in range(len(header))})  # Add empty row for headers
+
+    # Populate the metrics table with recommended metrics
+    for metric in recommended_metrics:
+        values = metric.split(server.DEBUG_OUTPUT_SEPERATOR)  # Split metric into values
+        metrics_table.append({header[i]: values[i] for i in range(len(values))})  # Create a dictionary for each row
+
+    # If no arguments are given, return the metrics table
+    if not args:
+        return metrics_table  # Return the list of dictionaries
+
+    # Display the top N metrics as configured in the server settings
+    for metric in recommended_metrics[:server.N_SHOW_METRICS]:
+        server.show_message(metric)
+
+    # Write debug output to a file if debugging is enabled
+    if server.SHOW_DEBUG_OUTPUT:
+        debug_file_path = path.join(getcwd(), server.sort_metric)  # Define the debug file path
+        server.show_message(f"Written debug file: {debug_file_path}")
+
+        # Convert the metrics table to a string
+        metrics_string = table_to_string(metrics_table, server.DEBUG_OUTPUT_SEPERATOR)
+
+        # Write the formatted string to the debug file
+        debug_file_write(debug_file_path, metrics_string)
+
+    # Final message indicating the recommendation process is complete
+    server.show_message(f"Recommendations for Software Under Test (SuT) based on {server.sort_metric}...")
 
 
 def debug_file_write(file_path: str = None, content: str = None):

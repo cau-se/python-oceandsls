@@ -17,50 +17,48 @@ import logging
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import os
-import shutil
-# Util imports
+# Standard library imports
+from logging import getLogger
+from os.path import join, relpath
+from shutil import rmtree
 from typing import Callable, Generic
 
 # Antlr4
 from antlr4.tree.Tree import ParseTree
 
-# User relative imports
+# Package imports
 from ..fxca.util.fxtran_utils import get_files, write_decorate_src_xml
 from ..gen.python.TestSuite.TestSuiteParser import TestSuiteParser
 from ..gen.python.TestSuite.TestSuiteVisitor import TestSuiteVisitor
 from ..utils.calculate_complexity import calculate_metrics
-from ..symboltable.symbol_table import MetricSymbol, SymbolTable, PathSymbol, SymbolTableOptions, P, T, TestCaseSymbol
+from ..symboltable.symbol_table import MetricSymbol, SymbolTable, SymbolTableOptions, P, T, TestCaseSymbol
 
 # Debug Log
-logger = logging.getLogger(__name__)
+LOGGER = getLogger(__name__)
 
 
-class CalculateComplexityVisitor(TestSuiteVisitor, Generic[T]):
-    _symbol_table: SymbolTable
-    _test_path: str
+class ComplexityMetricVisitor(TestSuiteVisitor, Generic[T]):
+    # Class constants
+    TEMP_DIR_NAME = "tmp"
+    XML_FILE_PATTERN = "*.[fF]90.xml"
+    SINGLE_QUOTE = "'"
 
-    def __init__(
-            self,
-            name: str = "",
-            test_work_path: str = "tdd-dsl/output",
-            fxtran_path: str = "fxtran",
-            sort_metric=None,
-            debug: bool = False,
-            debug_seperator: str = "\n"):
+    def __init__(self, name: str = "", source_root_directory: str = "tdd-dsl/output",
+                 fxtran_command_path: str = "fxtran", sorting_metric=None,
+                 debug_mode: bool = False, debug_separator: str = "\n"):
         super().__init__()
-        self.sort_metric = sort_metric
-        self.fxtran_path = fxtran_path
+        self.sorting_metric = sorting_metric
+        self.fxtran_command_path = fxtran_command_path  # Updated variable name
         self._symbol_table = SymbolTable(name, SymbolTableOptions(False))
-        self._scope = None
-        self._test_work_path = test_work_path
-        self._test_path = ""
-        self._debug = debug
-        self._debug_seperator = debug_seperator
+        self._current_scope = None
+        self._source_root_directory = source_root_directory
+        self._source_path = ""
+        self._debug_mode = debug_mode
+        self._debug_separator = debug_separator
 
     @property
     def work_path(self) -> str:
-        return self._test_work_path
+        return self._source_root_directory
 
     # Visit a parse tree produced by TestSuiteParser#testSuite.
     def visitTestSuite(self, ctx: TestSuiteParser.TestSuiteContext):
@@ -71,66 +69,66 @@ class CalculateComplexityVisitor(TestSuiteVisitor, Generic[T]):
     def visitTestCase(self, ctx: TestSuiteParser.TestCaseContext):
         return self.withScope(ctx, TestCaseSymbol, lambda: self.visitChildren(ctx), ctx.ID().getText())
 
-    # Return subdirectories under working path or user entered path
+    # Process the source path provided by the user or default to the working path
     def visitSrcPath(self, ctx: TestSuiteParser.SrcPathContext):
-        # Strip string terminals
-        user_path: str = ctx.path.text.strip("\'") if ctx.path else ''
+        # Extract and clean the user-provided path
+        user_path = ctx.path.text.strip(self.SINGLE_QUOTE) if ctx.path else ''
+        # Return symbol table for client call via TestSuite
+        self.calculate_metrics_for(user_path)
 
-        # TODO document
-        # Update source directory
-        # If the given path is an absolute path, then self._testPath is ignored and the joining is only the given path
-        self._test_path: str = os.path.join(self._test_work_path, user_path)
-
-        # TODO hc
-        xml_path = os.path.join(self._test_path, "tmp")
-        # Write XML files
-        write_decorate_src_xml(self._test_path, xml_path, fxtran_path=self.fxtran_path)
-
-        # Get Fortran files
-        xml_files = get_files(xml_path, "*.[fF]90.xml")
-
+    def calculate_metrics_for(self, user_path):
+        # Update the source directory based on the user input
+        self._source_path = join(self._source_root_directory, user_path)
+        # Create a temporary directory for XML files
+        temp_xml_path = join(self._source_path, self.TEMP_DIR_NAME)
+        write_decorate_src_xml(self._source_path, temp_xml_path, fxtran_path=self.fxtran_command_path)  # Updated variable name
+        # Retrieve Fortran XML files from the temporary directory
+        xml_files = get_files(temp_xml_path, self.XML_FILE_PATTERN)
         for path, filename in xml_files:
-            src_filename: str = filename.rsplit(".", 1)[0]
-            rel_path = os.path.relpath(path, xml_path)
-            if rel_path != ".":
-                # Relative path exists
-                src_path: str = os.path.join(self._test_path, rel_path, src_filename)
-            else:
-                # Relative path is current dir and omitted
-                src_path: str = os.path.join(self._test_path, src_filename)
-            scope_elements = calculate_metrics(
-                xml_path=os.path.join(
-                    path,
-                    filename),
-                src=src_path,
-                sort_metric=self.sort_metric,
-                debug=self._debug,
-                debug_seperator=self._debug_seperator)
+            src_filename = filename.rsplit(".", 1)[0]
+            rel_path = relpath(path, temp_xml_path)
+            # Construct the source path using the relative path
+            src_path = join(self._source_path, rel_path, src_filename) if rel_path != "." else join(self._source_path, src_filename)
 
+            # Calculate metrics for the current XML file
+            scope_elements = calculate_metrics(
+                xml_path=join(path, filename),
+                src=src_path,
+                sort_metric=self.sorting_metric,
+                debug=self._debug_mode,
+                debug_separator=self._debug_separator
+            )
+
+            # Add the calculated metrics to the symbol table
             for scope_name, scope in scope_elements.items():
                 if scope.is_testable:
-                    self._symbol_table.add_new_symbol_of_type(MetricSymbol, self._scope, scope_name, scope)
+                    self._symbol_table.add_new_symbol_of_type(MetricSymbol, self._current_scope, scope_name, scope)
+        # Clean up temporary XML files after processing
+        self._remove_temp_files(temp_xml_path)
+        # Return symboltable for cli call
+        return self._symbol_table
 
+    def _remove_temp_files(self, temp_xml_path: str):
+        """Remove the temporary XML files directory."""
         try:
-            # Remove temporary xml files
-            shutil.rmtree(xml_path)
+            rmtree(temp_xml_path)
         except OSError as e:
-            logger.error("Error deleting temporary xml directory : %s - %s." % (e.filename, e.strerror))
+            LOGGER.error("Error deleting temporary XML directory: %s - %s.", e.filename, e.strerror)
 
-    def withScope(self, tree: ParseTree, t: type, action: Callable, *my_args: P.args or None, **my_kwargs: P.kwargs or None) -> T:
+    def withScope(self, tree: ParseTree, symbol_type: type, action: Callable, *args: P.args or None, **kwargs: P.kwargs or None) -> T:
         """
-        Visit a scoped symbol and recursively visit all symbols inside with the scoped symbol as scope
+        Visit a scoped symbol and recursively visit all symbols inside with the scoped symbol as scope.
         :param tree: Context of the scoped symbol
-        :param t: Symbol type
-        :param action: Lambda function to add children symbols to symboltable
-        :param my_args: Arguments of symbol type
-        :param my_kwargs: named Arguments of symbol type
+        :param symbol_type: Type of the symbol
+        :param action: Lambda function to add child symbols to the symbol table
+        :param args: Arguments for the symbol type
+        :param kwargs: Named arguments for the symbol type
         :return: Current scope
         """
-        scope = self._symbol_table.add_new_symbol_of_type(t, self._scope, *my_args, **my_kwargs)
+        scope = self._symbol_table.add_new_symbol_of_type(symbol_type, self._current_scope, *args, **kwargs)
         scope.context = tree
-        self._scope = scope
+        self._current_scope = scope
         try:
             return action()
         finally:
-            self._scope = scope.parent()
+            self._current_scope = scope.parent()

@@ -71,7 +71,7 @@ class Scope:
     sort_metric: str = field(default="")
 
     debug: bool = field(default=False)
-    debug_seperator: str = field(default="\n")
+    debug_separator: str = field(default="\n")
 
     routine_types: Set = field(default_factory=lambda: {"function-stmt", "subroutine-stmt"})
     module_types: Set = field(default_factory=lambda: {"module-stmt"})
@@ -604,52 +604,52 @@ class Scope:
         """ toString method """
 
         if not self.debug:
-            return (f"ID: {self.name}{self.debug_seperator}"
-                    f"Source: {self.src}{self.debug_seperator}"
+            return (f"ID: {self.name}{self.debug_separator}"
+                    f"Source: {self.src}{self.debug_separator}"
                     )
-        elif self.debug_seperator == "\n":
-            return (f"Scope: {self.name}{self.debug_seperator}"
-                    f"Source: {self.src}{self.debug_seperator}"
-                    f"Cyclomatic Complexity: {self.cyclomatic_complexity}{self.debug_seperator}"
-                    f"Depth of Nesting: {self.depth_of_nesting}{self.debug_seperator}"
-                    f"Lines of Code (LOC): {self.loc}{self.debug_seperator}"
-                    f"Number of Parameters: {self.n_arguments}{self.debug_seperator}"
-                    f"Number of Conditionals: {self.n_conditionals}{self.debug_seperator}"
-                    f"Number of Loops: {self.n_loops}{self.debug_seperator}"
-                    f"Number of Branches: {self.n_branches}{self.debug_seperator}"
-                    f"Number of Variables: {self.n_declarations}{self.debug_seperator}"
-                    f"Number of Return Statements: {self.n_results}{self.debug_seperator}"
-                    f"Number of Calls to External Functions/Procedures: {self.n_external_calls}{self.debug_seperator}"
-                    f"Number of Decision Points: {self.n_decision_points}{self.debug_seperator}"
-                    f"Halstead Complexity Measures:{self.debug_seperator}"
-                    f"Number of distinct Operators ηT: {self.n_operators}{self.debug_seperator}"
-                    f"Number of distinct Operands ηD: {self.n_operands}{self.debug_seperator}"
-                    f"Number of total Operators NT: {self.sum_operators}{self.debug_seperator}"
-                    f"Number of total Operands ND: {self.sum_operands}{self.debug_seperator}"
-                    f"Ratio of Operators nNT: {self.ratio_operators}{self.debug_seperator}"
-                    f"Ratio of Operands nND: {self.ratio_operands}{self.debug_seperator}"
-                    f"Vocabulary (ηT + ηD): {self.vocabulary}{self.debug_seperator}"
-                    f"Program Length (NT + ND): {self.program_length}{self.debug_seperator}"
-                    f"Calculated Length: {self.calculated_length}{self.debug_seperator}"
-                    f"Volume: {self.volume}{self.debug_seperator}"
-                    f"Difficulty: {self.difficulty}{self.debug_seperator}"
-                    f"Effort: {self.effort}{self.debug_seperator}"
-                    f"Time required to program: {self.time_required_to_program}{self.debug_seperator}"
-                    f"Number of delivered bugs: {self.n_bugs}{self.debug_seperator}"
-                    # f"Distinct Operators: {self.operators}{self.debug_seperator}"
-                    # f"Distinct Operands: {self.operands}{self.debug_seperator}"
-                    f"Test Score:{self.debug_seperator}"
-                    f"Testability Score: {self.testability_difficulty}{self.debug_seperator}"
-                    f"Testability Index: {self.testability_index}{self.debug_seperator}"
-                    f"Normalized Testability Score: {self.normalized_testability_difficulty}{self.debug_seperator}"
-                    f"Aggregated Testability Score: {self.aggregated_testability_difficulty}{self.debug_seperator}"
-                    f"Test Index: {self.test_index}{self.debug_seperator}"
-                    f"Normalized Test Score: {self.normalized_test_score}{self.debug_seperator}"
-                    f"Aggregated Test Score: {self.aggregated_test_score}{self.debug_seperator}"
+        elif self.debug_separator == "\n":
+            return (f"Scope: {self.name}{self.debug_separator}"
+                    f"Source: {self.src}{self.debug_separator}"
+                    f"Cyclomatic Complexity: {self.cyclomatic_complexity}{self.debug_separator}"
+                    f"Depth of Nesting: {self.depth_of_nesting}{self.debug_separator}"
+                    f"Lines of Code (LOC): {self.loc}{self.debug_separator}"
+                    f"Number of Parameters: {self.n_arguments}{self.debug_separator}"
+                    f"Number of Conditionals: {self.n_conditionals}{self.debug_separator}"
+                    f"Number of Loops: {self.n_loops}{self.debug_separator}"
+                    f"Number of Branches: {self.n_branches}{self.debug_separator}"
+                    f"Number of Variables: {self.n_declarations}{self.debug_separator}"
+                    f"Number of Return Statements: {self.n_results}{self.debug_separator}"
+                    f"Number of Calls to External Functions/Procedures: {self.n_external_calls}{self.debug_separator}"
+                    f"Number of Decision Points: {self.n_decision_points}{self.debug_separator}"
+                    f"Halstead Complexity Measures:{self.debug_separator}"
+                    f"Number of distinct Operators ηT: {self.n_operators}{self.debug_separator}"
+                    f"Number of distinct Operands ηD: {self.n_operands}{self.debug_separator}"
+                    f"Number of total Operators NT: {self.sum_operators}{self.debug_separator}"
+                    f"Number of total Operands ND: {self.sum_operands}{self.debug_separator}"
+                    f"Ratio of Operators nNT: {self.ratio_operators}{self.debug_separator}"
+                    f"Ratio of Operands nND: {self.ratio_operands}{self.debug_separator}"
+                    f"Vocabulary (ηT + ηD): {self.vocabulary}{self.debug_separator}"
+                    f"Program Length (NT + ND): {self.program_length}{self.debug_separator}"
+                    f"Calculated Length: {self.calculated_length}{self.debug_separator}"
+                    f"Volume: {self.volume}{self.debug_separator}"
+                    f"Difficulty: {self.difficulty}{self.debug_separator}"
+                    f"Effort: {self.effort}{self.debug_separator}"
+                    f"Time required to program: {self.time_required_to_program}{self.debug_separator}"
+                    f"Number of delivered bugs: {self.n_bugs}{self.debug_separator}"
+                    # f"Distinct Operators: {self.operators}{self.debug_separator}"
+                    # f"Distinct Operands: {self.operands}{self.debug_separator}"
+                    f"Test Score:{self.debug_separator}"
+                    f"Testability Score: {self.testability_difficulty}{self.debug_separator}"
+                    f"Testability Index: {self.testability_index}{self.debug_separator}"
+                    f"Normalized Testability Score: {self.normalized_testability_difficulty}{self.debug_separator}"
+                    f"Aggregated Testability Score: {self.aggregated_testability_difficulty}{self.debug_separator}"
+                    f"Test Index: {self.test_index}{self.debug_separator}"
+                    f"Normalized Test Score: {self.normalized_test_score}{self.debug_separator}"
+                    f"Aggregated Test Score: {self.aggregated_test_score}{self.debug_separator}"
                     f"Test Factor: {self.test_factor}"
                     )
         else:
-            return (self.debug_seperator.join(str(x) for x in [self.name,
+            return (self.debug_separator.join(str(x) for x in [self.name,
                                                                self.src,
                                                                self.cyclomatic_complexity,
                                                                self.depth_of_nesting,
@@ -812,14 +812,14 @@ def add_operators_to(scope: Scope, element: ET.Element):
                 scope.add_operator(operator.text.strip())
 
 
-def calculate_metrics(xml_path: str = None, src: str = None, sort_metric=None, debug: bool = False, debug_seperator: str = "\n") -> dict[str, Scope]:
+def calculate_metrics(xml_path: str = None, src: str = None, sort_metric=None, debug: bool = False, debug_separator: str = "\n") -> dict[str, Scope]:
     """
     Calculate cyclomatic complexity and halstead complexity measures from fxtran formatted xml file for Fortran code
     :param xml_path: Path to fxtran xml files
     :param src: Optional path to Fortran source files
     :param sort_metric: Optional sort metric
     :param debug: Optional debug output
-    :param debug_seperator: Optional seperator for debug output
+    :param debug_separator: Optional separator for debug output
     :return: None
     """
 
@@ -906,7 +906,7 @@ def calculate_metrics(xml_path: str = None, src: str = None, sort_metric=None, d
                 src=src,
                 sort_metric=sort_metric,
                 debug=debug,
-                debug_seperator=debug_seperator)
+                debug_separator=debug_separator)
 
             # Add scope to parent
             if current_scope:
