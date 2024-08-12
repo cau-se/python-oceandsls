@@ -54,7 +54,7 @@ arrayExpression             : '[' (elements+=arithmeticExpression (',' elements+
 //TODO returns NamedElementReference
 //TODO add NamedElement reference for element = ID and attribute  ID
 //TODO {NamedElementReference} enforce Type and return object of NamedElementReference
-namedElementReference       : element=ID ('.' attribute=ID)? ;
+namedElementReference       : elements+=ID ('.' elements+=ID)* ;
 
 stringValue                 : value = STRING ;
 
@@ -69,7 +69,7 @@ booleanValue                : value = EBoolean ;
 // -----------------------------------------------------------------------
 /*
 expr
-    : '(' expr ')'                              # ParenExpr
+    : '(' expr ')'                              # ParentExpr
     | left=expr op=('*'|'/'|'%') right=expr     # InfixExpr
     | left=expr op=('+'|'-') right=expr         # InfixExpr
     | atom=INT                                  # NumberExpr

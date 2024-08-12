@@ -15,7 +15,7 @@
 __author__ = "reiner"
 
 # util imports
-from typing import Generic, Callable, Dict
+from typing import Generic, Callable, Dict, List
 
 # antlr4
 from antlr4.tree.Tree import ParseTree
@@ -25,7 +25,7 @@ from antlr4 import ParserRuleContext, TerminalNode
 # user relative imports
 from model.symbols import Scope, T, P
 from model.declaration_model import DeclarationModel, Parameter, ParameterGroup, Feature, FeatureGroup, EKind
-from model.type_system import GenericEnumeralType, EnumeralType, Enumeral, RangeType, ArrayType, Dimension, BaseType, base_types
+from model.type_system import GenericEnumeralType, EnumeralType, InternalEnumeralType, Enumeral, RangeType, ArrayType, Dimension, BaseType, base_types
 from model.unit_model import Unit, UnitPrefix, UnitKind, UnitSpecification, SIUnit, CustomUnit, DivisionUnit, ExponentUnit
 from common.logger import GeneratorLogger
 from model.arithmetic_model import ArithmeticExpression, IntValue, FloatValue, StringValue
@@ -124,6 +124,21 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
 
         return enum_type
 
+    def visitInlineEnumerationType(self, ctx: DeclarationParser.InlineEnumerationTypeContext):
+        enum_type = InternalEnumeralType()
+
+        for i in ctx.enumeral():
+            # enum_list representation: [(id, value),...]
+            enum_item = self.visitEnumeral(i)
+            if enum_item.value == -1:
+                enum_item.value = self.find_next_enum_number(enum_type._enumerals)
+            if self.check_enumeral_name(enum_item, enum_type._enumerals):
+                self._logger.strict(ctx, f"Enumeral {enum_item[0]} already exists in enumeration {enum_name}")
+            else:
+                enum_type._enumerals[enum_item.name] = enum_item
+
+        return enum_type
+
     def visitEnumeral(self, ctx: DeclarationParser.EnumeralContext):
         if ctx.value:
             # return a tuple of id and value
@@ -179,23 +194,39 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
         if (ctx.typeReference() is not None):
             return self.visitTypeReference(ctx.typeReference())
         if (ctx.arrayType() is not None):
-            print(f"ARRAY {type(ctx.arrayType())}")
-            return None
+            return self.visitArrayType(ctx.arrayType())
+        if (ctx.inlineEnumerationType() is not None):
+            return self.visitInlineEnumerationType(ctx.inlineEnumerationType())
 
         return None
 
-    def visitArrayType(self, ctx: DeclarationParser.ArrayTypeContext):
-        base_type = self.resolve_type(self._scope, ctx.type_.getText())
-        dimensions = []
+    def visitArrayType(self, ctx:DeclarationParser.ArrayTypeContext):
+        base_type = self.resolve_type(self._scope, ctx.type_.text)
+        dimensions=[]
+
         for dimension in ctx.dimensions:
             dimensions.append(self.visit(dimension))
         return ArrayType(base_type, dimensions)
 
     def visitSizeDimension(self, ctx: DeclarationParser.SizeDimensionContext):
-        return Dimension(0, ctx.size - 1)
+        size:CommonToken = ctx.size
+        if size is not None:
+            return Dimension(0,int(size.text)-1)
+        else:
+            return Dimension(0,None)
 
     def visitRangeDimension(self, ctx: DeclarationParser.RangeDimensionContext):
-        return Dimension(ctx.lowerBound, ctx.upperBound)
+        lower_bound_token:CommonToken = ctx.lowerBound
+        if lower_bound_token is None:
+            lower_bound = None
+        else:
+            lower_bound = int(lower_bound_token.text)
+        upper_bound_token:CommonToken = ctx.upperBound
+        if upper_bound_token is None:
+            upper_bound = None
+        else:
+            upper_bound = int(upper_bound_token.text)
+        return Dimension(lower_bound, upper_bound)
 
     def visitTypeReference(self, ctx: DeclarationParser.TypeReferenceContext):
         return self.resolve_type(self._scope, ctx.type_.text)
@@ -244,6 +275,7 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
                 print("Right and left compute")
             else:
                 print("left")
+                return self.visit(ctx.left)
             return None
 
         if len(ctx.children) == 1:
@@ -306,8 +338,14 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
     def visitStringValue(self, ctx: DeclarationParser.StringValueContext):
         return StringValue(ctx, base_types["string"], ctx.value.text[1:-1])
 
+
+
     def visitNamedElementReference(self, ctx: DeclarationParser.NamedElementReferenceContext):
-        if ctx.attribute is None:  # enum or local reference
+        element = ctx.elements[0]
+
+        symbol:Parameter = self._scope.resolve_symbol(element)
+
+        if ctx.attribute is None: # enum or local reference
             # TODO parameter reference
             # enum
             if isinstance(self._type_scope, GenericEnumeralType):
@@ -478,19 +516,3 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
 
     def check_enumeral_name(self, enum_item, enumerals: Dict[str, int]) -> bool:
         return enumerals.get(enum_item.name, None) is not None
-
-    def visitInlineEnumerationType(self, ctx: DeclarationParser.InlineEnumerationTypeContext):
-        enumName = ""
-        enumList = []
-        self._enum_index = 0
-        for i in ctx.enumeral():
-            # enumList representation: [(id, value),...]
-            enumList.append(self.visitEnumeral(i))
-            self._enum_index += 1
-        oldSymbol = self._scope.resolve_sync(enumName)
-        if oldSymbol:
-            enumName = "inline_" + str(self.inlineInt)
-            self.inlineInt += 1
-        symbol = self._symbol_table.add_new_symbol_of_type(EnumType, self._scope, enumName, enumList)
-        symbol.context = ctx
-        return symbol

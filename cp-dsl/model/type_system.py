@@ -62,6 +62,8 @@ class GenericEnumeralType(Type):
     def __init__(self) -> None:
         pass
 
+class InternalEnumeralType(GenericEnumeralType):
+    pass
 
 class EnumeralType(GenericEnumeralType, NamedType):
 

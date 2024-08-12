@@ -100,7 +100,7 @@ class ParameterGroup(NamedElement):
         self._description = description
         self._parameters = {}
 
-    def resolve_symbol(self, name: str):
+    def resolve_symbol(self, name: str) -> Parameter:
         return self._parameters.get(name, None)
 
 #

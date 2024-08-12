@@ -17,9 +17,9 @@ __author__ = "reiner"
 import unittest
 from generator.visitors.declaration_visitor import GeneratorDeclarationVisitor
 from model.declaration_model import DeclarationModel, ParameterGroup, Parameter
-from model.type_system import EnumeralType, Enumeral, RangeType, BaseType
+from model.type_system import EnumeralType, Enumeral, RangeType, BaseType, ArrayType, Dimension, InternalEnumeralType, Enumeral
 from model.unit_model import UnitSpecification, UnitKind, UnitPrefix, SIUnit, CustomUnit, DivisionUnit, ExponentUnit
-from model.arithmetic_model import IntValue, StringValue, FloatValue
+from model.arithmetic_model import IntValue, StringValue, FloatValue, ArithmeticExpression
 from antlr4 import InputStream, CommonTokenStream
 from antlr4.Token import CommonToken
 from antlr4 import ParserRuleContext, TerminalNode
@@ -113,23 +113,202 @@ class TestGeneratorDeclarationVisitor(unittest.TestCase):
             self.assertEqual(p._default_value.value, 0, "Wrong value")
             self.assertEqual(p._description, "", "Wrong description")
 
+<<<<<<< HEAD
     def test_visitParamType(self):
         self.fail()
+=======
+
+    def test_visitParamType_type_reference(self):
+        param_type_context = DeclarationParser.ParamTypeContext(parent=None, parser=None)
+        type_reference = DeclarationParser.TypeReferenceContext(parent=param_type_context, parser=None)
+        type_reference.type_ = self.set_token("r")
+        param_type_context.addChild(type_reference)
+
+        result = self.make_visitor(type=RangeType(name="r", type=int, minimum=0, maximum=10)).visitParamType(param_type_context)
+
+        self.assertIsInstance(result, RangeType, "wrong type")
+        self.assertEqual(result.name, "r", "wrong type name")
+
+#        param_type_context.inlineEnumerationType()
+
+#        param_type_context.arrayType()
+
+    def test_visitParamType_inline_enumeration_type(self):
+        param_type_context = DeclarationParser.ParamTypeContext(parent=None, parser=None)
+        inline_enumeration_type = DeclarationParser.InlineEnumerationTypeContext(parent=param_type_context, parser=None)
+
+        enum1 = DeclarationParser.EnumeralContext(parent=inline_enumeration_type, parser=None)
+        enum1.name = self.set_token("FIRST")
+        enum1.value = self.set_token(1)
+        inline_enumeration_type.addChild(enum1)
+
+        enum2 = DeclarationParser.EnumeralContext(parent=inline_enumeration_type, parser=None)
+        enum2.name = self.set_token("SECOND")
+        enum2.value = self.set_token(2)
+        inline_enumeration_type.addChild(enum2)
+
+        inline_enumeration_type.values = [enum1, enum2]
+
+        param_type_context.addChild(inline_enumeration_type)
+
+        result = self.make_visitor().visitParamType(param_type_context)
+
+        self.assertIsInstance(result, InternalEnumeralType, "wrong type")
+        self.assertEqual(len(result._enumerals),2, "Wrong number")
+        self.assertEqual(list(result._enumerals.keys()), ["FIRST", "SECOND"], "Wrong keys")
+        enumerals = list(result._enumerals.values())
+        self.assertEqual(enumerals[0].name, "FIRST", "Wrong name")
+        self.assertEqual(enumerals[0].value, 1, "Wrong value")
+        self.assertEqual(enumerals[1].name, "SECOND", "Wrong name")
+        self.assertEqual(enumerals[1].value, 2, "Wrong value")
+
+    def test_visitParamType_array_type(self):
+        param_type_context = DeclarationParser.ParamTypeContext(parent=None, parser=None)
+        array_type_context = DeclarationParser.ArrayTypeContext(parent=param_type_context, parser=None)
+        array_type_context.type_ = self.set_token("int")
+
+        dim1 = DeclarationParser.SizeDimensionContext(parent=array_type_context, parser=None)
+        dim1.size = self.set_token(5)
+        array_type_context.addChild(dim1)
+
+        dim2 = DeclarationParser.RangeDimensionContext(parent=array_type_context, parser=None)
+        dim2.lowerBound = self.set_token(2)
+        dim2.upperBound = self.set_token(10)
+        array_type_context.addChild(dim2)
+
+        array_type_context.dimensions = [dim1, dim2]
+        param_type_context.addChild(array_type_context)
+
+        result = self.make_visitor().visitParamType(param_type_context)
+
+        self.assertIsInstance(result, ArrayType, "wrong type")
+        self.assertEqual(len(result._dimensions), 2, "Wrong number of dimensions")
+        self.assertEqual(result._dimensions[0].lower, 0, "Wrong lower bound")
+        self.assertEqual(result._dimensions[0].upper, 4, "Wrong upper bound")
+        self.assertEqual(result._dimensions[1].lower, 2, "Wrong lower bound")
+        self.assertEqual(result._dimensions[1].upper, 10, "Wrong upper bound")
+>>>>>>> 98c5cd3 (Updated grammar.)
 
     def test_visitArrayType(self):
-        self.fail()
+        array_type_context = DeclarationParser.ArrayTypeContext(parent=None, parser=None)
+        array_type_context.type_ = self.set_token("int")
 
-    def test_visitSizeDimension(self):
-        self.fail()
+        dim1 = DeclarationParser.SizeDimensionContext(parent=array_type_context, parser=None)
+        dim1.size = self.set_token(5)
+        array_type_context.addChild(dim1)
 
-    def test_visitRangeDimension(self):
-        self.fail()
+        dim2 = DeclarationParser.RangeDimensionContext(parent=array_type_context, parser=None)
+        dim2.lowerBound = self.set_token(2)
+        dim2.upperBound = self.set_token(10)
+        array_type_context.addChild(dim2)
+
+        array_type_context.dimensions = [dim1, dim2]
+
+        result:ArrayType = self.make_visitor().visitArrayType(array_type_context)
+
+        self.assertIsInstance(result, ArrayType, "wrong type")
+        self.assertEqual(len(result._dimensions), 2, "Wrong number of dimensions")
+        self.assertEqual(result._dimensions[0].lower, 0, "Wrong lower bound")
+        self.assertEqual(result._dimensions[0].upper, 4, "Wrong upper bound")
+        self.assertEqual(result._dimensions[1].lower, 2, "Wrong lower bound")
+        self.assertEqual(result._dimensions[1].upper, 10, "Wrong upper bound")
+
+    def test_visitSizeDimension_code_with_value(self):
+        self.visitSizeDimension_code("10")
+
+    def test_visitSizeDimension_code_without_value(self):
+        self.visitSizeDimension_code("")
+
+    def visitSizeDimension_code(self, size:str):
+        code = """
+            model eval
+                group test: "" {
+                    def param int[""" + size + """] : meter
+                }
+        """
+        model = self.parse_code(code)
+
+        group:ParameterGroup = model._groups.get("test")
+
+        for p in group._parameters.values():
+            type:ArrayType = p._type
+
+            self.assertIsInstance(type, ArrayType, "Wrong type")
+            self.assertEqual(len(type._dimensions), 1, "Wrong number of dimensions")
+            dim:Dimension = type._dimensions[0]
+            self.assertEqual(dim.lower, 0, "Wrong lower bound")
+            if size == "":
+                self.assertEqual(dim.upper, None, "Wrong upper bound")
+            else:
+                self.assertEqual(dim.upper, int(size)-1, "Wrong upper bound")
+
+
+    def test_visitSizeDimension_with_value(self):
+        size_dimension = DeclarationParser.SizeDimensionContext(parent=None, parser=None)
+        size_dimension.size = self.set_token("9")
+
+        result = self.make_visitor().visitSizeDimension(size_dimension)
+
+        self.assertIsInstance(result, Dimension, "Wrong type")
+        self.assertEqual(result.lower, 0, "Wrong lower bound")
+        self.assertEqual(result.upper, 8, "Wrong upper bound")
+
+    def test_visitSizeDimension_without_value(self):
+        size_dimension = DeclarationParser.SizeDimensionContext(parent=None, parser=None)
+        size_dimension.size = None
+
+        result = self.make_visitor().visitSizeDimension(size_dimension)
+
+        self.assertIsInstance(result, Dimension, "Wrong type")
+        self.assertEqual(result.lower, 0, "Wrong lower bound")
+        self.assertEqual(result.upper, None, "Wrong upper bound")
+
+    def visitRangeDimension_code(self, lower:int, upper:int):
+        if lower is None:
+            if upper is None:
+                range = ":"
+            else:
+                range = f":{upper}"
+        else:
+            if upper is None:
+                range = f"{lower}:"
+            else:
+                range = f"{lower}:{upper}"
+
+        code = """
+            model eval
+                group test: "" {
+                    def param int[""" + range + """] : meter
+                }
+        """
+        model = self.parse_code(code)
+
+        group:ParameterGroup = model._groups.get("test")
+
+        for p in group._parameters.values():
+            type:ArrayType = p._type
+
+            self.assertIsInstance(type, ArrayType, "Wrong type")
+            self.assertEqual(len(type._dimensions), 1, "Wrong number of dimensions")
+            dim:Dimension = type._dimensions[0]
+
+            self.assertEqual(dim.lower, lower, "Wrong lower bound")
+            self.assertEqual(dim.upper, upper, "Wrong upper bound")
+
+    def test_visitRangeDimension_code_lu(self):
+        self.visitRangeDimension_code(3,7)
+
+    def test_visitRangeDimension_code_xu(self):
+        self.visitRangeDimension_code(None,7)
+
+    def test_visitRangeDimension_code_lx(self):
+        self.visitRangeDimension_code(3,None)
 
     def test_visitTypeReference(self):
-        typeReference = DeclarationParser.TypeReferenceContext(parent=None, parser=None)
-        typeReference.type_ = self.set_token("r")
+        type_reference = DeclarationParser.TypeReferenceContext(parent=None, parser=None)
+        type_reference.type_ = self.set_token("r")
 
-        result = self.make_visitor(type=RangeType(name="r", type=int, minimum=0, maximum=10)).visitTypeReference(typeReference)
+        result = self.make_visitor(type=RangeType(name="r", type=int, minimum=0, maximum=10)).visitTypeReference(type_reference)
 
         self.assertIsInstance(result, RangeType, "wrong type")
         self.assertEqual(result.name, "r", "wrong type name")
@@ -292,8 +471,36 @@ class TestGeneratorDeclarationVisitor(unittest.TestCase):
         self.assertIsInstance(result.value, str, "Wrong value type")
         self.assertEqual(result.value, "text message", "Incorrect value")
 
-    def test_visitNamedElementReference(self):
-        self.fail()
+    # Named elements can be references to an enumeral or another property or in future a feature
+    # The test must therefor test whether an group property, an enumeration and an inline enumeration can be resolved.
+    # This test tests property, local
+    def test_visitNamedElementReference_one_property(self):
+        reference_context = DeclarationParser.NamedElementReferenceContext(parent=None, parser=None)
+        reference_context.elements = [self.set_token("a")]
+
+        result = self.make_visitor().visitNamedElementReference(reference_context)
+
+    # This test tests enum based on context
+    def test_visitNamedElementReference_one_enum(self):
+        model = self.parse_code("""
+            model eval
+            types
+                enum Color { red, green, blue }
+            group test : "description" {
+                def param Color : meter = blue
+            }
+            """)
+
+        group:ParameterGroup = model._groups.get("test")
+        parameter:Parameter = group._parameters.get("param")
+        expression:ArithmeticExpression = parameter._default_value
+
+    def test_visitNamedElementReference_two(self):
+        reference_context = DeclarationParser.NamedElementReferenceContext(parent=None, parser=None)
+        reference_context.elements = [self.set_token("a"), self.set_token("b")]
+
+        result = self.make_visitor().visitNamedElementReference(reference_context)
+
 
     def test_visitSiunit_no_prefix(self):
         # sIUnit                      :   (prefix=ePrefix)? type=eSIUnitType #siunit;
