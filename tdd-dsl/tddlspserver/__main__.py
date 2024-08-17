@@ -49,7 +49,7 @@ def add_arguments(parser):
     )
 
     parser.add_argument(
-        "-m", "--metric", dest="metric", default="Testability Factor", help="Metric to sort SuT recommendations, e.g. Testability Factor"
+        "-m", "--metric", dest="metric", default="Test Index", help="Metric to sort SuT recommendations, e.g. Testability Factor"
     )
 
     parser.add_argument(
@@ -58,6 +58,10 @@ def add_arguments(parser):
 
     parser.add_argument(
         "-s", "--source", dest="source", type=readable_directory, help="Path of source code to analyse"
+    )
+
+    parser.add_argument(
+        "-d", "--descending", action="store_true", help="Sort the list in descending order"
     )
 
 
@@ -104,7 +108,7 @@ def fxtran_executable(path: str):
     cmd: str = " ".join([path, "-help"])
 
     try:
-        # Call 'fxtran -help' via subprocess
+        # Call "fxtran -help" via subprocess
         check_output(cmd, shell=True, stderr=STDOUT)
     except CalledProcessError as e:
         raise argparse.ArgumentTypeError(
@@ -126,25 +130,31 @@ def process_recommended_metrics(metrics_path):
     # Get the current script's directory
     current_dir = dirname(abspath(__file__))
 
-    # Define the path to the llm __main__.py file
-    llm_main_path = join(current_dir, 'llm')
+    # Define the path to llm main
+    llm_main_path = join(current_dir, "llm")
 
-    # Define the arguments you want to pass to llm
-    args = ['--contextOnly', metrics_path]  # Replace with your actual arguments
+    # Define the arguments to pass to llm
+    args = ["--contextOnly", metrics_path]
 
-    # Run the llm __main__.py file with arguments
-    result = run([executable, '-m', 'llm'] + args, cwd=llm_main_path)
+    print(f"{[executable, '-m', 'llm'] + args}\tcwd:{llm_main_path}")
 
-    # Check the result
-    if result.returncode != 0:
-        print("llm execution failed.")
-    else:
-        print("llm executed successfully.")
+    # # Run the llm __main__.py file with arguments
+    # result = run([executable, "-m", "llm"] + args, cwd=llm_main_path)
+    #
+    # # Check the result
+    # if result.returncode != 0:
+    #     print("llm execution failed.")
+    # else:
+    #     print("llm executed successfully.")
+
 
 def main():
     parser = argparse.ArgumentParser()
     add_arguments(parser)
     args = parser.parse_args()
+
+    # Sort the list based on the descending flag
+    tdd_server.descending_sort = args.descending
 
     if args.fxtran:
         # Add fxtran path

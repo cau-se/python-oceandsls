@@ -769,7 +769,7 @@ class Scope:
             case "Test Factor":
                 return self.test_factor
             case _:
-                return self.test_factor
+                return self.test_index
 
 
 # Set the namespace as Fxtran for XPath expressions

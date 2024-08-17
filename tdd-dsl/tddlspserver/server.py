@@ -88,6 +88,7 @@ class TDDLSPServer(LanguageServer):
         self.files: Dict[str, Tuple[float, str, str]] = {}  # Empty attribute init for generated files
         self.fxtran_path = "fxtran"  # Default Fxtran system file path can be overwritten
         self.sort_metric = None  # Recommendation metric option
+        self.descending_sort = False
         self.input_path = None
         self.parse_tree = None
 
@@ -190,11 +191,7 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
 
         # Suggest symbols based on the identified symbol types
         for symbol_type in symbol_types:
-            symbols = suggest_symbols(
-                symbol_table=symbol_table,
-                position=token_index,
-                symbol_type=symbol_type
-            )
+            symbols = suggest_symbols(symbol_table=symbol_table, position=token_index, symbol_type=symbol_type, descending_sort=tdd_server.descending_sort)
             completion_list.items.extend([CompletionItem(label=s) for s in symbols])
 
     # Add terminal tokens to the completion candidates
@@ -324,6 +321,7 @@ def semantic_tokens(server: TDDLSPServer, params: SemanticTokensParams) -> Seman
 
     return SemanticTokens(data=data)
 
+
 @tdd_server.command(TDDLSPServer.CMD_RECOMMEND_SUT_BLOCKING)
 def recommend_software_under_test(server: TDDLSPServer, *args):
     """Calculates the complexity of Software Under Test (SuT) in the input path and returns SuTs test recommendations."""
@@ -345,12 +343,13 @@ def recommend_software_under_test(server: TDDLSPServer, *args):
         symbol_table = complexity_visitor.calculate_metrics_for(server.input_path)
 
     # Suggest metrics based on the generated symbol table
-    recommended_metrics = suggest_symbols(symbol_table, position=None, symbol_type=MetricSymbol)
+    recommended_metrics = suggest_symbols(symbol_table, position=None, symbol_type=MetricSymbol, descending_sort=server.descending_sort)
 
-    # Write output to file if debug enabled or passed to llm analysis
+    # Write output to file if passed to llm analysis or debug enabled
     if tdd_server.SHOW_DEBUG_OUTPUT or not args:
         recommended_metrics.insert(0, tdd_server.DEBUG_HEADER)
-        file_path = path.join(getcwd(), tdd_server.sort_metric)
+        cleaned_metric_name = filter_escape_chars(tdd_server.sort_metric)
+        file_path = path.join(getcwd(), cleaned_metric_name)
         debug_file_write(file_path, "\n".join(recommended_metrics))
         return file_path
 
@@ -359,6 +358,15 @@ def recommend_software_under_test(server: TDDLSPServer, *args):
         tdd_server.show_message(metric)
 
     server.show_message(f"Recommendations for Software Under Test (SuT) based on {server.sort_metric}...")
+
+
+def filter_escape_chars(input_string):
+    """Removes characters to be escaped for Bash."""
+    # characters to be escaped for Bash
+    escape_chars = r'\"\'$`!&*?;|<>()[\]{} '
+
+    translation_table = str.maketrans('', '', escape_chars)
+    return input_string.translate(translation_table)
 
 
 def debug_file_write(file_path: str = None, content: str = None):
