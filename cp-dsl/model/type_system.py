@@ -57,10 +57,10 @@ class Enumeral:
 
 class GenericEnumeralType(Type):
 
-    _enumerals: Dict[int, Enumeral] = {}
+    _enumerals: Dict[str,Enumeral]
 
     def __init__(self) -> None:
-        pass
+        self._enumerals = {}
 
 class InternalEnumeralType(GenericEnumeralType):
     pass

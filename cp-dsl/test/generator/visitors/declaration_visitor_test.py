@@ -16,10 +16,10 @@ __author__ = "reiner"
 
 import unittest
 from generator.visitors.declaration_visitor import GeneratorDeclarationVisitor
-from model.declaration_model import DeclarationModel, ParameterGroup, Parameter
+from model.declaration_model import DeclarationModel, ParameterGroup, Parameter, FeatureGroup, Feature
 from model.type_system import EnumeralType, Enumeral, RangeType, BaseType, ArrayType, Dimension, InternalEnumeralType, Enumeral
 from model.unit_model import UnitSpecification, UnitKind, UnitPrefix, SIUnit, CustomUnit, DivisionUnit, ExponentUnit
-from model.arithmetic_model import IntValue, StringValue, FloatValue, ArithmeticExpression
+from model.arithmetic_model import IntValue, StringValue, FloatValue, ArithmeticExpression, MultiplicationExpression, EMultiplicationOperator, EAdditionOperator
 from antlr4 import InputStream, CommonTokenStream
 from antlr4.Token import CommonToken
 from antlr4 import ParserRuleContext, TerminalNode
@@ -105,6 +105,7 @@ class TestGeneratorDeclarationVisitor(unittest.TestCase):
         self.assertEqual(group._description, "group description", "Wrong description")
 
         t = BaseType("int")
+        self.assertEqual(len(group._parameters.values()), 1, "Wrong number of parameters")
         for p in group._parameters.values():
             self.assertEqual(p.name, "param1", "Wrong param name")
             self.assertEqual(p._type, t, "Wrong type")
@@ -316,17 +317,94 @@ class TestGeneratorDeclarationVisitor(unittest.TestCase):
     def test_visitFeatureAssignStat(self):
         self.fail()
 
+    def create_feature(self, name:str, required: bool, description:str, parent:ParserRuleContext=None):
+        feature = DeclarationParser.FeatureAssignStatContext(parser=None, ctx=parent)
+        feature.required = self.set_token("required")
+        feature.name = self.set_token(f"\"{name}\"")
+        feature.description = self.set_token(f"\"{description}\"")
+
+        return feature
+
     def test_visitFeatureGroupAssignStat(self):
-        self.fail()
+        code = """
+            model eval
+                required feature Base : "Base description" {
+                    sub alternative
+                        feature Feat1 : "Feature one"
+                        feature Feat2 : "Feature two"
+                }
+        """
+
+        model = self.parse_code(code)
+
+        base_feature:Feature = model._features.get("Base")
+        self.assertEqual(base_feature.name, "Base", "Wrong feature")
+        self.assertEqual(base_feature._required, True, "Feature must be required")
+        self.assertEqual(len(base_feature._features), 2, "Wrong number features")
+
+        print(f"Base {type(base_feature)}")
+
+#        feature = self.create_feature(required=True, name="Base", description="Base feature", parent=None)
+#        ctx = DeclarationParser.FeatureGroupAssignStatContext(parser=None, ctx=feature)
+#        ctx.kind = self.set_token("alternative") # "multiple"
+#        ctx.featureDeclarations.append(self.create_feature(required=True, name="Feat1", description="Test feature 1", parent=ctx))
+#        ctx.featureDeclarations.append(self.create_feature(required=False, name="Feat2", description="Test feature 2", parent=ctx))
+#
+#        result:FeatureGroup = self.make_visitor().visitFeatureGroupAssignStat(ctx)
+#
+#        print(f"Kind {result._kind}")
 
     def test_visitEKind(self):
         self.fail()
 
     def test_visitArithmeticExpression(self):
-        self.fail()
+        model = self.parse_code("model eval group g : \"group description\" { def param1 int : meter = 3 + 4 }")
+
+        group:ParameterGroup = model._groups.get("g")
+
+        self.assertIsInstance(group, ParameterGroup, f"Wrong type {type(group)}")
+        self.assertEqual(group.name, "g", "Wrong name")
+        self.assertEqual(group._description, "group description", "Wrong description")
+
+        t = BaseType("int")
+        self.assertEqual(len(group._parameters.values()), 1, "Wrong number of parameters")
+        for p in group._parameters.values():
+            self.assertEqual(p.name, "param1", "Wrong param name")
+            self.assertEqual(p._type, t, "Wrong type")
+            # TODO
+#            self.assertEqual(p._unit, u, "Should be meter")
+            self.assertIsInstance(p._default_value, ArithmeticExpression, "Wrong expression type")
+            self.assertIsInstance(p._default_value.left, IntValue, "Wrong value type")
+            self.assertEqual(p._default_value.left.value, 3, "Wrong value")
+            self.assertIsInstance(p._default_value.right, IntValue, "Wrong value type")
+            self.assertEqual(p._default_value.right.value, 4, "Wrong value")
+            self.assertEqual(p._default_value.op, EAdditionOperator.ADD, "Wrong operation")
+            self.assertEqual(p._description, "", "Wrong description")
 
     def test_visitMultiplicationExpression(self):
-        self.fail()
+        model = self.parse_code("model eval group g : \"group description\" { def param1 int : meter = 3 * 4 }")
+
+        group:ParameterGroup = model._groups.get("g")
+
+        self.assertIsInstance(group, ParameterGroup, f"Wrong type {type(group)}")
+        self.assertEqual(group.name, "g", "Wrong name")
+        self.assertEqual(group._description, "group description", "Wrong description")
+
+        t = BaseType("int")
+        self.assertEqual(len(group._parameters.values()), 1, "Wrong number of parameters")
+        for p in group._parameters.values():
+            self.assertEqual(p.name, "param1", "Wrong param name")
+            self.assertEqual(p._type, t, "Wrong type")
+            # TODO
+#            self.assertEqual(p._unit, u, "Should be meter")
+            self.assertIsInstance(p._default_value, MultiplicationExpression, "Wrong expression type")
+            self.assertIsInstance(p._default_value.left, IntValue, "Wrong value type")
+            self.assertEqual(p._default_value.left.value, 3, "Wrong value")
+            self.assertIsInstance(p._default_value.right, IntValue, "Wrong value type")
+            self.assertEqual(p._default_value.right.value, 4, "Wrong value")
+            self.assertEqual(p._default_value.op, EMultiplicationOperator.MULT, "Wrong operator")
+            self.assertEqual(p._description, "", "Wrong description")
+
 
     def test_visitValueExpression_parenthesis(self):
         ctx = DeclarationParser.ValueExpressionContext(parser=None, parent=None)
@@ -494,6 +572,7 @@ class TestGeneratorDeclarationVisitor(unittest.TestCase):
         group:ParameterGroup = model._groups.get("test")
         parameter:Parameter = group._parameters.get("param")
         expression:ArithmeticExpression = parameter._default_value
+        print (f"{expression} {parameter}")
 
     def test_visitNamedElementReference_two(self):
         reference_context = DeclarationParser.NamedElementReferenceContext(parent=None, parser=None)
@@ -636,7 +715,26 @@ class TestGeneratorDeclarationVisitor(unittest.TestCase):
         self.fail()
 
     def test_visitInlineEnumerationType(self):
-        self.fail()
+        model = self.parse_code("model eval group g : \"group description\" { def param1 ( RED, GREEN, BLUE ) : meter = BLUE }")
+
+        group:ParameterGroup = model._groups.get("g")
+
+        self.assertIsInstance(group, ParameterGroup, f"Wrong type {type(group)}")
+        self.assertEqual(group.name, "g", "Wrong name")
+        self.assertEqual(group._description, "group description", "Wrong description")
+
+        self.assertEqual(len(group._parameters.values()), 1, "Wrong number of parameters")
+        for p in group._parameters.values():
+            self.assertEqual(p.name, "param1", "Wrong param name")
+            self.assertIsInstance(p._type, InternalEnumeralType, "Wrong type")
+            enumeral_type:InternalEnumeralType = p._type
+            self.assertEqual(len(enumeral_type._enumerals), 3, "Wrong number of enumerals")
+            self.assertEqual(enumeral_type._enumerals.get("RED").name, "RED", "Not red")
+            self.assertEqual(enumeral_type._enumerals.get("RED").value, 0, "Not 0 for red")
+            self.assertEqual(enumeral_type._enumerals.get("GREEN").name, "GREEN", "Not green")
+            self.assertEqual(enumeral_type._enumerals.get("GREEN").value, 1, "Not 1 for green")
+            self.assertEqual(enumeral_type._enumerals.get("BLUE").name, "BLUE", "Not blue")
+            self.assertEqual(enumeral_type._enumerals.get("BLUE").value, 2, "Not 2 for blue")
 
     #########################################
     # Utility functions

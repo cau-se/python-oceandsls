@@ -15,6 +15,7 @@
 from .type_system import Type
 from dataclasses import dataclass
 from antlr4.ParserRuleContext import ParserRuleContext
+from enum import Enum
 
 
 @dataclass
@@ -22,11 +23,27 @@ class AbstractExpression:
 
     ctx: ParserRuleContext
 
+class EAdditionOperator(Enum):
+    ADD = '+'
+    SUB = '-'
+@dataclass
 
 class ArithmeticExpression(AbstractExpression):
+    left:AbstractExpression
+    right:AbstractExpression
+    op:EAdditionOperator
 
-    def __init__(self) -> None:
-        pass
+class EMultiplicationOperator(Enum):
+    MULT = '*'
+    DIV = '/'
+    MOD = '%'
+
+@dataclass
+class MultiplicationExpression(AbstractExpression):
+    left:AbstractExpression
+    right:AbstractExpression
+    op:EMultiplicationOperator
+
 
 
 @dataclass

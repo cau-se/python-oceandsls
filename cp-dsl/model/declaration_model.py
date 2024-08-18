@@ -21,8 +21,8 @@ from typing import Optional, Coroutine, TypeVar, List, Dict
 from antlr4.tree.Tree import ParseTree
 
 from .symbols import Scope, NamedElement
-from .symbols import ScopedSymbol, Symbol, UnitSymbol
-from .type_system import NamedType, Type, GenericEnumeralType, EnumeralType
+from .symbols import UnitSymbol
+from .type_system import NamedType, Type
 from .unit_model import UnitSpecification
 from .arithmetic_model import ArithmeticExpression
 
@@ -59,16 +59,6 @@ class DeclarationModel(Scope):
 
     def resolve_type(self, name: str):
         return self._types.get(name, None)
-
-#
-# Types
-#
-
-
-class InlineEnumerationType(GenericEnumeralType):
-
-    def __init__(self) -> None:
-        super().__init__()
 
 #
 # Parameter Groups
@@ -121,6 +111,11 @@ class FeatureGroup(Scope):
     def __init__(self, name: str, parent: Scope):
         super().__init__(parent)
 
+<<<<<<< HEAD
+=======
+    def resolve_symbol(self, name: str) -> Feature:
+        return self._features.get(name, None)
+>>>>>>> 8bd4432 (Updated checks.)
 
 class Feature(NamedElement):
 
@@ -136,3 +131,13 @@ class Feature(NamedElement):
     def __init__(self, name: str, description: str, parent: Scope):
         super().__init__(name, parent)
         self._description = description
+<<<<<<< HEAD
+=======
+
+    def resolve_symbol(self, name: str) -> ParameterGroup|FeatureGroup:
+        result = self._features.get(name, None)
+        if result is None:
+            return self._groups.get(name, None)
+        else:
+            return result
+>>>>>>> 8bd4432 (Updated checks.)

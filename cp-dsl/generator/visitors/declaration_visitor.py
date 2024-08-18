@@ -28,7 +28,7 @@ from model.declaration_model import DeclarationModel, Parameter, ParameterGroup,
 from model.type_system import GenericEnumeralType, EnumeralType, InternalEnumeralType, Enumeral, RangeType, ArrayType, Dimension, BaseType, base_types
 from model.unit_model import Unit, UnitPrefix, UnitKind, UnitSpecification, SIUnit, CustomUnit, DivisionUnit, ExponentUnit
 from common.logger import GeneratorLogger
-from model.arithmetic_model import ArithmeticExpression, IntValue, FloatValue, StringValue
+from model.arithmetic_model import ArithmeticExpression, MultiplicationExpression, IntValue, FloatValue, StringValue, EMultiplicationOperator, EAdditionOperator
 
 from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
 from dcllspserver.gen.python.Declaration.DeclarationVisitor import DeclarationVisitor
@@ -36,39 +36,40 @@ from dcllspserver.gen.python.Declaration.DeclarationVisitor import DeclarationVi
 # NOTE: Method names starting with visit are required to look like this, as parts of the grammar
 # are named in that way
 
+# NOTE: DiagnosticListener bei Sven im Code ansehen
 
 class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
 
-    _symbol_table: DeclarationModel
+    _declaration_model: DeclarationModel
 
     def __init__(self, symbol_table: DeclarationModel, logger: GeneratorLogger):
         super().__init__()
         # creates a new symboltable with no duplicate symbols
-        self._symbol_table = symbol_table
+        self._declaration_model = symbol_table
         # TODO scope marker
         # self._scope = self._symbol_table.add_new_symbol_of_type( ScopedSymbol, None )
-        self._scope = self._symbol_table
+        self._scope = self._declaration_model
         self._type_scope = None
         self.inline_int = 0
         self._logger = logger
 
     @property
     def symbol_table(self) -> DeclarationModel:
-        return self._symbol_table
+        return self._declaration_model
 
     def visitDeclarationModel(self, ctx: DeclarationParser.DeclarationModelContext):
-        self._symbol_table.name = ctx.name.text
+        self._declaration_model.name = ctx.name.text
         for type in ctx.types:
             type_definition = self.visitDeclaredType(type)
-            self._symbol_table._types[type_definition.name] = type_definition
+            self._declaration_model._types[type_definition.name] = type_definition
 
         for group in ctx.parameterGroupDeclarations:
             group_declaration = self.visitParamGroupAssignStat(group)
-            self._symbol_table._groups[group_declaration.name] = group_declaration
+            self._declaration_model._groups[group_declaration.name] = group_declaration
 
         for feature in ctx.featureDeclarations:
             feature_declaration = self.visitFeatureAssignStat(feature)
-            self._symbol_table._features[feature_declaration.name] = feature_declaration
+            self._declaration_model._features[feature_declaration.name] = feature_declaration
 
         return self._scope
 
@@ -86,7 +87,7 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
         old_symbol = self.resolve_type(self._scope, range_name)
         if old_symbol:
             self._logger.strict(ctx, "Redefining ranges")
-        type = self.resolve_type(self._symbol_table, ctx.type_.text)
+        type = self.resolve_type(self._declaration_model, ctx.type_.text)
         if type is not None:
             if ctx.minimum.longValue() is not None:
                 minimum = ctx.minimum.longValue().value.text
@@ -110,7 +111,7 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
         # create a new type if no old one exists
         if enum_type is None:
             enum_type = EnumeralType(enum_name)
-            self._symbol_table.add_new_type(enum_type)
+            self._declaration_model.add_new_type(enum_type)
 
         for i in ctx.enumeral():
             # enum_list representation: [(id, value),...]
@@ -238,6 +239,7 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
         if feature is None:
             description = ctx.description.text
             feature = Feature(name, description, self._scope)
+            feature._required = ctx.required is not None
             parent_scope = self._scope
             self._scope = feature
             contents = self.visitChildren(ctx)
@@ -270,39 +272,73 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
 
     def visitArithmeticExpression(self, ctx: DeclarationParser.ArithmeticExpressionContext):
         if ctx.left is not None:
-            print("Left")
             if ctx.right is not None:
+<<<<<<< HEAD
                 print("Right and left compute")
+=======
+                left = self.visit(ctx.left)
+                right = self.visit(ctx.right)
+                op = self.visitEAdditionOperator(ctx.op)
+                return ArithmeticExpression(ctx=ctx,left=left,right=right,op=op)
+>>>>>>> 8bd4432 (Updated checks.)
             else:
-                print("left")
                 return self.visit(ctx.left)
-            return None
 
         if len(ctx.children) == 1:
             expression = ctx.children[0]
-            return self.visitMultiplicationExpression(expression)
+            if isinstance(expression, DeclarationParser.MultiplicationExpressionContext):
+                return self.visitMultiplicationExpression(expression)
+            else:
+                print(f"ERROR unsupported type in ArithmeticExpression {type(expression)}")
+                return None
         else:
             print("ERROR")
             return None
 
+    def visitEAdditionOperator(self, ctx: DeclarationParser.EAdditionOperatorContext):
+        value = ctx.getText()
+        if value == EAdditionOperator.ADD.value:
+            return EAdditionOperator.ADD
+        if value == EAdditionOperator.SUB.value:
+            return EAdditionOperator.SUB
+
+        return None
+
     def visitMultiplicationExpression(self, ctx: DeclarationParser.MultiplicationExpressionContext):
         if ctx.left is not None:
-            print("Left")
             if ctx.right is not None:
+<<<<<<< HEAD
                 print("Right and left compute")
+=======
+                left = self.visit(ctx.left)
+                right = self.visit(ctx.right)
+                op = self.visitEMultiplicationOperator(ctx.op)
+                return MultiplicationExpression(ctx=ctx,left=left,right=right,op=op)
+>>>>>>> 8bd4432 (Updated checks.)
             else:
-                print("left")
+                return self.visit(ctx.left)
 
         if len(ctx.children) == 1:
             expression = ctx.children[0]
             if isinstance(expression, DeclarationParser.ValueExpressionContext):
                 return self.visitValueExpression(expression)
             else:
-                print(type(expression))
+                print(f"ERROR unsupported type in MultiplicationExpression {type(expression)}")
                 return None
         else:
             print("ERROR")
             return None
+
+    def visitEMultiplicationOperator(self, ctx: DeclarationParser.EMultiplicationOperatorContext):
+        value = ctx.getText()
+        if value == EMultiplicationOperator.MULT.value:
+            return EMultiplicationOperator.MULT
+        if value == EMultiplicationOperator.DIV.value:
+            return EMultiplicationOperator.DIV
+        if value == EMultiplicationOperator.MOD.value:
+            return EMultiplicationOperator.MOD
+
+        return None
 
     def visitValueExpression(self, ctx: DeclarationParser.ValueExpressionContext):
         if ctx.parenthesisExpression() is not None:
@@ -338,13 +374,31 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
     def visitStringValue(self, ctx: DeclarationParser.StringValueContext):
         return StringValue(ctx, base_types["string"], ctx.value.text[1:-1])
 
-
-
     def visitNamedElementReference(self, ctx: DeclarationParser.NamedElementReferenceContext):
+<<<<<<< HEAD
         element = ctx.elements[0]
+=======
+        depth = len(ctx.elements)
+        scope = self._scope
+        if depth > 1:
+            for i in range(1,depth-1):
+                scope = scope.parent
 
-        symbol:Parameter = self._scope.resolve_symbol(element)
+        # check whether it is a parameter
+        parameter_level = 0
+        param = True
+        for i in range(0,depth-1):
+            scope = scope.resolve_symbol(ctx.elements[i])
+            if scope is None:
+                parameter_level = i
+                param = False
+                break
+>>>>>>> 8bd4432 (Updated checks.)
 
+        if param:
+            return scope
+
+<<<<<<< HEAD
         if ctx.attribute is None: # enum or local reference
             # TODO parameter reference
             # enum
@@ -360,6 +414,44 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
                 return type._enumerals.get(ctx.attribute.text)
             self._logger.strict(ctx, f"Name {ctx.element.text}.{ctx.attribute.text} cannot be resolved to a parameter or enumeral")
             return None
+=======
+        # check whether it is an enumeration
+        if depth == 2: # Can be an enumeration
+            type = self._declaration_model._types.get(ctx.elements[0])
+            if issubclass(type, GenericEnumeralType):
+                enumeral = type._enumerals.get(ctx.elements[1], None)
+                if enumeral is None:
+                    self._logger.strict(ctx, f"Symbol {self.print_symbol(ctx.element,2)} does not refer to an enumeral")
+                    return None
+            else:
+                self._logger.strict(ctx, f"Symbol {self.print_symbol(ctx.element,1)} does not refer to an enumeration type")
+                return None
+
+        # check whether it is an enumeration inferred by parameter type
+        if isinstance(self._type_scope, Parameter):
+            type = self._type_scope
+            if issubclass(type, GenericEnumeralType):
+                enumeral = type._enumerals.get(ctx.elements[0], None)
+                if enumeral is None:
+                    self._logger.strict(ctx, f"Symbol {self.print_symbol(ctx.element,2)} does not refer to an enumeral")
+                    return None
+            else:
+                self._logger.strict(ctx, f"Symbol {self.print_symbol(ctx.element,1)} does not refer to an enumeration type")
+                return None
+
+        # Strange cases
+        self._logger.strict(ctx, f"Symbol {self.print_symbol(ctx.elements, len(ctx.elements))} cannot be resolved.")
+        return None
+
+    def print_symbol(self, elements:list, level:int):
+        result = ""
+        for i in range(0,level-1):
+            if result == "":
+                result = f"{elements[i]}"
+            else:
+                result = f"{result}.{elements[i]}"
+        return result
+>>>>>>> 8bd4432 (Updated checks.)
 
     ##################################
     # Units
