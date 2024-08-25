@@ -77,6 +77,18 @@ public class DeclarationBaseListener implements DeclarationListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterFeatureReference(DeclarationParser.FeatureReferenceContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitFeatureReference(DeclarationParser.FeatureReferenceContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterFeatureGroupAssignStat(DeclarationParser.FeatureGroupAssignStatContext ctx) { }
 	/**
 	 * {@inheritDoc}

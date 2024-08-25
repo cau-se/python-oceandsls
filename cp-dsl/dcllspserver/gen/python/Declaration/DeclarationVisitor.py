@@ -34,6 +34,11 @@ class DeclarationVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by DeclarationParser#featureReference.
+    def visitFeatureReference(self, ctx:DeclarationParser.FeatureReferenceContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by DeclarationParser#featureGroupAssignStat.
     def visitFeatureGroupAssignStat(self, ctx:DeclarationParser.FeatureGroupAssignStatContext):
         return self.visitChildren(ctx)

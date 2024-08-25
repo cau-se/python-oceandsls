@@ -64,6 +64,16 @@ public interface DeclarationListener extends ParseTreeListener {
 	 */
 	void exitFeatureAssignStat(DeclarationParser.FeatureAssignStatContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link DeclarationParser#featureReference}.
+	 * @param ctx the parse tree
+	 */
+	void enterFeatureReference(DeclarationParser.FeatureReferenceContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link DeclarationParser#featureReference}.
+	 * @param ctx the parse tree
+	 */
+	void exitFeatureReference(DeclarationParser.FeatureReferenceContext ctx);
+	/**
 	 * Enter a parse tree produced by the {@code featureGroupAssignStat}
 	 * labeled alternative in {@link DeclarationParser#featureGroupDeclaration}.
 	 * @param ctx the parse tree

@@ -60,6 +60,13 @@ class DeclarationModel(Scope):
     def resolve_type(self, name: str):
         return self._types.get(name, None)
 
+    def resolve_symbol(self, name: str):
+        feature = self._features.get(name, None)
+        if feature is None:
+            return self._groups.get(name, None)
+        else:
+            return feature
+
 #
 # Parameter Groups
 #
@@ -105,17 +112,16 @@ class EKind(Enum):
 
 class FeatureGroup(Scope):
 
-    _kind: EKind
-    _features = {}
+    _kind:EKind
+    _features:Dict[str, Feature]
 
-    def __init__(self, name: str, parent: Scope):
+    def __init__(self, kind:EKind, parent: Scope):
         super().__init__(parent)
+        self._kind = kind
+        self._features = {}
 
-<<<<<<< HEAD
-=======
     def resolve_symbol(self, name: str) -> Feature:
         return self._features.get(name, None)
->>>>>>> 8bd4432 (Updated checks.)
 
 class Feature(NamedElement):
 
@@ -125,19 +131,22 @@ class Feature(NamedElement):
     _requires: List[Feature] = []
     _excludes: List[Feature] = []
 
-    _groups: Dict[str, ParameterGroup] = {}
-    _features: Dict[str, FeatureGroup] = {}
+    _groups:Dict[str, ParameterGroup]
+    _feature_sets:List[FeatureGroup]
 
     def __init__(self, name: str, description: str, parent: Scope):
         super().__init__(name, parent)
         self._description = description
-<<<<<<< HEAD
-=======
+        self._groups = {}
+        self._feature_sets = []
 
     def resolve_symbol(self, name: str) -> ParameterGroup|FeatureGroup:
-        result = self._features.get(name, None)
+        result = self._groups.get(name, None)
         if result is None:
-            return self._groups.get(name, None)
+            for feature_set in self._feature_sets:
+                feature = feature_set._features.get(name, None)
+                if feature is not None:
+                    return feature
+            return None
         else:
             return result
->>>>>>> 8bd4432 (Updated checks.)

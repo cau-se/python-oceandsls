@@ -53,6 +53,15 @@ class DeclarationListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by DeclarationParser#featureReference.
+    def enterFeatureReference(self, ctx:DeclarationParser.FeatureReferenceContext):
+        pass
+
+    # Exit a parse tree produced by DeclarationParser#featureReference.
+    def exitFeatureReference(self, ctx:DeclarationParser.FeatureReferenceContext):
+        pass
+
+
     # Enter a parse tree produced by DeclarationParser#featureGroupAssignStat.
     def enterFeatureGroupAssignStat(self, ctx:DeclarationParser.FeatureGroupAssignStatContext):
         pass

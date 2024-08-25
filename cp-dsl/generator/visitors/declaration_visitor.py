@@ -235,28 +235,55 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
     def visitFeatureAssignStat(self, ctx: DeclarationParser.FeatureAssignStatContext):
         name = ctx.name.text
 
-        feature = self._scope._features.get(name, None)
+        feature = self._scope.resolve_symbol(name)
         if feature is None:
-            description = ctx.description.text
+            description = ctx.description.text[1:-1]
             feature = Feature(name, description, self._scope)
             feature._required = ctx.required is not None
+
+            for required in ctx.requires:
+                feature._requires.append(self.visitFeatureReference(required))
+            for excluded in ctx.excludes:
+                feature._excludes.append(self.visitFeatureReference(excluded))
+
             parent_scope = self._scope
             self._scope = feature
-            contents = self.visitChildren(ctx)
-            if contents is not None:
-                for element in contents:
-                    print(f"content {type(element)}")
+
+            for group in ctx.featureGroupDeclarations:
+                feature._feature_sets.append(self.visitFeatureGroupAssignStat(group))
+
             self._scope = parent_scope
             return feature
         else:
             self._logger.strict(ctx, f"Feature redefinition is not allowed")
 
+    def visitFeatureReference(self, ctx: DeclarationParser.FeatureReferenceContext):
+        depth = len(ctx.elements)
+        scope = self._scope
+        if depth > 1:
+            for i in range(1,depth-1):
+                scope = scope.parent
+
+        for i in range(0,depth-1):
+            scope = scope.resolve_symbol(ctx.elements[i])
+            if scope is None:
+                self._logger.strict(ctx, f"Symbol {self.print_symbol(ctx.elements, i)} does not exist")
+                return None
+            if not isinstance(scope, Feature):
+                self._logger.strict(ctx, f"Symbol {self.print_symbol(ctx.elements, i)} does not refer to a feature")
+
+        return scope
+
+
     def visitFeatureGroupAssignStat(self, ctx: DeclarationParser.FeatureGroupAssignStatContext):
-        mode = self.visitEKind(ctx.kind)
-        group = FeatureGroup(mode, self._scope)
+        kind = self.visitEKind(ctx.kind)
+        group = FeatureGroup(kind=kind, parent=self._scope)
         parent_scope = self._scope
-        self._scope = group
-        self.visitChildren(ctx)
+
+        for declaration in ctx.featureDeclarations:
+            feature = self.visitFeatureAssignStat(declaration)
+            group._features[feature.name] = feature
+
         self._scope = parent_scope
 
         return group
@@ -273,14 +300,10 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
     def visitArithmeticExpression(self, ctx: DeclarationParser.ArithmeticExpressionContext):
         if ctx.left is not None:
             if ctx.right is not None:
-<<<<<<< HEAD
-                print("Right and left compute")
-=======
                 left = self.visit(ctx.left)
                 right = self.visit(ctx.right)
                 op = self.visitEAdditionOperator(ctx.op)
                 return ArithmeticExpression(ctx=ctx,left=left,right=right,op=op)
->>>>>>> 8bd4432 (Updated checks.)
             else:
                 return self.visit(ctx.left)
 
@@ -302,19 +325,16 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
         if value == EAdditionOperator.SUB.value:
             return EAdditionOperator.SUB
 
+        print("Illegal addition operator")
         return None
 
     def visitMultiplicationExpression(self, ctx: DeclarationParser.MultiplicationExpressionContext):
         if ctx.left is not None:
             if ctx.right is not None:
-<<<<<<< HEAD
-                print("Right and left compute")
-=======
                 left = self.visit(ctx.left)
                 right = self.visit(ctx.right)
                 op = self.visitEMultiplicationOperator(ctx.op)
                 return MultiplicationExpression(ctx=ctx,left=left,right=right,op=op)
->>>>>>> 8bd4432 (Updated checks.)
             else:
                 return self.visit(ctx.left)
 
@@ -375,9 +395,6 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
         return StringValue(ctx, base_types["string"], ctx.value.text[1:-1])
 
     def visitNamedElementReference(self, ctx: DeclarationParser.NamedElementReferenceContext):
-<<<<<<< HEAD
-        element = ctx.elements[0]
-=======
         depth = len(ctx.elements)
         scope = self._scope
         if depth > 1:
@@ -393,28 +410,10 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
                 parameter_level = i
                 param = False
                 break
->>>>>>> 8bd4432 (Updated checks.)
 
         if param:
             return scope
 
-<<<<<<< HEAD
-        if ctx.attribute is None: # enum or local reference
-            # TODO parameter reference
-            # enum
-            if isinstance(self._type_scope, GenericEnumeralType):
-                return self._type_scope._enumerals.get(ctx.element.text)
-            self._logger.strict(ctx, f"Name {ctx.element.text} cannot be resolved to a parameter or enumeral")
-            return None
-        else:
-            # TODO parameter
-            # enum
-            type = self._symbol_table.resolve_type(ctx.element.text)
-            if type is not None:
-                return type._enumerals.get(ctx.attribute.text)
-            self._logger.strict(ctx, f"Name {ctx.element.text}.{ctx.attribute.text} cannot be resolved to a parameter or enumeral")
-            return None
-=======
         # check whether it is an enumeration
         if depth == 2: # Can be an enumeration
             type = self._declaration_model._types.get(ctx.elements[0])
@@ -451,7 +450,6 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
             else:
                 result = f"{result}.{elements[i]}"
         return result
->>>>>>> 8bd4432 (Updated checks.)
 
     ##################################
     # Units

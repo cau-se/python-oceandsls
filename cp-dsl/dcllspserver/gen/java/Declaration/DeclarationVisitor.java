@@ -44,6 +44,12 @@ public interface DeclarationVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitFeatureAssignStat(DeclarationParser.FeatureAssignStatContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link DeclarationParser#featureReference}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitFeatureReference(DeclarationParser.FeatureReferenceContext ctx);
+	/**
 	 * Visit a parse tree produced by the {@code featureGroupAssignStat}
 	 * labeled alternative in {@link DeclarationParser#featureGroupDeclaration}.
 	 * @param ctx the parse tree

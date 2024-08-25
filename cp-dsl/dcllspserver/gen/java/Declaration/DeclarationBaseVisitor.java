@@ -53,6 +53,13 @@ public class DeclarationBaseVisitor<T> extends AbstractParseTreeVisitor<T> imple
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
+	@Override public T visitFeatureReference(DeclarationParser.FeatureReferenceContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
 	@Override public T visitFeatureGroupAssignStat(DeclarationParser.FeatureGroupAssignStatContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
