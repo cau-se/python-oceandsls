@@ -15,9 +15,8 @@
 __author__ = "reiner"
 
 import unittest
-from generator.visitors.declaration_visitor import GeneratorDeclarationVisitor
 from model.declaration_model import DeclarationModel, ParameterGroup, Parameter, FeatureGroup, Feature
-from model.type_system import EnumeralType, Enumeral, RangeType, BaseType, ArrayType, Dimension, InternalEnumeralType, Enumeral
+from model.type_system import EnumeralType, Enumeral, RangeType, BaseType, ArrayType, Dimension, InlineEnumeralType, Enumeral
 from model.unit_model import UnitSpecification, UnitKind, UnitPrefix, SIUnit, CustomUnit, DivisionUnit, ExponentUnit
 from model.arithmetic_model import IntValue, StringValue, FloatValue, ArithmeticExpression, MultiplicationExpression, EMultiplicationOperator, EAdditionOperator
 from antlr4 import InputStream, CommonTokenStream
@@ -31,17 +30,12 @@ from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationPar
 from common.logger import GeneratorLogger
 from common.configuration import CompileFlags
 
-class TestStream(InputStream):
+from test_utils import TestGeneratorDeclarationVisitorBase
 
-    fileName = "test"
-
-    def __init__(self, data: str) -> None:
-        super().__init__(data)
-
-class TestGeneratorDeclarationVisitor(unittest.TestCase):
+class TestGeneratorDeclarationVisitor(TestGeneratorDeclarationVisitorBase):
 
     logger = GeneratorLogger(CompileFlags.STRICT)
-    
+
     def test_visitArithmeticExpression(self):
         model = self.parse_code("model eval group g : \"group description\" { def param1 int : meter = 3 + 4 }")
 
@@ -91,7 +85,7 @@ class TestGeneratorDeclarationVisitor(unittest.TestCase):
             self.assertEqual(p._default_value.op, EMultiplicationOperator.MULT, "Wrong operator")
             self.assertEqual(p._description, "", "Wrong description")
 
-   def test_visitValueExpression_parenthesis(self):
+    def test_visitValueExpression_parenthesis(self):
         ctx = DeclarationParser.ValueExpressionContext(parser=None, parent=None)
         parenthesisExpression = DeclarationParser.ParenthesisExpressionContext(parent=ctx, parser=None)
         ctx.addChild(parenthesisExpression)
@@ -216,7 +210,6 @@ class TestGeneratorDeclarationVisitor(unittest.TestCase):
         self.assertIsInstance(result.value, int, "Wrong value type")
         self.assertEqual(result.value, 10, "Incorrect value")
 
-
     def test_visitDoubleValue(self):
         value = DeclarationParser.DoubleValueContext(parent=None, parser=None)
         value.value = self.set_token("10.0")
@@ -237,12 +230,57 @@ class TestGeneratorDeclarationVisitor(unittest.TestCase):
 
     # Named elements can be references to an enumeral or another property or in future a feature
     # The test must therefor test whether an group property, an enumeration and an inline enumeration can be resolved.
-    # This test tests property, local
-    def test_visitNamedElementReference_one_property(self):
-        reference_context = DeclarationParser.NamedElementReferenceContext(parent=None, parser=None)
-        reference_context.elements = [self.set_token("a")]
 
-        result = self.make_visitor().visitNamedElementReference(reference_context)
+    # This test tests property, local
+    def test_visitNamedElementReference_one_parameter(self):
+        model = self.parse_code("""
+            model eval
+            group test : "description" {
+                def param_a int : meter = 0
+                def param_b int : meter = param_a
+            }
+            """)
+
+        group:ParameterGroup = model._groups.get("test")
+        parameter_a:Parameter = group._parameters.get("param_a")
+        parameter_b:Parameter = group._parameters.get("param_b")
+
+        self.assertNotEqual(parameter_a, None, "Missing parameter a")
+        self.assertNotEqual(parameter_b, None, "Missing parameter b")
+
+        expression:ArithmeticExpression = parameter_b._default_value
+
+        self.assertNotEqual(expression, None, "Missing expression")
+
+        self.assertIsInstance(expression, Parameter, "Wrong type, Parameter expected")
+        self.assertEqual(parameter_a, expression, "Reference to the wrong element")
+
+    # This test tests property, local
+    def test_visitNamedElementReference_two_parameter(self):
+        model = self.parse_code("""
+            model eval
+            group test : "description" {
+                def param_a int : meter = 0
+            }
+            group test2 : "other" {
+                def param_b int : meter = test.param_a
+            }
+            """)
+
+        group_a:ParameterGroup = model._groups.get("test")
+        parameter_a:Parameter = group_a._parameters.get("param_a")
+        group_b:ParameterGroup = model._groups.get("test2")
+        parameter_b:Parameter = group_b._parameters.get("param_b")
+
+        self.assertNotEqual(parameter_a, None, "Missing parameter a")
+        self.assertNotEqual(parameter_b, None, "Missing parameter b")
+
+        expression:ArithmeticExpression = parameter_b._default_value
+
+        self.assertNotEqual(expression, None, "Missing expression")
+
+        self.assertIsInstance(expression, Parameter, "Wrong type, Parameter expected")
+        self.assertEqual(parameter_a, expression, "Reference to the wrong element")
 
     # This test tests enum based on context
     def test_visitNamedElementReference_one_enum(self):
@@ -258,11 +296,33 @@ class TestGeneratorDeclarationVisitor(unittest.TestCase):
         group:ParameterGroup = model._groups.get("test")
         parameter:Parameter = group._parameters.get("param")
         expression:ArithmeticExpression = parameter._default_value
-        print (f"{expression} {parameter}")
 
-    def test_visitNamedElementReference_two(self):
-        reference_context = DeclarationParser.NamedElementReferenceContext(parent=None, parser=None)
-        reference_context.elements = [self.set_token("a"), self.set_token("b")]
+        self.assertNotEqual(parameter, None, "Missing parameter")
+        self.assertNotEqual(expression, None, "Missing expression")
+        self.assertIsInstance(expression, Enumeral, "Missing enumeral")
+        self.assertEqual(expression.name, "blue", "Wrong enumeral name")
+        self.assertEqual(expression.value, 2, "Wrong enumeral value")
 
-        result = self.make_visitor().visitNamedElementReference(reference_context)
+    def test_visitNamedElementReference_two_enum(self):
+        model = self.parse_code("""
+            model eval
+            types
+                enum Color { red, green, blue }
+            group test : "description" {
+                def param Color : meter = Color.blue
+            }
+            """)
 
+        group:ParameterGroup = model._groups.get("test")
+        parameter:Parameter = group._parameters.get("param")
+        expression:ArithmeticExpression = parameter._default_value
+
+        self.assertNotEqual(parameter, None, "Missing parameter")
+        self.assertNotEqual(expression, None, "Missing expression")
+        self.assertIsInstance(expression, Enumeral, "Missing enumeral")
+        self.assertEqual(expression.name, "blue", "Wrong enumeral name")
+        self.assertEqual(expression.value, 2, "Wrong enumeral value")
+
+
+if __name__ == '__main__':
+    unittest.main()

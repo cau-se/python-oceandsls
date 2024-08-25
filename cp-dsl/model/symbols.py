@@ -515,12 +515,7 @@ class ScopedSymbol(Symbol, Scope):
         :return: the first symbol with a given name, in the order of appearance in this scope or any of the parent
         scopes (conditionally) or any scope included.
         """
-        for child in self.children():
-            if child.name == name:
-
-
-if not t or (not type_only and isinstance(child, t)) or (type_only and isinstance(child,                 if not t or (not type_only and isinstance(child, t)) or (type_only and )                    return child
-
+        # TODO this is broken
         # Nothing found locally. the parent continues.
         if not local_only:
             # Call parent scope

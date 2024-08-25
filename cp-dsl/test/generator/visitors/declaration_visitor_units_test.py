@@ -17,7 +17,7 @@ __author__ = "reiner"
 import unittest
 from generator.visitors.declaration_visitor import GeneratorDeclarationVisitor
 from model.declaration_model import DeclarationModel, ParameterGroup, Parameter, FeatureGroup, Feature
-from model.type_system import EnumeralType, Enumeral, RangeType, BaseType, ArrayType, Dimension, InternalEnumeralType, Enumeral
+from model.type_system import EnumeralType, Enumeral, RangeType, BaseType, ArrayType, Dimension, InlineEnumeralType, Enumeral
 from model.unit_model import UnitSpecification, UnitKind, UnitPrefix, SIUnit, CustomUnit, DivisionUnit, ExponentUnit
 from model.arithmetic_model import IntValue, StringValue, FloatValue, ArithmeticExpression, MultiplicationExpression, EMultiplicationOperator, EAdditionOperator
 from antlr4 import InputStream, CommonTokenStream
@@ -41,7 +41,7 @@ class TestStream(InputStream):
 class TestGeneratorDeclarationVisitor(unittest.TestCase):
 
     logger = GeneratorLogger(CompileFlags.STRICT)
-    
+
     def test_visitSiunit_no_prefix(self):
         # sIUnit                      :   (prefix=ePrefix)? type=eSIUnitType #siunit;
         ctx = DeclarationParser.SiunitContext(parser=None, ctx = DeclarationParser.SIUnitContext(parent=None, parser=None))

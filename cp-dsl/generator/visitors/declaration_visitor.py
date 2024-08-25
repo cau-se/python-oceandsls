@@ -25,7 +25,7 @@ from antlr4 import ParserRuleContext, TerminalNode
 # user relative imports
 from model.symbols import Scope, T, P
 from model.declaration_model import DeclarationModel, Parameter, ParameterGroup, Feature, FeatureGroup, EKind
-from model.type_system import GenericEnumeralType, EnumeralType, InternalEnumeralType, Enumeral, RangeType, ArrayType, Dimension, BaseType, base_types
+from model.type_system import EnumeralType, InlineEnumeralType, Enumeral, RangeType, ArrayType, Dimension, BaseType, base_types
 from model.unit_model import Unit, UnitPrefix, UnitKind, UnitSpecification, SIUnit, CustomUnit, DivisionUnit, ExponentUnit
 from common.logger import GeneratorLogger
 from model.arithmetic_model import ArithmeticExpression, MultiplicationExpression, IntValue, FloatValue, StringValue, EMultiplicationOperator, EAdditionOperator
@@ -113,22 +113,22 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
             enum_type = EnumeralType(enum_name)
             self._declaration_model.add_new_type(enum_type)
 
-        for i in ctx.enumeral():
+        for enumeral in ctx.values:
             # enum_list representation: [(id, value),...]
-            enum_item = self.visitEnumeral(i)
+            enum_item = self.visitEnumeral(enumeral)
             if enum_item.value == -1:
                 enum_item.value = self.find_next_enum_number(enum_type._enumerals)
             if self.check_enumeral_name(enum_item, enum_type._enumerals):
-                self._logger.strict(ctx, f"Enumeral {enum_item[0]} already exists in enumeration {enum_name}")
+                self._logger.strict(ctx, f"Enumeral {enum_item} already exists in enumeration {enum_name}")
             else:
                 enum_type._enumerals[enum_item.name] = enum_item
 
         return enum_type
 
     def visitInlineEnumerationType(self, ctx: DeclarationParser.InlineEnumerationTypeContext):
-        enum_type = InternalEnumeralType()
+        enum_type = InlineEnumeralType()
 
-        for i in ctx.enumeral():
+        for i in ctx.values:
             # enum_list representation: [(id, value),...]
             enum_item = self.visitEnumeral(i)
             if enum_item.value == -1:
@@ -398,14 +398,15 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
         depth = len(ctx.elements)
         scope = self._scope
         if depth > 1:
-            for i in range(1,depth-1):
+            for i in range(1,depth):
                 scope = scope.parent
 
         # check whether it is a parameter
         parameter_level = 0
         param = True
-        for i in range(0,depth-1):
-            scope = scope.resolve_symbol(ctx.elements[i])
+        for i in range(0,depth):
+            scope = scope.resolve_symbol(ctx.elements[i].text)
+
             if scope is None:
                 parameter_level = i
                 param = False
@@ -416,26 +417,30 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
 
         # check whether it is an enumeration
         if depth == 2: # Can be an enumeration
-            type = self._declaration_model._types.get(ctx.elements[0])
-            if issubclass(type, GenericEnumeralType):
-                enumeral = type._enumerals.get(ctx.elements[1], None)
+            data_type = self._declaration_model._types.get(ctx.elements[0].text)
+            if isinstance(data_type, EnumeralType):
+                enumeral = data_type._enumerals.get(ctx.elements[1].text, None)
                 if enumeral is None:
-                    self._logger.strict(ctx, f"Symbol {self.print_symbol(ctx.element,2)} does not refer to an enumeral")
+                    self._logger.strict(ctx, f"Symbol {self.print_symbol(ctx.elements, 2)} does not refer to an enumeral")
                     return None
+                else:
+                    return enumeral
             else:
-                self._logger.strict(ctx, f"Symbol {self.print_symbol(ctx.element,1)} does not refer to an enumeration type")
+                self._logger.strict(ctx, f"Symbol {self.print_symbol(ctx.elements, 1)} does not refer to an enumeration type")
                 return None
 
         # check whether it is an enumeration inferred by parameter type
         if isinstance(self._type_scope, Parameter):
-            type = self._type_scope
-            if issubclass(type, GenericEnumeralType):
-                enumeral = type._enumerals.get(ctx.elements[0], None)
+            data_type = self._type_scope
+            if isinstance(data_type, EnumeralType, InlineEnumeralType):
+                enumeral = data_type._enumerals.get(ctx.elements[0].text, None)
                 if enumeral is None:
-                    self._logger.strict(ctx, f"Symbol {self.print_symbol(ctx.element,2)} does not refer to an enumeral")
+                    self._logger.strict(ctx, f"Symbol {self.print_symbol(ctx.elements, 2)} does not refer to an enumeral")
                     return None
+                else:
+                    return enumeral
             else:
-                self._logger.strict(ctx, f"Symbol {self.print_symbol(ctx.element,1)} does not refer to an enumeration type")
+                self._logger.strict(ctx, f"Symbol {self.print_symbol(ctx.elements, 1)} does not refer to an enumeration type")
                 return None
 
         # Strange cases
@@ -444,11 +449,12 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
 
     def print_symbol(self, elements:list, level:int):
         result = ""
-        for i in range(0,level-1):
+        for i in range(0,level):
+            name = elements[i].text
             if result == "":
-                result = f"{elements[i]}"
+                result = f"{name}"
             else:
-                result = f"{result}.{elements[i]}"
+                result = f"{result}.{name}"
         return result
 
     ##################################

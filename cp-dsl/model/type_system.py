@@ -62,16 +62,14 @@ class GenericEnumeralType(Type):
     def __init__(self) -> None:
         self._enumerals = {}
 
-class InternalEnumeralType(GenericEnumeralType):
+class InlineEnumeralType(GenericEnumeralType):
     pass
 
 class EnumeralType(GenericEnumeralType, NamedType):
 
-    def __init__(self, name: str = "", enumerals={}):
+    def __init__(self, name: str = ""):
         super().__init__()
         self.name = name
-        self._enumerals = enumerals
-
 
 class RangeType(NamedType):
     '''

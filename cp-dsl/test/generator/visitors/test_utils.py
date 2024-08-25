@@ -16,13 +16,10 @@ __author__ = "reiner"
 
 import unittest
 from generator.visitors.declaration_visitor import GeneratorDeclarationVisitor
-from model.declaration_model import DeclarationModel, ParameterGroup, Parameter, FeatureGroup, Feature
-from model.type_system import EnumeralType, Enumeral, RangeType, BaseType, ArrayType, Dimension, InlineEnumeralType, Enumeral
-from model.unit_model import UnitSpecification, UnitKind, UnitPrefix, SIUnit, CustomUnit, DivisionUnit, ExponentUnit
-from model.arithmetic_model import IntValue, StringValue, FloatValue, ArithmeticExpression, MultiplicationExpression, EMultiplicationOperator, EAdditionOperator
+from model.declaration_model import DeclarationModel
 from antlr4 import InputStream, CommonTokenStream
 from antlr4.Token import CommonToken
-from antlr4 import ParserRuleContext, TerminalNode
+from antlr4 import TerminalNode
 from antlr4.tree.Tree import TerminalNodeImpl
 
 from dcllspserver.gen.python.Declaration.DeclarationLexer import DeclarationLexer
@@ -38,14 +35,9 @@ class TestStream(InputStream):
     def __init__(self, data: str) -> None:
         super().__init__(data)
 
-class TestGeneratorDeclarationVisitor(unittest.TestCase):
+class TestGeneratorDeclarationVisitorBase(unittest.TestCase):
 
     logger = GeneratorLogger(CompileFlags.STRICT)
-
-    #########################################
-    # Utility functions
-    #########################################
-    # TODO move to a general and abstract test class
 
     def make_visitor(self, type=None) -> GeneratorDeclarationVisitor:
         model = DeclarationModel()
@@ -74,6 +66,3 @@ class TestGeneratorDeclarationVisitor(unittest.TestCase):
         visitor.visit(parser.declarationModel())
 
         return model
-
-if __name__ == '__main__':
-    unittest.main()
