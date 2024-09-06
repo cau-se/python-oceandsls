@@ -31,49 +31,13 @@ from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationPar
 from common.logger import GeneratorLogger
 from common.configuration import CompileFlags
 
-class TestStream(InputStream):
+from test_utils import AbstractTestGeneratorDeclarationVisitor
 
-    fileName = "test"
+class TestGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisitor):
 
-    def __init__(self, data: str) -> None:
-        super().__init__(data)
-
-class TestGeneratorDeclarationVisitor(unittest.TestCase):
-
-    logger = GeneratorLogger(CompileFlags.STRICT)
-
-    #########################################
-    # Utility functions
-    #########################################
-    # TODO move to a general and abstract test class
-
-    def make_visitor(self, type=None) -> GeneratorDeclarationVisitor:
-        model = DeclarationModel()
-        if type is not None:
-            model._types[type.name] = type
-        return GeneratorDeclarationVisitor(model, self.logger)
-
-    def set_terminal(self, value:str) -> TerminalNode:
-        return TerminalNodeImpl(self.set_token(value))
-
-    def set_token(self, value:str) -> CommonToken:
-        token = CommonToken()
-        token.text = value
-        return token
-
-    def parse_code(self, code:str) -> DeclarationModel:
-        model = DeclarationModel()
-        visitor = GeneratorDeclarationVisitor(model, self.logger)
-
-        input_stream = TestStream(code)
-
-        lexer = DeclarationLexer(input_stream)
-        stream = CommonTokenStream(lexer)
-        parser = DeclarationParser(stream)
-
-        visitor.visit(parser.declarationModel())
-
-        return model
+    def test_visitDeclarationModel(self):
+        model = self.parse_code("model eval")
+        self.assertEqual(model.name, "eval", "Name not set")
 
 if __name__ == '__main__':
     unittest.main()

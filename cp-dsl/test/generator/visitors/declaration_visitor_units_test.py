@@ -31,14 +31,9 @@ from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationPar
 from common.logger import GeneratorLogger
 from common.configuration import CompileFlags
 
-class TestStream(InputStream):
+from test_utils import AbstractTestGeneratorDeclarationVisitor
 
-    fileName = "test"
-
-    def __init__(self, data: str) -> None:
-        super().__init__(data)
-
-class TestGeneratorDeclarationVisitor(unittest.TestCase):
+class TestGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisitor):
 
     logger = GeneratorLogger(CompileFlags.STRICT)
 

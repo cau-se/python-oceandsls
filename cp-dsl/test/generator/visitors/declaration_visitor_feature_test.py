@@ -31,9 +31,9 @@ from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationPar
 from common.logger import GeneratorLogger
 from common.configuration import CompileFlags
 
-from test_utils import TestGeneratorDeclarationVisitorBase
+from test_utils import AbstractTestGeneratorDeclarationVisitor
 
-class TestFeatureGeneratorDeclarationVisitor(TestGeneratorDeclarationVisitorBase):
+class TestFeatureGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisitor):
 
     logger = GeneratorLogger(CompileFlags.STRICT)
 

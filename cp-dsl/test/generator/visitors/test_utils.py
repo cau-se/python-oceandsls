@@ -35,7 +35,7 @@ class TestStream(InputStream):
     def __init__(self, data: str) -> None:
         super().__init__(data)
 
-class TestGeneratorDeclarationVisitorBase(unittest.TestCase):
+class AbstractTestGeneratorDeclarationVisitor(unittest.TestCase):
 
     logger = GeneratorLogger(CompileFlags.STRICT)
 

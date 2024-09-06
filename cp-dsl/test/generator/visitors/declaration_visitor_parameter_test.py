@@ -31,16 +31,9 @@ from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationPar
 from common.logger import GeneratorLogger
 from common.configuration import CompileFlags
 
-class TestStream(InputStream):
+from test_utils import AbstractTestGeneratorDeclarationVisitor
 
-    fileName = "test"
-
-    def __init__(self, data: str) -> None:
-        super().__init__(data)
-
-class TestGeneratorDeclarationVisitor(unittest.TestCase):
-
-    logger = GeneratorLogger(CompileFlags.STRICT)
+class TestGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisitor):
 
     def test_visitParamGroupAssignStat(self):
         ctx = DeclarationParser.ParamGroupAssignStatContext(parser=None, ctx=DeclarationParser.DeclarationModelContext(parser=None))
@@ -72,7 +65,6 @@ class TestGeneratorDeclarationVisitor(unittest.TestCase):
 #            self.assertEqual(p._unit, u, "Should be meter")
             self.assertEqual(p._default_value.value, 0, "Wrong value")
             self.assertEqual(p._description, "", "Wrong description")
-
 
     def test_visitParamType_type_reference(self):
         param_type_context = DeclarationParser.ParamTypeContext(parent=None, parser=None)
