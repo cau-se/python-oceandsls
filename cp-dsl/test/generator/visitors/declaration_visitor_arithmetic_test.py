@@ -32,7 +32,7 @@ from common.configuration import CompileFlags
 
 from test_utils import TestGeneratorDeclarationVisitorBase
 
-class TestGeneratorDeclarationVisitor(TestGeneratorDeclarationVisitorBase):
+class TestArithmeticGeneratorDeclarationVisitor(TestGeneratorDeclarationVisitorBase):
 
     logger = GeneratorLogger(CompileFlags.STRICT)
 

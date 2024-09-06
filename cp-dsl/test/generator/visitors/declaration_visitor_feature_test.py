@@ -16,7 +16,7 @@ __author__ = "reiner"
 
 import unittest
 from generator.visitors.declaration_visitor import GeneratorDeclarationVisitor
-from model.declaration_model import DeclarationModel, ParameterGroup, Parameter, FeatureGroup, Feature
+from model.declaration_model import DeclarationModel, ParameterGroup, Parameter, FeatureGroup, Feature, EKind
 from model.type_system import EnumeralType, Enumeral, RangeType, BaseType, ArrayType, Dimension, InlineEnumeralType, Enumeral
 from model.unit_model import UnitSpecification, UnitKind, UnitPrefix, SIUnit, CustomUnit, DivisionUnit, ExponentUnit
 from model.arithmetic_model import IntValue, StringValue, FloatValue, ArithmeticExpression, MultiplicationExpression, EMultiplicationOperator, EAdditionOperator
@@ -31,17 +31,11 @@ from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationPar
 from common.logger import GeneratorLogger
 from common.configuration import CompileFlags
 
-class TestStream(InputStream):
+from test_utils import TestGeneratorDeclarationVisitorBase
 
-    fileName = "test"
-
-    def __init__(self, data: str) -> None:
-        super().__init__(data)
-
-class TestGeneratorDeclarationVisitor(unittest.TestCase):
+class TestFeatureGeneratorDeclarationVisitor(TestGeneratorDeclarationVisitorBase):
 
     logger = GeneratorLogger(CompileFlags.STRICT)
-
 
     def test_visitFeatureAssignStat_parameter(self):
         code = """
@@ -114,6 +108,19 @@ class TestGeneratorDeclarationVisitor(unittest.TestCase):
         self.assertEqual(f2.name, "Feat2", "Wrong feature name")
         self.assertEqual(f2._description, "Feature two", "Wrong description")
 
-    def test_visitEKind(self):
-        self.fail()
+    def test_visitEKind_alternative(self):
+        kind_ctx = DeclarationParser.EKindContext(parent=None, parser=None)
+        kind_ctx.alternative = self.set_token('alternative')
 
+        result = self.make_visitor().visitEKind(kind_ctx)
+        self.assertEqual(result, EKind.ALTERNATIVE, "Wrong kind of feature group")
+
+    def test_visitEKind_multiple(self):
+        kind_ctx = DeclarationParser.EKindContext(parent=None, parser=None)
+        kind_ctx.multiple = self.set_token('multiple')
+
+        result = self.make_visitor().visitEKind(kind_ctx)
+        self.assertEqual(result, EKind.MULTIPLE, "Wrong kind of feature group")
+
+if __name__ == '__main__':
+    unittest.main()

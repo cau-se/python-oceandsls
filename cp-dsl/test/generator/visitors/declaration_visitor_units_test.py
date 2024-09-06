@@ -175,3 +175,6 @@ class TestGeneratorDeclarationVisitor(unittest.TestCase):
 
     def test_visitComposedUnit(self):
         self.fail()
+
+if __name__ == '__main__':
+    unittest.main()

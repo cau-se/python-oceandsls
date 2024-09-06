@@ -86,3 +86,5 @@ class TestGeneratorDeclarationVisitor(unittest.TestCase):
         self.assertEqual(result.name, "r", "wrong type name")
 
 
+if __name__ == '__main__':
+    unittest.main()

@@ -284,3 +284,6 @@ class TestGeneratorDeclarationVisitor(unittest.TestCase):
             self.assertEqual(enumeral_type._enumerals.get("BLUE").name, "BLUE", "Not blue")
             self.assertEqual(enumeral_type._enumerals.get("BLUE").value, 2, "Not 2 for blue")
 
+
+if __name__ == '__main__':
+    unittest.main()

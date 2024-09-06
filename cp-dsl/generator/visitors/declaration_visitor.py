@@ -258,6 +258,7 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
             self._logger.strict(ctx, f"Feature redefinition is not allowed")
 
     def visitFeatureReference(self, ctx: DeclarationParser.FeatureReferenceContext):
+        print(f"REF {ctx.elements}")
         depth = len(ctx.elements)
         scope = self._scope
         if depth > 1:
@@ -267,10 +268,10 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
         for i in range(0,depth-1):
             scope = scope.resolve_symbol(ctx.elements[i])
             if scope is None:
-                self._logger.strict(ctx, f"Symbol {self.print_symbol(ctx.elements, i)} does not exist")
+                self._logger.strict(ctx, f"Feature {self.print_symbol(ctx.elements, i)} does not exist")
                 return None
             if not isinstance(scope, Feature):
-                self._logger.strict(ctx, f"Symbol {self.print_symbol(ctx.elements, i)} does not refer to a feature")
+                self._logger.strict(ctx, f"Feature {self.print_symbol(ctx.elements, i)} does not refer to a feature")
 
         return scope
 
