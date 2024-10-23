@@ -16,16 +16,17 @@ __author__ = "sgu"
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import difflib
-import hashlib
+from difflib import Differ
+from hashlib import md5
 # Utils
-import logging
-import re
-import os
-from typing import Dict, List
+from logging import DEBUG, getLogger
+from re import search, sub, escape, IGNORECASE, MULTILINE, DOTALL
+from os import path, makedirs
+from os.path import getmtime, dirname, isdir, splitext, exists
+from typing import Any, Dict, List, Tuple
 
 # Debug
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 show_debug_output: bool = False
 
@@ -39,7 +40,7 @@ def difflib_merge(file_content0: str, file_content1: str) -> str:
     :return: 3-way merge of comparing the first file and second file
     """
     merged_content = "\n".join(
-        lines[2:] for lines in difflib.Differ().compare(
+        lines[2:] for lines in Differ( ).compare(
             file_content0.split("\n"), file_content1.split("\n")
         ) if not lines.startswith("?")
     )
@@ -68,10 +69,10 @@ def cmake_merge(insert_contents: Dict[str, str], file_content):
 
             # Check if library exists
             add_library_pattern = r"^ *add_library *\( *" + sut_name + r"[^\)]*\)$"
-            match_add_library = re.search(add_library_pattern, file_content, re.IGNORECASE | re.MULTILINE | re.DOTALL)
+            match_add_library = search(add_library_pattern, file_content, IGNORECASE | MULTILINE | DOTALL)
             if match_add_library:
                 # Replace add_library statement
-                file_content = re.sub(add_library_pattern, library_statement, file_content, flags=re.IGNORECASE | re.MULTILINE | re.DOTALL)
+                file_content = sub(add_library_pattern, library_statement, file_content, flags=IGNORECASE | MULTILINE | DOTALL)
             else:
                 # Add library statement and target include statement and extend set_target statement
 
@@ -79,7 +80,7 @@ def cmake_merge(insert_contents: Dict[str, str], file_content):
                 set_target_pattern = r"^set_target_properties \([^\n]*( PROPERTIES)$"
 
                 # Find the position to insert the new code
-                match_target_include = re.search(target_include_pattern, file_content, flags=re.IGNORECASE | re.MULTILINE | re.DOTALL)
+                match_target_include = search(target_include_pattern, file_content, flags=IGNORECASE | MULTILINE | DOTALL)
 
                 # Add add_library statement and extend set_target statement
                 if match_target_include:
@@ -94,7 +95,7 @@ def cmake_merge(insert_contents: Dict[str, str], file_content):
                     insert_position_start:insert_position_end] + target_include_statements + "\n" + file_content[
                     insert_position_end:])
 
-                match_set_target = re.search(set_target_pattern, file_content, flags=re.IGNORECASE | re.MULTILINE | re.DOTALL)
+                match_set_target = search(set_target_pattern, file_content, flags=IGNORECASE | MULTILINE | DOTALL)
 
                 # Insert target_include statement
                 if match_set_target:
@@ -113,10 +114,10 @@ def cmake_merge(insert_contents: Dict[str, str], file_content):
 
             # Check if test exists
             add_pfunit_pattern = r"^ *add_pfunit_ctest *\( *" + test_name + r"[^\)]*\)$"
-            match_add_pfunit = re.search(add_pfunit_pattern, file_content, re.IGNORECASE | re.MULTILINE | re.DOTALL)
+            match_add_pfunit = search(add_pfunit_pattern, file_content, IGNORECASE | MULTILINE | DOTALL)
             if match_add_pfunit:
                 # Replace add_library statement
-                file_content = re.sub(add_pfunit_pattern, test_statement, file_content, flags=re.IGNORECASE | re.MULTILINE | re.DOTALL)
+                file_content = sub(add_pfunit_pattern, test_statement, file_content, flags=IGNORECASE | MULTILINE | DOTALL)
             else:
                 # Add test statement at the file end
                 file_content = file_content + "\n" + test_statement
@@ -124,56 +125,58 @@ def cmake_merge(insert_contents: Dict[str, str], file_content):
     return file_content
 
 
-def remove_fortran_subroutine_or_function(fortran_code, names):
+def remove_fortran_subroutine_or_function(fortran_code, names) -> str:
     # Define regex components
-    whitespace = r'\s*'
+    whitespace = r'[ \t\r\f]*'
+    decl_rest = r'[^\n]*\n'
     optional_attribute = r'(elemental|pure)?'  # Matches optional attributes
     function_or_subroutine = r'(function|subroutine)'  # Matches function or subroutine keywords
 
     # Create a regex pattern for the function/subroutine removal
-    arguments = r'$.*$'  # Matches the argument list
+    arguments = r'\(.*\)'  # Matches the argument list
     comment = r'(! <<Replace with (return expression|SUBROUTINE body) here>>)'  # Matches the specific comment
-    code_lines_before_comment = r'(.*?\n)*?'  # Matches any lines of code before the comment
-    code_lines_after_comment = r'(.*?\n)*?'  # Matches any lines of code after the comment
+    code_lines = r'(.*?\n)*?'  # Matches any lines of code
 
     # Remove each specified function or subroutine
     for name in names:
-        name_pattern = re.escape(name)  # Escape the name to safely include it in the regex
-        end_statement = rf'end\s+(function|subroutine)\s+{name_pattern}\s*$'  # Matches the end statement
+        name_pattern = escape(name)  # Escape the name to safely include it in the regex
+        end_statement = rf'{whitespace}end{whitespace}(function|subroutine){whitespace}{name_pattern}\s*$'  # Matches the end statement
 
         # Combine components into the full regex pattern
         pattern = (
             f'^{whitespace}{optional_attribute}{whitespace}{function_or_subroutine}{whitespace}{name_pattern}{whitespace}'
-            f'{arguments}{whitespace}.*\n'
-            f'{code_lines_before_comment}{comment}\\s*\n'
-            f'{code_lines_after_comment}{end_statement}'
+            f'{arguments}{whitespace}{decl_rest}'
+            f'{code_lines}'
+            f'{whitespace}{comment}{whitespace}{decl_rest}'
+            f'{code_lines}'
+            f'{end_statement}'
         )
 
         # Remove the specified function or subroutine from the Fortran code
-        modified_code = re.sub(pattern, '', fortran_code, flags=re.MULTILINE | re.DOTALL | re.IGNORECASE)
+        modified_code = sub(pattern, '', fortran_code, flags=MULTILINE | DOTALL | IGNORECASE)
 
         # Update the fortran_code for the next iteration
         fortran_code = modified_code
 
     # Clean public/private declarations
     public_pattern = r"(?:(\n *(public|private)(?: *\:\:)? *(.*?))\n)+"
-    modified_code = re.sub(public_pattern, lambda m: clean_public_private(m.group(0), names), fortran_code, flags=re.MULTILINE | re.IGNORECASE)
+    modified_code = sub(public_pattern, lambda m: clean_public_private(m.group(0), names), fortran_code, flags=MULTILINE | IGNORECASE)
 
     # TODO decide if to clean up any extra whitespace or empty lines?
-    # modified_code = re.sub(r'\n\s*\n', '\n', modified_code)  # Remove empty lines
+    # modified_code = sub(r'\n\s*\n', '\n', modified_code)  # Remove empty lines
     return modified_code.strip()  # Return the modified code without leading/trailing whitespace
 
 
-def clean_public_private(declaration, names):
+def clean_public_private(declaration, names) -> str:
     # Loop over each name to remove it from the declaration
     for name in names:
-        name_pattern = re.escape(name)  # Escape the name to safely include it in the regex
+        name_pattern = escape(name)  # Escape the name to safely include it in the regex
         # This pattern matches the name and any preceding comma and optional whitespace
         removal_pattern = rf',?\s*{name_pattern}\s*(?=,|$)'
-        declaration = re.sub(removal_pattern, '', declaration)
+        declaration = sub(removal_pattern, '', declaration)
 
     # Remove any empty public/private declarations
-    if re.search(r'public\s*::\s*$', declaration) or re.search(r'private\s*::\s*$', declaration):
+    if search(r'public\s*::\s*$', declaration) or search(r'private\s*::\s*$', declaration):
         return ''  # Remove the entire line if it's empty after removal
 
     return declaration
@@ -206,10 +209,10 @@ def fortran_merge(insert_content: Dict[str, List[str]], file_content):
         module_end_pattern = r"(\n( *)end +module +" + module_name + " *\n?)"
 
         # Find the position to insert the new code
-        match_public = re.search(public_pattern, file_content, flags=re.IGNORECASE)
-        match_private = re.search(private_pattern, file_content, flags=re.IGNORECASE)
-        match_implicit = re.search(implicit_pattern, file_content, flags=re.IGNORECASE)
-        match_module_start = re.search(module_start_pattern, file_content, flags=re.IGNORECASE)
+        match_public = search(public_pattern, file_content, flags=IGNORECASE)
+        match_private = search(private_pattern, file_content, flags=IGNORECASE)
+        match_implicit = search(implicit_pattern, file_content, flags=IGNORECASE)
+        match_module_start = search(module_start_pattern, file_content, flags=IGNORECASE)
 
         # Insert code accessible
         if match_public:
@@ -240,7 +243,7 @@ def fortran_merge(insert_content: Dict[str, List[str]], file_content):
             file_content = (file_content[:insert_position] + file_content[line_insertion[0]:line_insertion[1]] +
                             f"PUBLIC :: {ops_names}" + "\n" + file_content[insert_position:])
 
-        match_module_end = re.search(module_end_pattern, file_content, flags=re.IGNORECASE)
+        match_module_end = search(module_end_pattern, file_content, flags=IGNORECASE)
 
         # Insert function code
         if match_module_end:
@@ -257,17 +260,21 @@ def fortran_merge(insert_content: Dict[str, List[str]], file_content):
 
     return file_content
 
-
-def hash_file(path: str = None) -> str:
+def hash_file(path: str) -> str:
     """
-    Hash file using MD5
+    Hash file using MD5.
 
-    :param path: system file path
-    :return: MD5 hash of file
+    :param path: System file path.
+    :return: MD5 hash of the file as a hexadecimal string.
     """
+    try:
+        with open(path, "rb") as f:
+            return md5(f.read()).hexdigest()
+    except FileNotFoundError:
+        raise ValueError(f"File not found: {path}")
+    except IOError as e:
+        raise ValueError(f"Error reading file {path}: {e}")
 
-    with open(path, "rb") as f:
-        return hashlib.md5(f.read()).hexdigest()
 
 
 def file_modified(path=None, mtime: float = 0, fileHash: str = None) -> bool:
@@ -279,7 +286,7 @@ def file_modified(path=None, mtime: float = 0, fileHash: str = None) -> bool:
     :param fileHash: last md5 file hash
     :return: If modification time or file hash is changed
     """
-    if os.path.getmtime(path) > mtime or fileHash != hash_file(path):
+    if getmtime(path) > mtime or fileHash != hash_file(path):
         logger.debug(f"... modified {path}")
         return True
     else:
@@ -287,7 +294,7 @@ def file_modified(path=None, mtime: float = 0, fileHash: str = None) -> bool:
         return False
 
 
-def write_file(file_path: str = "", content: str | Dict = "", file_attr: tuple[float, str, str] = None, insert: bool = False) -> (tuple)[float, str, str]:
+def write_file(file_path: str = "", content: str | Dict = "", file_attr: tuple[float, str, str] = None, insert: bool = False) -> Tuple[float, str, str]:
     """
     Write/merge pFUnit-file under :test_path:/:test_folder:/:filename:.pf for test-case.
     Merges file if it exists using difflib.
@@ -300,19 +307,19 @@ def write_file(file_path: str = "", content: str | Dict = "", file_attr: tuple[f
     """
 
     # Define the folder and filename. Current working directory is ignored for absolut test_path
-    path = os.path.dirname(file_path)
+    path = dirname(file_path)
 
     # Create folder if it doesn't exist
-    if not os.path.isdir(path):
-        os.makedirs(path)
-        if show_debug_output and logger.isEnabledFor(logging.DEBUG):
+    if not isdir(path):
+        makedirs(path)
+        if show_debug_output and logger.isEnabledFor(DEBUG):
             logger.debug(f"... create {path}")
 
     # Get File extension for merge functions
-    extension: str = os.path.splitext(file_path)[1]
+    extension: str = splitext(file_path)[1]
 
     # Create file if it doesn't exist else merge with existing file
-    if os.path.exists(file_path):
+    if exists(file_path):
         # Check if file is known or was modified
         if file_attr is None or file_modified(file_path, file_attr[0], file_attr[1]):
             # Reload file from disk if it is unknown or modified
@@ -323,7 +330,7 @@ def write_file(file_path: str = "", content: str | Dict = "", file_attr: tuple[f
             content_org = file_attr[2]
 
         # Log
-        if show_debug_output and logger.isEnabledFor(logging.DEBUG):
+        if show_debug_output and logger.isEnabledFor(DEBUG):
             logger.debug(f"...try merge {file_path}")
 
         # Merge current content with original file content based on file extension
@@ -358,7 +365,7 @@ def write_file(file_path: str = "", content: str | Dict = "", file_attr: tuple[f
     # Write rendered and optional merged content to file
     with open(file_path, mode="w", encoding="utf-8") as f:
         f.write(content)
-        if show_debug_output and logger.isEnabledFor(logging.DEBUG):
+        if show_debug_output and logger.isEnabledFor(DEBUG):
             logger.debug(f"... write {file_path}")
 
-    return os.path.getmtime(file_path), hash_file(file_path), content_org
+    return getmtime(file_path), hash_file(file_path), content_org
