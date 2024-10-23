@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import argparse
+from argparse import ArgumentTypeError, ArgumentParser
 from logging import basicConfig, DEBUG
 from os import access, getcwd, R_OK
 from os.path import isfile, join, isdir, dirname, abspath
@@ -78,7 +78,7 @@ def readable_file(file_path: str):
     if isfile(abs_file_path) and access(abs_file_path, R_OK):
         return abs_file_path
     else:
-        raise argparse.ArgumentTypeError(f"File {abs_file_path} doesn't exist or isn't readable.")
+        raise ArgumentTypeError(f"File {abs_file_path} doesn't exist or isn't readable.")
 
 
 def readable_directory(dir_path: str):
@@ -94,7 +94,7 @@ def readable_directory(dir_path: str):
     if isdir(abs_dir_path) and access(abs_dir_path, R_OK):
         return abs_dir_path
     else:
-        raise argparse.ArgumentTypeError(f"Directory {abs_dir_path} doesn't exist or isn't readable.")
+        raise ArgumentTypeError(f"Directory {abs_dir_path} doesn't exist or isn't readable.")
 
 
 def fxtran_executable(path: str):
@@ -111,7 +111,7 @@ def fxtran_executable(path: str):
         # Call "fxtran -help" via subprocess
         check_output(cmd, shell=True, stderr=STDOUT)
     except CalledProcessError as e:
-        raise argparse.ArgumentTypeError(
+        raise ArgumentTypeError(
             f"Did not found fxtran. Command '{e.cmd}' returned error (code {e.returncode}): {e.output}. Provide valid path via -fx PATH or add to system PATH."
         )
 
@@ -149,7 +149,7 @@ def process_recommended_metrics(metrics_path):
 
 
 def main():
-    parser = argparse.ArgumentParser()
+    parser = ArgumentParser()
     add_arguments(parser)
     args = parser.parse_args()
 
