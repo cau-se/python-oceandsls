@@ -67,7 +67,7 @@ class InlineEnumeralType(GenericEnumeralType):
 
 class EnumeralType(GenericEnumeralType, NamedType):
 
-    def __init__(self, name: str = ""):
+    def __init__(self, name: str):
         super().__init__()
         self.name = name
 

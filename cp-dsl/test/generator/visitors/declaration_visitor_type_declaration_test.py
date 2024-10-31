@@ -37,8 +37,27 @@ class TestGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisitor):
 
     logger = GeneratorLogger(CompileFlags.STRICT)
 
+    def check_visitRangeType(self, model:DeclarationModel):
+        result = model._types.get("Temperature")
+        self.assertIsInstance(result, RangeType, "Not the correct data type")
+        self.assertEqual(result.minimum, 0, "Wrong minimum")
+        self.assertEqual(result.maximum, 273, "Wrong maximum")
+
+    def check_visitEnumerationType(self, model: DeclarationModel):
+        result = model._types.get("Color")
+        self.assertIsInstance(result, EnumeralType, "Not the correct data type")
+        enumerals = {"red":0, "green":1, "blue":2}
+        expected = EnumeralType("Color")
+        for e in enumerals.items():
+            expected._enumerals[e[0]] = Enumeral(e[0], e[1])
+
+        self.assertEqual(result.name, expected.name, "Names do not match")
+        self.assertEqual(result._enumerals, expected._enumerals, "Not the same symbols")
+
     def test_visitDeclaredType(self):
-        self.fail()
+        model = self.parse_code("model eval types range Temperature int [0: 273] enum Color { red, green, blue }")
+        self.check_visitRangeType(model)
+        self.check_visitEnumerationType(model)
 
     def test_visitRangeType(self):
         model = self.parse_code("model eval types range Temperature int [0: 273]")
@@ -50,17 +69,7 @@ class TestGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisitor):
 
     def test_visitEnumerationType(self):
         model = self.parse_code("model eval types enum Color { red, green, blue }")
-
-        result = model._types.get("Color")
-        self.assertIsInstance(result, EnumeralType, "Not the correct data type")
-        enumerals = {"red":0, "green":1, "blue":2}
-        enums = {}
-        for e in enumerals.items():
-            enums[e[0]] = Enumeral(e[0], e[1])
-        expected = EnumeralType("Color", enumerals=enums)
-
-        self.assertEqual(result.name, expected.name, "Names do not match")
-        self.assertEqual(result._enumerals, expected._enumerals, "Not the same symbols")
+        self.check_visitEnumerationType(model)
 
     def test_visitEnumeral(self):
         ctx = DeclarationParser.EnumeralContext(parent=None, parser=None, invokingState=1)

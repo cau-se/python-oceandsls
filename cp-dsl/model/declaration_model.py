@@ -141,6 +141,7 @@ class Feature(NamedElement):
         self._feature_sets = []
 
     def resolve_symbol(self, name: str) -> ParameterGroup|FeatureGroup:
+        print(f"resolve {name}")
         result = self._groups.get(name, None)
         if result is None:
             for feature_set in self._feature_sets:
@@ -149,4 +150,5 @@ class Feature(NamedElement):
                     return feature
             return None
         else:
+            print(f"result symbol {result}")
             return result

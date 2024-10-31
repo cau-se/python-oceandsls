@@ -70,6 +70,7 @@ class TestFeatureGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVis
 
         base_feature:Feature = model._features.get("Base")
 
+
     def create_feature(self, name:str, required: bool, description:str, parent:ParserRuleContext=None):
         feature = DeclarationParser.FeatureAssignStatContext(parser=None, ctx=parent)
         feature.required = self.set_token("required")

@@ -284,7 +284,7 @@ class TestArithmeticGeneratorDeclarationVisitor(AbstractTestGeneratorDeclaration
 
     # This test tests enum based on context
     def test_visitNamedElementReference_one_enum(self):
-        model = self.parse_code("""
+        model:DeclarationModel = self.parse_code("""
             model eval
             types
                 enum Color { red, green, blue }

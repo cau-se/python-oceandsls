@@ -258,14 +258,15 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
             self._logger.strict(ctx, f"Feature redefinition is not allowed")
 
     def visitFeatureReference(self, ctx: DeclarationParser.FeatureReferenceContext):
-        print(f"REF {ctx.elements}")
         depth = len(ctx.elements)
         scope = self._scope
+        print(f"SCOPE {scope} {depth} {self.print_symbol(ctx.elements, len(ctx.elements)-1)}")
         if depth > 1:
             for i in range(1,depth-1):
                 scope = scope.parent
+                print(f"parent SCOPE {scope}")
 
-        for i in range(0,depth-1):
+        for i in range(0,depth):
             scope = scope.resolve_symbol(ctx.elements[i])
             if scope is None:
                 self._logger.strict(ctx, f"Feature {self.print_symbol(ctx.elements, i)} does not exist")
@@ -273,6 +274,7 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
             if not isinstance(scope, Feature):
                 self._logger.strict(ctx, f"Feature {self.print_symbol(ctx.elements, i)} does not refer to a feature")
 
+        print(f"RETURN {scope}")
         return scope
 
 
@@ -431,18 +433,14 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
                 return None
 
         # check whether it is an enumeration inferred by parameter type
-        if isinstance(self._type_scope, Parameter):
-            data_type = self._type_scope
-            if isinstance(data_type, EnumeralType, InlineEnumeralType):
-                enumeral = data_type._enumerals.get(ctx.elements[0].text, None)
-                if enumeral is None:
-                    self._logger.strict(ctx, f"Symbol {self.print_symbol(ctx.elements, 2)} does not refer to an enumeral")
-                    return None
-                else:
-                    return enumeral
-            else:
-                self._logger.strict(ctx, f"Symbol {self.print_symbol(ctx.elements, 1)} does not refer to an enumeration type")
+        data_type = self._type_scope
+        if isinstance(data_type, EnumeralType) or isinstance(data_type, InlineEnumeralType):
+            enumeral = data_type._enumerals.get(ctx.elements[0].text, None)
+            if enumeral is None:
+                self._logger.strict(ctx, f"Symbol {self.print_symbol(ctx.elements, 2)} does not refer to an enumeral")
                 return None
+            else:
+                return enumeral
 
         # Strange cases
         self._logger.strict(ctx, f"Symbol {self.print_symbol(ctx.elements, len(ctx.elements))} cannot be resolved.")
@@ -450,7 +448,7 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
 
     def print_symbol(self, elements:list, level:int):
         result = ""
-        for i in range(0,level):
+        for i in range(0,level+1):
             name = elements[i].text
             if result == "":
                 result = f"{name}"

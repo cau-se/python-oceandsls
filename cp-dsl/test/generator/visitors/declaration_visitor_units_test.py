@@ -68,7 +68,7 @@ class TestGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisitor):
 
     def test_visitCustomunit(self):
         ctx = DeclarationParser.CustomunitContext(parser=None, ctx = DeclarationParser.CustomUnitContext(parser=None))
-        ctx.name = self.set_token("gini")
+        ctx.name = self.set_token("\"gini\"")
 
         result = self.make_visitor().visitCustomunit(ctx)
 
