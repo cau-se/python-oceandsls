@@ -310,7 +310,7 @@ def write_file(file_path: str = "", content: str | Dict = "", file_attr: tuple[f
     path = dirname(file_path)
 
     # Create folder if it doesn't exist
-    if not isdir(path):
+    if path and not isdir(path):
         makedirs(path)
         if show_debug_output and logger.isEnabledFor(DEBUG):
             logger.debug(f"... create {path}")
