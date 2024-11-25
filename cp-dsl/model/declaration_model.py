@@ -128,8 +128,8 @@ class Feature(NamedElement):
     _is_activated: bool = False  # set if the feature is activated
     _required: bool = False
     _description: str = None
-    _requires: List[Feature] = []
-    _excludes: List[Feature] = []
+    _requires: List[Feature]
+    _excludes: List[Feature]
 
     _groups:Dict[str, ParameterGroup]
     _feature_sets:List[FeatureGroup]
@@ -138,10 +138,11 @@ class Feature(NamedElement):
         super().__init__(name, parent)
         self._description = description
         self._groups = {}
+        self._requires = []
+        self._excludes = []
         self._feature_sets = []
 
     def resolve_symbol(self, name: str) -> ParameterGroup|FeatureGroup:
-        print(f"resolve {name}")
         result = self._groups.get(name, None)
         if result is None:
             for feature_set in self._feature_sets:
@@ -150,5 +151,4 @@ class Feature(NamedElement):
                     return feature
             return None
         else:
-            print(f"result symbol {result}")
             return result

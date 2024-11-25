@@ -169,7 +169,34 @@ class TestGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisitor):
 
 
     def test_visitComposedUnit(self):
-        self.fail()
+        code = """
+            model eval
+
+            group a : "a description" {
+                def m float : "num" / "denominator"
+            }
+        """
+
+        model:DeclarationModel = self.parse_code(code)
+
+        group:ParameterGroup = model._groups["a"]
+        parameter:Parameter = group._parameters["m"]
+        division_unit:DivisionUnit = parameter._unit
+
+        self.assertIsInstance(division_unit, DivisionUnit, "Wrong object type")
+
+        d = division_unit.denominator
+        n = division_unit.numerator
+
+        self.assertIsNotNone(d, "Missing denominator")
+        self.assertIsNotNone(n, "Missing numerator")
+
+        self.assertIsInstance(d, CustomUnit, "Must be CustomUnit")
+        self.assertIsInstance(n, CustomUnit, "Must be CustomUnit")
+
+        self.assertEqual(d.name, "denominator", "Wrong denominator")
+        self.assertEqual(n.name, "num", "Wrong numerator")
+
 
 if __name__ == '__main__':
     unittest.main()

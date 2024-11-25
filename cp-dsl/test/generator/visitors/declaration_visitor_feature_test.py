@@ -61,7 +61,7 @@ class TestFeatureGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVis
                     requires Base
                 }
                 feature Alternate : "Alternate description" {
-                    requires Base
+                    requires Base, Second
                     excludes Base.Feat2
                 }
         """
@@ -69,6 +69,32 @@ class TestFeatureGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVis
         model = self.parse_code(code)
 
         base_feature:Feature = model._features.get("Base")
+
+        self.assertIsInstance(base_feature, Feature, f"Wrong type {type(base_feature)}")
+        self.assertEqual(base_feature.name, "Base", "Wrong feature")
+
+        second_feature:Feature = model._features.get("Second")
+
+        self.assertIsInstance(second_feature, Feature, f"Wrong type {type(second_feature)}")
+        self.assertEqual(second_feature.name, "Second", "Wrong feature")
+
+        self.assertEqual(len(second_feature._requires), 1, "Wrong number of required features")
+        self.assertEqual(second_feature._requires[0].name, "Base", "Wrong feature")
+
+        alternate_feature:Feature = model._features.get("Alternate")
+
+        self.assertIsInstance(alternate_feature, Feature, f"Wrong type {type(alternate_feature)}")
+        self.assertEqual(alternate_feature.name, "Alternate", "Wrong feature")
+
+        self.assertEqual(len(alternate_feature._requires), 2, "Wrong number of required features")
+        r1 = alternate_feature._requires[0]
+        r2 = alternate_feature._requires[1]
+        self.assertEqual(r1, base_feature, "Wrong feature {base_feature.name}")
+        self.assertEqual(r2, second_feature, "Wrong feature {second_feature.name}")
+
+        e1 = alternate_feature._excludes[0]
+        feat2 = base_feature._feature_sets[0]._features['Feat2']
+        self.assertEqual(e1, feat2, "Wrong feature {feat2.name}")
 
 
     def create_feature(self, name:str, required: bool, description:str, parent:ParserRuleContext=None):
@@ -92,6 +118,7 @@ class TestFeatureGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVis
         model = self.parse_code(code)
 
         base_feature:Feature = model._features.get("Base")
+
         self.assertIsInstance(base_feature, Feature, f"Wrong type {type(base_feature)}")
         self.assertEqual(base_feature.name, "Base", "Wrong feature")
         self.assertEqual(base_feature._description, "Base description", "Wrong description")

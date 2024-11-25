@@ -31,8 +31,8 @@ parameterDeclaration        :   'def' name=ID type=paramType ':' unit=unitSpecif
 //TODO required? set required to true if '!' else to false
 //TODO add FeatureDeclaration reference for requires+= ID and excludes+= ID
 featureDeclaration          :   (required='required')? 'feature' name=ID ':' description=STRING ( '{'
-                                ('requires' requires+=featureReference)*
-                                ('excludes' excludes+=featureReference)*
+                                ('requires' requires+=featureReference (',' requires+=featureReference)*)*
+                                ('excludes' excludes+=featureReference (',' excludes+=featureReference)*)*
                                 (parameterGroupDeclarations+=parameterGroupDeclaration | featureGroupDeclarations+=featureGroupDeclaration)*
                    	            '}')? # featureAssignStat
                             ;

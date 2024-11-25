@@ -260,21 +260,18 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
     def visitFeatureReference(self, ctx: DeclarationParser.FeatureReferenceContext):
         depth = len(ctx.elements)
         scope = self._scope
-        print(f"SCOPE {scope} {depth} {self.print_symbol(ctx.elements, len(ctx.elements)-1)}")
         if depth > 1:
             for i in range(1,depth-1):
                 scope = scope.parent
-                print(f"parent SCOPE {scope}")
 
         for i in range(0,depth):
-            scope = scope.resolve_symbol(ctx.elements[i])
+            scope = scope.resolve_symbol(ctx.elements[i].text)
             if scope is None:
                 self._logger.strict(ctx, f"Feature {self.print_symbol(ctx.elements, i)} does not exist")
                 return None
             if not isinstance(scope, Feature):
                 self._logger.strict(ctx, f"Feature {self.print_symbol(ctx.elements, i)} does not refer to a feature")
 
-        print(f"RETURN {scope}")
         return scope
 
 
