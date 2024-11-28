@@ -154,13 +154,40 @@ add_subdirectory(tests)"""
         result = file_modified(path, mtime, file_hash)
         self.assertEqual(result, expected_result)
 
+    # Define constants for the write file test case
+    TEST_DIR = "test_dir"
+    FILE_NAME = "test.pf"
+    FILE_PATH = path.join(TEST_DIR, FILE_NAME)
+    NEW_CONTENT = "new content"
+    MOD_CONTENT = "mod content"
+    EMPTY_CONTENT = ""
+    EXISTING_CONTENT = "existing content"
+    MOCKED_HASH = "mocked_hash"
+    MODIFIED_TIME = 1234567890.0
+
+    # Define boolean constants for clarity
+    FILE_DOES_NOT_EXIST = False
+    FILE_EXISTS = True
+    DIR_DOES_NOT_EXIST = False
+    DIR_EXISTS = True
+    FILE_MODIFIED = True
+    FILE_NOT_MODIFIED = False
+    SHOULD_INSERT = True
+    SHOULD_NOT_INSERT = False
+
     @parameterized.expand([
             # Test case for a new file
-            ("new_file", False, True, path.join("test_dir", "test.pf"), "test content", (1234567890.0, "mocked_hash", "")),
+            # Input: A file that does not exist (file_exists is False), the content to write, and the expected result.
+            # Expected Result: The function should create the file and write the content.
+            ("new_file", FILE_DOES_NOT_EXIST, DIR_EXISTS, FILE_NOT_MODIFIED,SHOULD_INSERT, FILE_PATH, NEW_CONTENT, MOD_CONTENT ,EXISTING_CONTENT, MODIFIED_TIME, MOCKED_HASH, NEW_CONTENT, (MODIFIED_TIME, MOCKED_HASH, EMPTY_CONTENT)),
             # Test case for an existing file that is modified
-            ("existing_file_modified", True, True, path.join("test_dir", "test.pf"), "new content", (1234567890.0, "mocked_hash", "existing content")),
+            # Input: A file that exists and has been modified (file_exists is True and file_modified returns True), along with new content.
+            # Expected Result: The function should overwrite the existing content with the new content.
+            ("existing_file_modified", FILE_EXISTS, DIR_EXISTS, FILE_MODIFIED,SHOULD_INSERT, FILE_PATH, NEW_CONTENT,  MOD_CONTENT, EXISTING_CONTENT,MODIFIED_TIME, MOCKED_HASH,  f"{NEW_CONTENT}\n{MOD_CONTENT}", (MODIFIED_TIME, MOCKED_HASH, MOD_CONTENT)),
             # Test case for an existing file that is not modified
-            ("existing_file_not_modified", True, False, path.join("test_dir", "test.pf"), "new content", (1234567890.0, "mocked_hash", "existing content")),
+            # Input: A file that exists but has not been modified (file_exists is True and file_modified returns False), along with new content.
+            # Expected Result: The function should not overwrite the existing content.
+            ("existing_file_not_modified", FILE_EXISTS, DIR_EXISTS, FILE_NOT_MODIFIED,SHOULD_INSERT, FILE_PATH, NEW_CONTENT, MOD_CONTENT, EXISTING_CONTENT,MODIFIED_TIME, MOCKED_HASH,  f"{NEW_CONTENT}\n{EXISTING_CONTENT}", (MODIFIED_TIME, MOCKED_HASH, EXISTING_CONTENT)),
     ])
     @patch("builtins.open", new_callable=mock_open)
     @patch("filewriter.file_writer.exists")
@@ -169,27 +196,36 @@ add_subdirectory(tests)"""
     @patch("filewriter.file_writer.file_modified")
     @patch("filewriter.file_writer.hash_file")
     @patch("filewriter.file_writer.getmtime")
-    def test_write_file(self, name, file_exists, dir_exists, file_path, content, expected_result,
+    def test_write_file(self, test_name, file_exists, dir_exists, is_file_modified,should_insert, file_path, new_content, mod_content, existing_content, modified_time, mocked_hash, expected_written,expected_result,
                         mock_getmtime, mock_hash_file, mock_file_modified, mock_isdir, mock_makedirs, mock_exists, mock_file):
 
         # Setup the mocks
-        mock_exists.return_value = file_exists  # Simulate whether the file exists
-        mock_isdir.return_value = dir_exists  # Simulate whether the directory exists
-        mock_getmtime.return_value = 1234567890.0  # Mock the modification time
-        mock_hash_file.return_value = "mocked_hash"  # Mock the file hash
+        mock_isdir.return_value = dir_exists
+        mock_exists.return_value = file_exists
+        mock_file_modified.return_value = is_file_modified
+        mock_getmtime.return_value = modified_time
+        mock_hash_file.return_value = mocked_hash
 
-        if file_exists:
-            mock_file_modified.return_value = True  # Simulate that the file is modified
-            mock_file().read.return_value = "existing content"  # Mock the existing file content
-        else:
-            mock_file_modified.return_value = False  # Simulate that the file is not modified
+        if is_file_modified:
+            mock_file().read.return_value = mod_content
 
-        result = write_file(file_path, content)
+        file_attribute = (modified_time, mocked_hash, existing_content) if file_exists else None
+
+        result = write_file(file_path, new_content, file_attribute, should_insert)
 
         # Assertions
-        mock_file().write.assert_called_once_with(content)
-        mock_exists.assert_called_once_with(file_path)
         mock_makedirs.assert_called_once() if not dir_exists else mock_makedirs.assert_not_called()
+        mock_exists.assert_called_once_with(file_path)
+        if file_exists:
+            mock_file_modified.assert_called_once_with(file_path, modified_time, mocked_hash)
+        else:
+            mock_file_modified.assert_not_called()
+
+        mock_file().read.assert_called_once() if is_file_modified else mock_file().read.assert_not_called()
+        mock_getmtime.assert_called_once_with(file_path)
+        mock_hash_file.assert_called_once_with(file_path)
+        mock_file().write.assert_called_once_with(expected_written)
+
         self.assertIsInstance(result, tuple)
         self.assertEqual(result, expected_result)
 
