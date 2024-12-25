@@ -15,17 +15,13 @@
 __author__ = "reiner"
 
 import unittest
-from generator.visitors.declaration_visitor import GeneratorDeclarationVisitor
-from model.declaration_model import DeclarationModel, ParameterGroup, Parameter, FeatureGroup, Feature
-from model.type_system import EnumeralType, Enumeral, RangeType, BaseType, ArrayType, Dimension, InlineEnumeralType, Enumeral
-from model.unit_model import UnitSpecification, UnitKind, UnitPrefix, SIUnit, CustomUnit, DivisionUnit, ExponentUnit
-from model.arithmetic_model import IntValue, StringValue, FloatValue, ArithmeticExpression, MultiplicationExpression, EMultiplicationOperator, EAdditionOperator
-from antlr4 import InputStream, CommonTokenStream
-from antlr4.Token import CommonToken
+
+from model.declaration_model import DeclarationModel, ParameterGroup, Parameter
+from model.unit_model import UnitSpecification, UnitKind, UnitPrefix, SIUnit, CustomUnit, DivisionUnit
+
 from antlr4 import ParserRuleContext, TerminalNode
 from antlr4.tree.Tree import TerminalNodeImpl
 
-from dcllspserver.gen.python.Declaration.DeclarationLexer import DeclarationLexer
 from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
 
 from common.logger import GeneratorLogger
@@ -84,24 +80,24 @@ class TestGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisitor):
 
     def test_visitUnitSpecification_code_one(self):
         model = self.parse_code("model eval group a : \"bla\" { def param int : meter } ")
-        group:ParameterGroup = model._groups.get("a")
-        parameter:Parameter = group._parameters.get("param")
+        group:ParameterGroup = model.groups.get("a")
+        parameter:Parameter = group.parameters.get("param")
 
         unit_meter = SIUnit(kind=UnitKind.Meter, prefix=None)
 
-        p_unit:SIUnit = parameter._unit
+        p_unit:SIUnit = parameter.unit
         self.assertIsInstance(p_unit, SIUnit, "Wrong type")
         self.assertEqual(p_unit, unit_meter, "Wrong unit")
 
     def test_visitUnitSpecification_code_two(self):
         model = self.parse_code("model eval group a : \"bla\" { def param int : meter * \"gini\" } ")
-        group:ParameterGroup = model._groups.get("a")
-        parameter:Parameter = group._parameters.get("param")
+        group:ParameterGroup = model.groups.get("a")
+        parameter:Parameter = group.parameters.get("param")
 
         unit_meter = SIUnit(kind=UnitKind.Meter, prefix=None)
         unit_gini = CustomUnit(name="gini")
 
-        p_unit:UnitSpecification = parameter._unit
+        p_unit:UnitSpecification = parameter.unit
         self.assertIsInstance(p_unit, UnitSpecification, "Wrong type")
         p_unit_meter = p_unit.units[0]
         p_unit_gini = p_unit.units[1]
@@ -179,9 +175,9 @@ class TestGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisitor):
 
         model:DeclarationModel = self.parse_code(code)
 
-        group:ParameterGroup = model._groups["a"]
-        parameter:Parameter = group._parameters["m"]
-        division_unit:DivisionUnit = parameter._unit
+        group:ParameterGroup = model.groups["a"]
+        parameter:Parameter = group.parameters["m"]
+        division_unit:DivisionUnit = parameter.unit
 
         self.assertIsInstance(division_unit, DivisionUnit, "Wrong object type")
 

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * TODO License
 
- Grammars always start with a grammar header. This grammer is called Configuration
+ Grammars always start with a grammar header. This grammar is called Configuration
  and must match the filename: Configuration.g4
  *******************************************************************************/
 grammar Configuration; //

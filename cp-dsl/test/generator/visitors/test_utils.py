@@ -47,7 +47,7 @@ class AbstractTestGeneratorDeclarationVisitor(unittest.TestCase):
     def make_visitor(self, type=None) -> GeneratorDeclarationVisitor:
         model = DeclarationModel()
         if type is not None:
-            model._types[type.name] = type
+            model.types[type.name] = type
         return GeneratorDeclarationVisitor(model, self.logger)
 
     def set_terminal(self, value:str) -> TerminalNode:
@@ -79,7 +79,7 @@ class AbstractTestGeneratorConfigurationVisitor(unittest.TestCase):
     def make_visitor(self, type=None) -> GeneratorConfigurationVisitor:
         model = DeclarationModel()
         if type is not None:
-            model._types[type.name] = type
+            model.types[type.name] = type
         return GeneratorConfigurationVisitor(model, self.logger)
 
     def set_terminal(self, value:str) -> TerminalNode:
@@ -98,6 +98,20 @@ class AbstractTestGeneratorConfigurationVisitor(unittest.TestCase):
         lexer = ConfigurationLexer(input_stream)
         stream = CommonTokenStream(lexer)
         parser = ConfigurationParser(stream)
+
+        visitor.visit(parser.configurationModel())
+
+        return model
+
+    def parse_declaration_code(self, code:str) -> DeclarationModel:
+        model = DeclarationModel()
+        visitor = GeneratorDeclarationVisitor(model, self.logger)
+
+        input_stream = TestStream(code)
+
+        lexer = DeclarationLexer(input_stream)
+        stream = CommonTokenStream(lexer)
+        parser = DeclarationParser(stream)
 
         visitor.visit(parser.declarationModel())
 

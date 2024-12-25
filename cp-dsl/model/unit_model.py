@@ -48,30 +48,30 @@ class UnitPrefix(Enum):
     Rough categorization of a unit from SI prefixes.
     """
     NoP = 0
-    Quetta = 1
-    Ronna = 2
-    Yotta = 3
-    Zetta = 4
-    Exa = 5
-    Peta = 6
-    Tera = 7
-    Giga = 8
-    Mega = 9
-    Kilo = 10
-    Hecto = 11
-    Deca = 12
-    Deci = 13
-    Centi = 14
-    Mili = 15
-    Micro = 16
-    Nano = 17
-    Pico = 18
-    Femto = 19
-    Atto = 20
-    Zepto = 21
-    Yocto = 22
-    Ronto = 23
-    Quecto = 24
+    Quetta = 30
+    Ronna = 27
+    Yotta = 24
+    Zetta = 21
+    Exa = 18
+    Peta = 15
+    Tera = 12
+    Giga = 9
+    Mega = 6
+    Kilo = 3
+    Hecto = 2
+    Deca = 1
+    Deci = -1
+    Centi = -2
+    Milli = -3
+    Micro = -6
+    Nano = -9
+    Pico = -12
+    Femto = -15
+    Atto = -18
+    Zepto = -21
+    Yocto = -24
+    Ronto = -27
+    Quecto = -30
 
 
 class Unit:

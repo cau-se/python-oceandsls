@@ -16,13 +16,29 @@ __author__ = "reiner"
 
 import unittest
 
-from test_utils import AbstractTestGeneratorDeclarationVisitor
+from model.declaration_model import DeclarationModel
 
-class TestGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisitor):
+from test_utils import AbstractTestGeneratorConfigurationVisitor
 
-    def test_visitDeclarationModel(self):
-        model = self.parse_code("model eval")
+class TestGeneratorConfigurationVisitor(AbstractTestGeneratorConfigurationVisitor):
+
+    def test_visit_unitSpecification(self):
+        model = self.parse_declaration_code("""
+                model eval
+                    group my_group : "description" {
+                        def param int : meter / kilo gram
+                    }
+                """)
         self.assertEqual(model.name, "eval", "Name not set")
+
+        model = self.parse_code("""
+                configuration test : eval
+
+                group my_group {
+                    param: 4 m/kg
+                }
+
+                """)
 
 if __name__ == '__main__':
     unittest.main()

@@ -16,18 +16,18 @@ from .type_system import Type
 from dataclasses import dataclass
 from antlr4.ParserRuleContext import ParserRuleContext
 from enum import Enum
-
+from typing import List
+from model.unit_model import UnitSpecification
 
 @dataclass
 class AbstractExpression:
-
     ctx: ParserRuleContext
+    unit: UnitSpecification
 
 class EAdditionOperator(Enum):
     ADD = '+'
     SUB = '-'
 @dataclass
-
 class ArithmeticExpression(AbstractExpression):
     left:AbstractExpression
     right:AbstractExpression
@@ -68,3 +68,7 @@ class FloatValue(AbstractTypedValue):
 class StringValue(AbstractTypedValue):
 
     value: str
+
+@dataclass
+class ArrayExpression(AbstractExpression):
+    elements: List[AbstractExpression]

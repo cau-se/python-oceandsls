@@ -15,17 +15,10 @@
 __author__ = "reiner"
 
 import unittest
-from generator.visitors.declaration_visitor import GeneratorDeclarationVisitor
-from model.declaration_model import DeclarationModel, ParameterGroup, Parameter, FeatureGroup, Feature
-from model.type_system import EnumeralType, Enumeral, RangeType, BaseType, ArrayType, Dimension, InlineEnumeralType, Enumeral
-from model.unit_model import UnitSpecification, UnitKind, UnitPrefix, SIUnit, CustomUnit, DivisionUnit, ExponentUnit
-from model.arithmetic_model import IntValue, StringValue, FloatValue, ArithmeticExpression, MultiplicationExpression, EMultiplicationOperator, EAdditionOperator
-from antlr4 import InputStream, CommonTokenStream
-from antlr4.Token import CommonToken
-from antlr4 import ParserRuleContext, TerminalNode
-from antlr4.tree.Tree import TerminalNodeImpl
 
-from dcllspserver.gen.python.Declaration.DeclarationLexer import DeclarationLexer
+from model.declaration_model import DeclarationModel, ParameterGroup
+from model.type_system import EnumeralType, Enumeral, RangeType, ArrayType, Dimension, InlineEnumeralType, Enumeral
+
 from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
 
 from common.logger import GeneratorLogger
@@ -38,21 +31,21 @@ class TestGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisitor):
     logger = GeneratorLogger(CompileFlags.STRICT)
 
     def check_visitRangeType(self, model:DeclarationModel):
-        result = model._types.get("Temperature")
+        result = model.types.get("Temperature")
         self.assertIsInstance(result, RangeType, "Not the correct data type")
         self.assertEqual(result.minimum, 0, "Wrong minimum")
         self.assertEqual(result.maximum, 273, "Wrong maximum")
 
     def check_visitEnumerationType(self, model: DeclarationModel):
-        result = model._types.get("Color")
+        result = model.types.get("Color")
         self.assertIsInstance(result, EnumeralType, "Not the correct data type")
         enumerals = {"red":0, "green":1, "blue":2}
         expected = EnumeralType("Color")
         for e in enumerals.items():
-            expected._enumerals[e[0]] = Enumeral(e[0], e[1])
+            expected.enumerals[e[0]] = Enumeral(e[0], e[1])
 
         self.assertEqual(result.name, expected.name, "Names do not match")
-        self.assertEqual(result._enumerals, expected._enumerals, "Not the same symbols")
+        self.assertEqual(result.enumerals, expected.enumerals, "Not the same symbols")
 
     def test_visitDeclaredType(self):
         model = self.parse_code("model eval types range Temperature int [0: 273] enum Color { red, green, blue }")
@@ -62,7 +55,7 @@ class TestGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisitor):
     def test_visitRangeType(self):
         model = self.parse_code("model eval types range Temperature int [0: 273]")
 
-        result = model._types.get("Temperature")
+        result = model.types.get("Temperature")
         self.assertIsInstance(result, RangeType, "Not the correct data type")
         self.assertEqual(result.minimum, 0, "Wrong minimum")
         self.assertEqual(result.maximum, 273, "Wrong maximum")
@@ -103,9 +96,9 @@ class TestGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisitor):
         result = self.make_visitor().visitParamType(param_type_context)
 
         self.assertIsInstance(result, InlineEnumeralType, "wrong type")
-        self.assertEqual(len(result._enumerals),2, "Wrong number")
-        self.assertEqual(list(result._enumerals.keys()), ["FIRST", "SECOND"], "Wrong keys")
-        enumerals = list(result._enumerals.values())
+        self.assertEqual(len(result.enumerals),2, "Wrong number")
+        self.assertEqual(list(result.enumerals.keys()), ["FIRST", "SECOND"], "Wrong keys")
+        enumerals = list(result.enumerals.values())
         self.assertEqual(enumerals[0].name, "FIRST", "Wrong name")
         self.assertEqual(enumerals[0].value, 1, "Wrong value")
         self.assertEqual(enumerals[1].name, "SECOND", "Wrong name")
@@ -131,11 +124,11 @@ class TestGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisitor):
         result = self.make_visitor().visitParamType(param_type_context)
 
         self.assertIsInstance(result, ArrayType, "wrong type")
-        self.assertEqual(len(result._dimensions), 2, "Wrong number of dimensions")
-        self.assertEqual(result._dimensions[0].lower, 0, "Wrong lower bound")
-        self.assertEqual(result._dimensions[0].upper, 4, "Wrong upper bound")
-        self.assertEqual(result._dimensions[1].lower, 2, "Wrong lower bound")
-        self.assertEqual(result._dimensions[1].upper, 10, "Wrong upper bound")
+        self.assertEqual(len(result.dimensions), 2, "Wrong number of dimensions")
+        self.assertEqual(result.dimensions[0].lower, 0, "Wrong lower bound")
+        self.assertEqual(result.dimensions[0].upper, 4, "Wrong upper bound")
+        self.assertEqual(result.dimensions[1].lower, 2, "Wrong lower bound")
+        self.assertEqual(result.dimensions[1].upper, 10, "Wrong upper bound")
 
     def test_visitArrayType(self):
         array_type_context = DeclarationParser.ArrayTypeContext(parent=None, parser=None)
@@ -155,11 +148,11 @@ class TestGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisitor):
         result:ArrayType = self.make_visitor().visitArrayType(array_type_context)
 
         self.assertIsInstance(result, ArrayType, "wrong type")
-        self.assertEqual(len(result._dimensions), 2, "Wrong number of dimensions")
-        self.assertEqual(result._dimensions[0].lower, 0, "Wrong lower bound")
-        self.assertEqual(result._dimensions[0].upper, 4, "Wrong upper bound")
-        self.assertEqual(result._dimensions[1].lower, 2, "Wrong lower bound")
-        self.assertEqual(result._dimensions[1].upper, 10, "Wrong upper bound")
+        self.assertEqual(len(result.dimensions), 2, "Wrong number of dimensions")
+        self.assertEqual(result.dimensions[0].lower, 0, "Wrong lower bound")
+        self.assertEqual(result.dimensions[0].upper, 4, "Wrong upper bound")
+        self.assertEqual(result.dimensions[1].lower, 2, "Wrong lower bound")
+        self.assertEqual(result.dimensions[1].upper, 10, "Wrong upper bound")
 
     def test_visitSizeDimension_code_with_value(self):
         self.visitSizeDimension_code("10")
@@ -176,14 +169,14 @@ class TestGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisitor):
         """
         model = self.parse_code(code)
 
-        group:ParameterGroup = model._groups.get("test")
+        group:ParameterGroup = model.groups.get("test")
 
-        for p in group._parameters.values():
-            type:ArrayType = p._type
+        for p in group.parameters.values():
+            type:ArrayType = p.type
 
             self.assertIsInstance(type, ArrayType, "Wrong type")
-            self.assertEqual(len(type._dimensions), 1, "Wrong number of dimensions")
-            dim:Dimension = type._dimensions[0]
+            self.assertEqual(len(type.dimensions), 1, "Wrong number of dimensions")
+            dim:Dimension = type.dimensions[0]
             self.assertEqual(dim.lower, 0, "Wrong lower bound")
             if size == "":
                 self.assertEqual(dim.upper, None, "Wrong upper bound")
@@ -231,14 +224,14 @@ class TestGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisitor):
         """
         model = self.parse_code(code)
 
-        group:ParameterGroup = model._groups.get("test")
+        group:ParameterGroup = model.groups.get("test")
 
-        for p in group._parameters.values():
-            type:ArrayType = p._type
+        for p in group.parameters.values():
+            type:ArrayType = p.type
 
             self.assertIsInstance(type, ArrayType, "Wrong type")
-            self.assertEqual(len(type._dimensions), 1, "Wrong number of dimensions")
-            dim:Dimension = type._dimensions[0]
+            self.assertEqual(len(type.dimensions), 1, "Wrong number of dimensions")
+            dim:Dimension = type.dimensions[0]
 
             self.assertEqual(dim.lower, lower, "Wrong lower bound")
             self.assertEqual(dim.upper, upper, "Wrong upper bound")
@@ -264,24 +257,24 @@ class TestGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisitor):
     def test_visitInlineEnumerationType(self):
         model = self.parse_code("model eval group g : \"group description\" { def param1 ( RED, GREEN, BLUE ) : meter = BLUE }")
 
-        group:ParameterGroup = model._groups.get("g")
+        group:ParameterGroup = model.groups.get("g")
 
         self.assertIsInstance(group, ParameterGroup, f"Wrong type {type(group)}")
         self.assertEqual(group.name, "g", "Wrong name")
-        self.assertEqual(group._description, "group description", "Wrong description")
+        self.assertEqual(group.description, "group description", "Wrong description")
 
-        self.assertEqual(len(group._parameters.values()), 1, "Wrong number of parameters")
-        for p in group._parameters.values():
+        self.assertEqual(len(group.parameters.values()), 1, "Wrong number of parameters")
+        for p in group.parameters.values():
             self.assertEqual(p.name, "param1", "Wrong param name")
-            self.assertIsInstance(p._type, InlineEnumeralType, "Wrong type")
-            enumeral_type:InlineEnumeralType = p._type
-            self.assertEqual(len(enumeral_type._enumerals), 3, "Wrong number of enumerals")
-            self.assertEqual(enumeral_type._enumerals.get("RED").name, "RED", "Not red")
-            self.assertEqual(enumeral_type._enumerals.get("RED").value, 0, "Not 0 for red")
-            self.assertEqual(enumeral_type._enumerals.get("GREEN").name, "GREEN", "Not green")
-            self.assertEqual(enumeral_type._enumerals.get("GREEN").value, 1, "Not 1 for green")
-            self.assertEqual(enumeral_type._enumerals.get("BLUE").name, "BLUE", "Not blue")
-            self.assertEqual(enumeral_type._enumerals.get("BLUE").value, 2, "Not 2 for blue")
+            self.assertIsInstance(p.type, InlineEnumeralType, "Wrong type")
+            enumeral_type:InlineEnumeralType = p.type
+            self.assertEqual(len(enumeral_type.enumerals), 3, "Wrong number of enumerals")
+            self.assertEqual(enumeral_type.enumerals.get("RED").name, "RED", "Not red")
+            self.assertEqual(enumeral_type.enumerals.get("RED").value, 0, "Not 0 for red")
+            self.assertEqual(enumeral_type.enumerals.get("GREEN").name, "GREEN", "Not green")
+            self.assertEqual(enumeral_type.enumerals.get("GREEN").value, 1, "Not 1 for green")
+            self.assertEqual(enumeral_type.enumerals.get("BLUE").name, "BLUE", "Not blue")
+            self.assertEqual(enumeral_type.enumerals.get("BLUE").value, 2, "Not 2 for blue")
 
 
 if __name__ == '__main__':

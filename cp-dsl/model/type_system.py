@@ -57,10 +57,10 @@ class Enumeral:
 
 class GenericEnumeralType(Type):
 
-    _enumerals: Dict[str,Enumeral]
+    enumerals: Dict[str,Enumeral]
 
     def __init__(self) -> None:
-        self._enumerals = {}
+        self.enumerals = {}
 
 class InlineEnumeralType(GenericEnumeralType):
     pass
@@ -95,12 +95,12 @@ class Dimension:
 
 class ArrayType(Type):
 
-    _type: NamedType
-    _dimensions: List[Dimension]
+    type: NamedType
+    dimensions: List[Dimension]
 
     def __init__(self, type: NamedType, dimensions: List[Dimension]):
-        self._type = type
-        self._dimensions = dimensions
+        self.type = type
+        self.dimensions = dimensions
 
 
 def get_fundamental_type(type: str = "") -> Type | FundamentalType:

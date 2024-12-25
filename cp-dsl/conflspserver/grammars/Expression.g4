@@ -1,7 +1,7 @@
 /*******************************************************************************
  * TODO License
 
- Grammars always start with a grammar header. This grammer is called Expression
+ Grammars always start with a grammar header. This grammar is called Expression
  and must match the filename: Expression.g4
  *******************************************************************************/
 grammar Expression; //
@@ -21,7 +21,7 @@ eAdditionOperator           : '+'
                             | '-'
                             ;
 
-//TODO pradicates: ->
+//TODO predicates: ->
 multiplicationExpression    : left=valueExpression op=eMultiplicationOperator right=multiplicationExpression
                             | valueExpression
                             ;
@@ -54,7 +54,7 @@ arrayExpression             : '[' (elements+=arithmeticExpression (',' elements+
 //TODO returns NamedElementReference
 //TODO add NamedElement reference for element = ID and attribute  ID
 //TODO {NamedElementReference} enforce Type and return object of NamedElementReference
-namedElementReference       : element=ID ('.' attribute=ID)? ;
+namedElementReference       : elements+=ID ('.' elements+=ID)* ;
 
 stringValue                 : value = STRING ;
 
@@ -69,7 +69,7 @@ booleanValue                : value = EBoolean ;
 // -----------------------------------------------------------------------
 /*
 expr
-    : '(' expr ')'                              # ParenExpr
+    : '(' expr ')'                              # ParentExpr
     | left=expr op=('*'|'/'|'%') right=expr     # InfixExpr
     | left=expr op=('+'|'-') right=expr         # InfixExpr
     | atom=INT                                  # NumberExpr

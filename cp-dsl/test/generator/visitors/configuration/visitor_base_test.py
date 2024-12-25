@@ -15,29 +15,50 @@
 __author__ = "reiner"
 
 import unittest
-from generator.visitors.declaration_visitor import GeneratorDeclarationVisitor
-from model.declaration_model import DeclarationModel, ParameterGroup, Parameter, FeatureGroup, Feature
-from model.type_system import EnumeralType, Enumeral, RangeType, BaseType, ArrayType, Dimension, InlineEnumeralType, Enumeral
-from model.unit_model import UnitSpecification, UnitKind, UnitPrefix, SIUnit, CustomUnit, DivisionUnit, ExponentUnit
-from model.arithmetic_model import IntValue, StringValue, FloatValue, ArithmeticExpression, MultiplicationExpression, EMultiplicationOperator, EAdditionOperator
-from antlr4 import InputStream, CommonTokenStream
-from antlr4.Token import CommonToken
-from antlr4 import ParserRuleContext, TerminalNode
-from antlr4.tree.Tree import TerminalNodeImpl
 
-from dcllspserver.gen.python.Declaration.DeclarationLexer import DeclarationLexer
-from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
+from model.declaration_model import DeclarationModel
 
-from common.logger import GeneratorLogger
-from common.configuration import CompileFlags
+from test_utils import AbstractTestGeneratorConfigurationVisitor
 
-from test_utils import AbstractTestGeneratorDeclarationVisitor
+class TestGeneratorConfigurationVisitor(AbstractTestGeneratorConfigurationVisitor):
 
-class TestGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisitor):
-
-    def test_visitDeclarationModel(self):
-        model = self.parse_code("model eval")
+    def test_visitConfigurationModel_plain(self):
+        model = self.parse_declaration_code("model eval")
         self.assertEqual(model.name, "eval", "Name not set")
+
+        model = self.parse_code("configuration test : eval", model)
+        self.assertEqual(model.name, "eval", "Name not set after configuration")
+        self.assertEqual(model.configuration_name, "test", "Configuration name not set")
+
+    def test_visitConfigurationModel_group(self):
+        model = self.parse_declaration_code("""
+                model eval
+                    group example : "description" {
+                        def param1 int : meter = 0
+                    }
+                """)
+        self.assertEqual(model.name, "eval", "Name not set")
+
+        model:DeclarationModel = self.parse_code("configuration test : eval", model)
+        self.assertEqual(model.name, "eval", "Name not set after configuration")
+        self.assertEqual(model.configuration_name, "test", "Configuration name not set")
+        self.assertEqual(len(model.groups), 1, "Wrong set of groups")
+        self.assertIsNotNone(model.groups["example"], "Missing group")
+        self.assertEqual(model.groups["example"].name, "example", "Wrong group name")
+
+    def test_visitConfigurationModel_feature(self):
+        model = self.parse_declaration_code("""
+                model eval
+                    feature Base : "description"
+                """)
+        self.assertEqual(model.name, "eval", "Name not set")
+
+        model:DeclarationModel = self.parse_code("configuration test : eval", model)
+        self.assertEqual(model.name, "eval", "Name not set after configuration")
+        self.assertEqual(model.configuration_name, "test", "Configuration name not set")
+        self.assertEqual(len(model.features), 1, "Wrong set of features")
+        self.assertIsNotNone(model.features["Base"], "Missing feature")
+        self.assertEqual(model.features["Base"].name, "Base", "Wrong feature name")
 
 if __name__ == '__main__':
     unittest.main()

@@ -28,7 +28,8 @@ from model.declaration_model import DeclarationModel, Parameter, ParameterGroup,
 from model.type_system import EnumeralType, InlineEnumeralType, Enumeral, RangeType, ArrayType, Dimension, BaseType, base_types
 from model.unit_model import Unit, UnitPrefix, UnitKind, UnitSpecification, SIUnit, CustomUnit, DivisionUnit, ExponentUnit
 from common.logger import GeneratorLogger
-from model.arithmetic_model import ArithmeticExpression, MultiplicationExpression, IntValue, FloatValue, StringValue, EMultiplicationOperator, EAdditionOperator
+from model.arithmetic_model import ArithmeticExpression, MultiplicationExpression, IntValue, FloatValue, StringValue, \
+    EMultiplicationOperator, EAdditionOperator, ArrayExpression
 
 from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
 from dcllspserver.gen.python.Declaration.DeclarationVisitor import DeclarationVisitor
@@ -40,36 +41,36 @@ from dcllspserver.gen.python.Declaration.DeclarationVisitor import DeclarationVi
 
 class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
 
-    _declaration_model: DeclarationModel
+    _model: DeclarationModel
 
     def __init__(self, symbol_table: DeclarationModel, logger: GeneratorLogger):
         super().__init__()
         # creates a new symboltable with no duplicate symbols
-        self._declaration_model = symbol_table
+        self._model = symbol_table
         # TODO scope marker
         # self._scope = self._symbol_table.add_new_symbol_of_type( ScopedSymbol, None )
-        self._scope = self._declaration_model
+        self._scope = self._model
         self._type_scope = None
         self.inline_int = 0
         self._logger = logger
 
     @property
     def symbol_table(self) -> DeclarationModel:
-        return self._declaration_model
+        return self._model
 
     def visitDeclarationModel(self, ctx: DeclarationParser.DeclarationModelContext):
-        self._declaration_model.name = ctx.name.text
+        self._model.name = ctx.name.text
         for type in ctx.types:
             type_definition = self.visitDeclaredType(type)
-            self._declaration_model._types[type_definition.name] = type_definition
+            self._model.types[type_definition.name] = type_definition
 
         for group in ctx.parameterGroupDeclarations:
             group_declaration = self.visitParamGroupAssignStat(group)
-            self._declaration_model._groups[group_declaration.name] = group_declaration
+            self._model.groups[group_declaration.name] = group_declaration
 
         for feature in ctx.featureDeclarations:
             feature_declaration = self.visitFeatureAssignStat(feature)
-            self._declaration_model._features[feature_declaration.name] = feature_declaration
+            self._model.features[feature_declaration.name] = feature_declaration
 
         return self._scope
 
@@ -87,7 +88,7 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
         old_symbol = self.resolve_type(self._scope, range_name)
         if old_symbol:
             self._logger.strict(ctx, "Redefining ranges")
-        type = self.resolve_type(self._declaration_model, ctx.type_.text)
+        type = self.resolve_type(self._model, ctx.type_.text)
         if type is not None:
             if ctx.minimum.longValue() is not None:
                 minimum = ctx.minimum.longValue().value.text
@@ -111,17 +112,17 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
         # create a new type if no old one exists
         if enum_type is None:
             enum_type = EnumeralType(enum_name)
-            self._declaration_model.add_new_type(enum_type)
+            self._model.add_new_type(enum_type)
 
         for enumeral in ctx.values:
             # enum_list representation: [(id, value),...]
             enum_item = self.visitEnumeral(enumeral)
             if enum_item.value == -1:
-                enum_item.value = self.find_next_enum_number(enum_type._enumerals)
-            if self.check_enumeral_name(enum_item, enum_type._enumerals):
+                enum_item.value = self.find_next_enum_number(enum_type.enumerals)
+            if self.check_enumeral_name(enum_item, enum_type.enumerals):
                 self._logger.strict(ctx, f"Enumeral {enum_item} already exists in enumeration {enum_name}")
             else:
-                enum_type._enumerals[enum_item.name] = enum_item
+                enum_type.enumerals[enum_item.name] = enum_item
 
         return enum_type
 
@@ -132,11 +133,11 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
             # enum_list representation: [(id, value),...]
             enum_item = self.visitEnumeral(i)
             if enum_item.value == -1:
-                enum_item.value = self.find_next_enum_number(enum_type._enumerals)
-            if self.check_enumeral_name(enum_item, enum_type._enumerals):
+                enum_item.value = self.find_next_enum_number(enum_type.enumerals)
+            if self.check_enumeral_name(enum_item, enum_type.enumerals):
                 self._logger.strict(ctx, f"Enumeral {enum_item[0]} already exists in enumeration {enum_name}")
             else:
-                enum_type._enumerals[enum_item.name] = enum_item
+                enum_type.enumerals[enum_item.name] = enum_item
 
         return enum_type
 
@@ -153,16 +154,16 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
         description = ctx.description.text[1:-1] if ctx.description else ""
 
         try:
-            group = self._scope._groups[name]
+            group = self._scope.groups[name]
             self._scope = group
         except KeyError:
             group = ParameterGroup(name, description, self._scope)
-            self._scope._groups[name] = group
+            self._scope.groups[name] = group
             self._scope = group
 
         for d in ctx.parameterDeclarations:
             p = self.visitParamAssignStat(d)
-            group._parameters[p.name] = p
+            group.parameters[p.name] = p
 
         self._scope = parent_scope
         return group
@@ -178,12 +179,12 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
         description = ctx.description.text if ctx.description else ""
         unit = self.visit(ctx.unit)
 
-        parameter: Parameter = self._scope.resolve_symbol(var_name)
+        parameter: Parameter = self._scope.resolve_parameters(var_name)
         if parameter is None:
             parameter = Parameter(var_name, var_type, unit, description, self._scope)
             if ctx.defaultValue is not None:
                 expression = self.visitArithmeticExpression(ctx.defaultValue)
-                parameter._default_value = expression
+                parameter.default_value = expression
             self._type_scope = None
             return parameter
         else:
@@ -239,18 +240,18 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
         if feature is None:
             description = ctx.description.text[1:-1]
             feature = Feature(name, description, self._scope)
-            feature._required = ctx.required is not None
+            feature.required = ctx.required is not None
 
             for required in ctx.requires:
-                feature._requires.append(self.visitFeatureReference(required))
+                feature.requires.append(self.visitFeatureReference(required))
             for excluded in ctx.excludes:
-                feature._excludes.append(self.visitFeatureReference(excluded))
+                feature.excludes.append(self.visitFeatureReference(excluded))
 
             parent_scope = self._scope
             self._scope = feature
 
             for group in ctx.featureGroupDeclarations:
-                feature._feature_sets.append(self.visitFeatureGroupAssignStat(group))
+                feature.feature_sets.append(self.visitFeatureGroupAssignStat(group))
 
             self._scope = parent_scope
             return feature
@@ -282,7 +283,7 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
 
         for declaration in ctx.featureDeclarations:
             feature = self.visitFeatureAssignStat(declaration)
-            group._features[feature.name] = feature
+            group.features[feature.name] = feature
 
         self._scope = parent_scope
 
@@ -343,7 +344,7 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
             if isinstance(expression, DeclarationParser.ValueExpressionContext):
                 return self.visitValueExpression(expression)
             else:
-                print(f"ERROR unsupported type in MultiplicationExpression {type(expression)}")
+                print(f"ERROR unsupported type in ValueExpressionContext {type(expression)}")
                 return None
         else:
             print("ERROR")
@@ -367,12 +368,20 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
             return self.visitLiteralExpression(ctx.literalExpression())
         elif ctx.namedElementReference() is not None:
             return self.visitNamedElementReference(ctx.namedElementReference())
+        elif ctx.arrayExpression() is not None:
+            return self.visitArrayExpression(ctx.arrayExpression())
         else:
-            print("ERROR something")
+            print(f"ERROR something {ctx} {type(ctx)}")
             return None
 
     def visitParenthesisExpression(self, ctx: DeclarationParser.ParenthesisExpressionContext):
         return self.visitArithmeticExpression(ctx.arithmeticExpression())
+
+    def visitArrayExpression(self, ctx: DeclarationParser.ArrayExpressionContext):
+        elements:List[ArithmeticExpression] = []
+        for element in ctx.elements:
+            elements.append(self.visit(element))
+        return ArrayExpression(ctx=ctx, elements=elements)
 
     def visitLiteralExpression(self, ctx: DeclarationParser.LiteralExpressionContext):
         return self.visitLiteral(ctx.literal())
@@ -417,24 +426,24 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
 
         # check whether it is an enumeration
         if depth == 2: # Can be an enumeration
-            data_type = self._declaration_model._types.get(ctx.elements[0].text)
+            data_type = self._model.types.get(ctx.elements[0].text)
             if isinstance(data_type, EnumeralType):
-                enumeral = data_type._enumerals.get(ctx.elements[1].text, None)
+                enumeral = data_type.enumerals.get(ctx.elements[1].text, None)
                 if enumeral is None:
-                    self._logger.strict(ctx, f"Symbol {self.print_symbol(ctx.elements, 2)} does not refer to an enumeral")
+                    self._logger.strict(ctx, f"Symbol {self.print_symbol(ctx.elements, 2)} does not refer to an enumeral nor parameter and parameter group")
                     return None
                 else:
                     return enumeral
             else:
-                self._logger.strict(ctx, f"Symbol {self.print_symbol(ctx.elements, 1)} does not refer to an enumeration type")
+                self._logger.strict(ctx, f"Symbol {self.print_symbol(ctx.elements, 1)} does not refer to an enumeration type nor parameter and parameter group")
                 return None
 
         # check whether it is an enumeration inferred by parameter type
         data_type = self._type_scope
         if isinstance(data_type, EnumeralType) or isinstance(data_type, InlineEnumeralType):
-            enumeral = data_type._enumerals.get(ctx.elements[0].text, None)
+            enumeral = data_type.enumerals.get(ctx.elements[0].text, None)
             if enumeral is None:
-                self._logger.strict(ctx, f"Symbol {self.print_symbol(ctx.elements, 2)} does not refer to an enumeral")
+                self._logger.strict(ctx, f"Symbol {self.print_symbol(ctx.elements, 2)} does not refer to an enumeral nor parameter and parameter group")
                 return None
             else:
                 return enumeral

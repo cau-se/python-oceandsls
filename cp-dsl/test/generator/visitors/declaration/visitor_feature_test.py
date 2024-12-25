@@ -15,17 +15,10 @@
 __author__ = "reiner"
 
 import unittest
-from generator.visitors.declaration_visitor import GeneratorDeclarationVisitor
-from model.declaration_model import DeclarationModel, ParameterGroup, Parameter, FeatureGroup, Feature, EKind
-from model.type_system import EnumeralType, Enumeral, RangeType, BaseType, ArrayType, Dimension, InlineEnumeralType, Enumeral
-from model.unit_model import UnitSpecification, UnitKind, UnitPrefix, SIUnit, CustomUnit, DivisionUnit, ExponentUnit
-from model.arithmetic_model import IntValue, StringValue, FloatValue, ArithmeticExpression, MultiplicationExpression, EMultiplicationOperator, EAdditionOperator
-from antlr4 import InputStream, CommonTokenStream
-from antlr4.Token import CommonToken
-from antlr4 import ParserRuleContext, TerminalNode
-from antlr4.tree.Tree import TerminalNodeImpl
 
-from dcllspserver.gen.python.Declaration.DeclarationLexer import DeclarationLexer
+from model.declaration_model import Feature, EKind
+from antlr4 import ParserRuleContext
+
 from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
 
 from common.logger import GeneratorLogger
@@ -68,32 +61,32 @@ class TestFeatureGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVis
 
         model = self.parse_code(code)
 
-        base_feature:Feature = model._features.get("Base")
+        base_feature:Feature = model.features.get("Base")
 
         self.assertIsInstance(base_feature, Feature, f"Wrong type {type(base_feature)}")
         self.assertEqual(base_feature.name, "Base", "Wrong feature")
 
-        second_feature:Feature = model._features.get("Second")
+        second_feature:Feature = model.features.get("Second")
 
         self.assertIsInstance(second_feature, Feature, f"Wrong type {type(second_feature)}")
         self.assertEqual(second_feature.name, "Second", "Wrong feature")
 
-        self.assertEqual(len(second_feature._requires), 1, "Wrong number of required features")
-        self.assertEqual(second_feature._requires[0].name, "Base", "Wrong feature")
+        self.assertEqual(len(second_feature.requires), 1, "Wrong number of required features")
+        self.assertEqual(second_feature.requires[0].name, "Base", "Wrong feature")
 
-        alternate_feature:Feature = model._features.get("Alternate")
+        alternate_feature:Feature = model.features.get("Alternate")
 
         self.assertIsInstance(alternate_feature, Feature, f"Wrong type {type(alternate_feature)}")
         self.assertEqual(alternate_feature.name, "Alternate", "Wrong feature")
 
-        self.assertEqual(len(alternate_feature._requires), 2, "Wrong number of required features")
-        r1 = alternate_feature._requires[0]
-        r2 = alternate_feature._requires[1]
+        self.assertEqual(len(alternate_feature.requires), 2, "Wrong number of required features")
+        r1 = alternate_feature.requires[0]
+        r2 = alternate_feature.requires[1]
         self.assertEqual(r1, base_feature, "Wrong feature {base_feature.name}")
         self.assertEqual(r2, second_feature, "Wrong feature {second_feature.name}")
 
-        e1 = alternate_feature._excludes[0]
-        feat2 = base_feature._feature_sets[0]._features['Feat2']
+        e1 = alternate_feature.excludes[0]
+        feat2 = base_feature.feature_sets[0].features['Feat2']
         self.assertEqual(e1, feat2, "Wrong feature {feat2.name}")
 
 
@@ -117,24 +110,24 @@ class TestFeatureGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVis
 
         model = self.parse_code(code)
 
-        base_feature:Feature = model._features.get("Base")
+        base_feature:Feature = model.features.get("Base")
 
         self.assertIsInstance(base_feature, Feature, f"Wrong type {type(base_feature)}")
         self.assertEqual(base_feature.name, "Base", "Wrong feature")
-        self.assertEqual(base_feature._description, "Base description", "Wrong description")
-        self.assertEqual(base_feature._required, True, "Feature must be required")
-        self.assertEqual(len(base_feature._feature_sets), 1, "Wrong number of feature groups")
-        feature_set = base_feature._feature_sets[0]
-        f1 = feature_set._features.get("Feat1")
-        f2 = feature_set._features.get("Feat2")
+        self.assertEqual(base_feature.description, "Base description", "Wrong description")
+        self.assertEqual(base_feature.required, True, "Feature must be required")
+        self.assertEqual(len(base_feature.feature_sets), 1, "Wrong number of feature groups")
+        feature_set = base_feature.feature_sets[0]
+        f1 = feature_set.features.get("Feat1")
+        f2 = feature_set.features.get("Feat2")
 
         self.assertIsInstance(f1, Feature, f"Wrong type {type(f1)}")
         self.assertEqual(f1.name, "Feat1", "Wrong feature name")
-        self.assertEqual(f1._description, "Feature one", "Wrong description")
+        self.assertEqual(f1.description, "Feature one", "Wrong description")
 
         self.assertIsInstance(f2, Feature, f"Wrong type {type(f2)}")
         self.assertEqual(f2.name, "Feat2", "Wrong feature name")
-        self.assertEqual(f2._description, "Feature two", "Wrong description")
+        self.assertEqual(f2.description, "Feature two", "Wrong description")
 
     def test_visitEKind_alternative(self):
         kind_ctx = DeclarationParser.EKindContext(parent=None, parser=None)

@@ -15,21 +15,12 @@
 __author__ = "reiner"
 
 import unittest
-from generator.visitors.declaration_visitor import GeneratorDeclarationVisitor
-from model.declaration_model import DeclarationModel, ParameterGroup, Parameter, FeatureGroup, Feature
-from model.type_system import EnumeralType, Enumeral, RangeType, BaseType, ArrayType, Dimension, InlineEnumeralType, Enumeral
-from model.unit_model import UnitSpecification, UnitKind, UnitPrefix, SIUnit, CustomUnit, DivisionUnit, ExponentUnit
-from model.arithmetic_model import IntValue, StringValue, FloatValue, ArithmeticExpression, MultiplicationExpression, EMultiplicationOperator, EAdditionOperator
-from antlr4 import InputStream, CommonTokenStream
-from antlr4.Token import CommonToken
-from antlr4 import ParserRuleContext, TerminalNode
-from antlr4.tree.Tree import TerminalNodeImpl
 
-from dcllspserver.gen.python.Declaration.DeclarationLexer import DeclarationLexer
+from model.declaration_model import ParameterGroup
+from model.type_system import RangeType, BaseType
+
 from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
 
-from common.logger import GeneratorLogger
-from common.configuration import CompileFlags
 
 from test_utils import AbstractTestGeneratorDeclarationVisitor
 
@@ -44,27 +35,27 @@ class TestGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisitor):
 
         self.assertIsInstance(result, ParameterGroup, f"Wrong type {type(result)}")
         self.assertEqual(result.name, "group_name", "Wrong name")
-        self.assertEqual(result._description, "group description", "Wrong description")
+        self.assertEqual(result.description, "group description", "Wrong description")
 
 
     def test_visitParamAssignStat(self):
         model = self.parse_code("model eval group g : \"group description\" { def param1 int : meter = 0 }")
 
-        group:ParameterGroup = model._groups.get("g")
+        group:ParameterGroup = model.groups.get("g")
 
         self.assertIsInstance(group, ParameterGroup, f"Wrong type {type(group)}")
         self.assertEqual(group.name, "g", "Wrong name")
-        self.assertEqual(group._description, "group description", "Wrong description")
+        self.assertEqual(group.description, "group description", "Wrong description")
 
         t = BaseType("int")
-        self.assertEqual(len(group._parameters.values()), 1, "Wrong number of parameters")
-        for p in group._parameters.values():
+        self.assertEqual(len(group.parameters.values()), 1, "Wrong number of parameters")
+        for p in group.parameters.values():
             self.assertEqual(p.name, "param1", "Wrong param name")
-            self.assertEqual(p._type, t, "Wrong type")
+            self.assertEqual(p.type, t, "Wrong type")
             # TODO
 #            self.assertEqual(p._unit, u, "Should be meter")
-            self.assertEqual(p._default_value.value, 0, "Wrong value")
-            self.assertEqual(p._description, "", "Wrong description")
+            self.assertEqual(p.default_value.value, 0, "Wrong value")
+            self.assertEqual(p.description, "", "Wrong description")
 
     def test_visitParamType_type_reference(self):
         param_type_context = DeclarationParser.ParamTypeContext(parent=None, parser=None)

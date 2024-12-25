@@ -8,6 +8,6 @@ echo $BASE_DIR
 git fetch
 . ~/.venv/bin/activate
 cd "$BASE_DIR/cp-dsl"
-export PYTHONPATH="$BASE_DIR/cp-dsl"
+export PYTHONPATH="$BASE_DIR/cp-dsl:$BASE_DIR/cp-dsl/test/generator/visitors"
 
 # end

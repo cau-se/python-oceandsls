@@ -46,59 +46,80 @@ class DeclarationModel(Scope):
 
     def __init__(self, name: str = None):
         super().__init__(None)  # DeclarationModel has no parent
-        self._name = name
-        self._groups = {}
-        self._features = {}
-        self._types = {}
+        self.name = name
+        self.configuration_name = None
+        self.groups = {}
+        self.features = {}
+        self.types = {}
 
     def add_new_type(self, type: Type):
         if isinstance(type, NamedType):
-            self._types[type.name] = type
+            self.types[type.name] = type
         else:
-            self._types[type.__hash__] = type
+            self.types[type.__hash__] = type
 
     def resolve_type(self, name: str):
-        return self._types.get(name, None)
+        return self.types.get(name, None)
+
+    def resolve_feature(self, name:str):
+        return self.features.get(name, None)
+
+    def resolve_parameter_group(self, name:str):
+        return self.groups.get(name, None)
 
     def resolve_symbol(self, name: str):
-        feature = self._features.get(name, None)
+        feature = self.features.get(name, None)
         if feature is None:
-            return self._groups.get(name, None)
+            return self.groups.get(name, None)
         else:
             return feature
 
 #
 # Parameter Groups
 #
+@dataclass
+class Selector:
+    lower_bound:int
+    upper_bound:int
 
-
+@dataclass
+class SelectorExpression:
+    selectors : List[Selector]
+    expression : ArithmeticExpression
 class Parameter(NamedElement):
 
-    _type: NamedType
-    _unit: UnitSymbol
-    _description: str
-    _default_value: ArithmeticExpression = None
-    _value = None
+    type: NamedType
+    unit: UnitSymbol
+    description: str
+    default_value: ArithmeticExpression = None
+    value = None
 
     def __init__(self, name: str, type: NamedType, unit: UnitSymbol, description: str = None, parent=None) -> None:
         super().__init__(name, parent)
-        self._type = type
-        self._unit = unit
-        self._description = description
+        self.type = type
+        self.unit = unit
+        self.config_unit = None
+        self.description = description
+        self.default_value = None
+        self.value = None
+        self.entries = []
 
 
 class ParameterGroup(NamedElement):
 
-    _description: str
-    _parameters: Dict[str, Parameter]
+    description: str
+    parameters: Dict[str, Parameter]
 
     def __init__(self, name: str, description: str, parent: Scope):
         super().__init__(name, parent)
-        self._description = description
-        self._parameters = {}
+        self.description = description
+        self.parameters = {}
 
-    def resolve_symbol(self, name: str) -> Parameter:
-        return self._parameters.get(name, None)
+    def resolve_parameters(self, name: str) -> Parameter:
+        return self.parameters.get(name, None)
+
+    def resolve_symbol(self, name):
+        return self.resolve_parameters(name)
 
 #
 # Features
@@ -112,41 +133,51 @@ class EKind(Enum):
 
 class FeatureGroup(Scope):
 
-    _kind:EKind
-    _features:Dict[str, Feature]
+    kind:EKind
+    features:Dict[str, Feature]
 
     def __init__(self, kind:EKind, parent: Scope):
         super().__init__(parent)
-        self._kind = kind
-        self._features = {}
+        self.kind = kind
+        self.features = {}
 
     def resolve_symbol(self, name: str) -> Feature:
-        return self._features.get(name, None)
+        return self.features.get(name, None)
 
 class Feature(NamedElement):
 
-    _is_activated: bool = False  # set if the feature is activated
-    _required: bool = False
-    _description: str = None
-    _requires: List[Feature]
-    _excludes: List[Feature]
+    is_activated: bool = False  # set if the feature is activated
+    required: bool = False
+    description: str = None
+    requires: List[Feature]
+    excludes: List[Feature]
 
-    _groups:Dict[str, ParameterGroup]
-    _feature_sets:List[FeatureGroup]
+    groups:Dict[str, ParameterGroup]
+    feature_sets:List[FeatureGroup]
 
     def __init__(self, name: str, description: str, parent: Scope):
         super().__init__(name, parent)
-        self._description = description
-        self._groups = {}
-        self._requires = []
-        self._excludes = []
-        self._feature_sets = []
+        self.description = description
+        self.groups = {}
+        self.requires = []
+        self.excludes = []
+        self.feature_sets = []
+
+    def resolve_feature(self, name: str) -> Feature:
+        for group in self.feature_sets:
+            feature = group.features.get(name, None)
+            if feature != None:
+                return feature
+        return None
+
+    def resolve_parameter_group(self, name:str):
+        return self.groups.get(name, None)
 
     def resolve_symbol(self, name: str) -> ParameterGroup|FeatureGroup:
-        result = self._groups.get(name, None)
+        result = self.groups.get(name, None)
         if result is None:
-            for feature_set in self._feature_sets:
-                feature = feature_set._features.get(name, None)
+            for feature_set in self.feature_sets:
+                feature = feature_set.features.get(name, None)
                 if feature is not None:
                     return feature
             return None

@@ -15,16 +15,12 @@
 __author__ = "reiner"
 
 import unittest
-from model.declaration_model import DeclarationModel, ParameterGroup, Parameter, FeatureGroup, Feature
-from model.type_system import EnumeralType, Enumeral, RangeType, BaseType, ArrayType, Dimension, InlineEnumeralType, Enumeral
-from model.unit_model import UnitSpecification, UnitKind, UnitPrefix, SIUnit, CustomUnit, DivisionUnit, ExponentUnit
-from model.arithmetic_model import IntValue, StringValue, FloatValue, ArithmeticExpression, MultiplicationExpression, EMultiplicationOperator, EAdditionOperator
-from antlr4 import InputStream, CommonTokenStream
-from antlr4.Token import CommonToken
-from antlr4 import ParserRuleContext, TerminalNode
-from antlr4.tree.Tree import TerminalNodeImpl
 
-from dcllspserver.gen.python.Declaration.DeclarationLexer import DeclarationLexer
+from model.declaration_model import DeclarationModel, ParameterGroup, Parameter
+from model.type_system import Enumeral, BaseType
+from model.arithmetic_model import IntValue, StringValue, FloatValue, ArithmeticExpression, MultiplicationExpression, \
+    EMultiplicationOperator, EAdditionOperator, ArrayExpression
+
 from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
 
 from common.logger import GeneratorLogger
@@ -39,51 +35,51 @@ class TestArithmeticGeneratorDeclarationVisitor(AbstractTestGeneratorDeclaration
     def test_visitArithmeticExpression(self):
         model = self.parse_code("model eval group g : \"group description\" { def param1 int : meter = 3 + 4 }")
 
-        group:ParameterGroup = model._groups.get("g")
+        group:ParameterGroup = model.groups.get("g")
 
         self.assertIsInstance(group, ParameterGroup, f"Wrong type {type(group)}")
         self.assertEqual(group.name, "g", "Wrong name")
-        self.assertEqual(group._description, "group description", "Wrong description")
+        self.assertEqual(group.description, "group description", "Wrong description")
 
         t = BaseType("int")
-        self.assertEqual(len(group._parameters.values()), 1, "Wrong number of parameters")
-        for p in group._parameters.values():
+        self.assertEqual(len(group.parameters.values()), 1, "Wrong number of parameters")
+        for p in group.parameters.values():
             self.assertEqual(p.name, "param1", "Wrong param name")
-            self.assertEqual(p._type, t, "Wrong type")
+            self.assertEqual(p.type, t, "Wrong type")
             # TODO
-#            self.assertEqual(p._unit, u, "Should be meter")
-            self.assertIsInstance(p._default_value, ArithmeticExpression, "Wrong expression type")
-            self.assertIsInstance(p._default_value.left, IntValue, "Wrong value type")
-            self.assertEqual(p._default_value.left.value, 3, "Wrong value")
-            self.assertIsInstance(p._default_value.right, IntValue, "Wrong value type")
-            self.assertEqual(p._default_value.right.value, 4, "Wrong value")
-            self.assertEqual(p._default_value.op, EAdditionOperator.ADD, "Wrong operation")
-            self.assertEqual(p._description, "", "Wrong description")
+#            self.assertEqual(p.unit, u, "Should be meter")
+            self.assertIsInstance(p.default_value, ArithmeticExpression, "Wrong expression type")
+            self.assertIsInstance(p.default_value.left, IntValue, "Wrong value type")
+            self.assertEqual(p.default_value.left.value, 3, "Wrong value")
+            self.assertIsInstance(p.default_value.right, IntValue, "Wrong value type")
+            self.assertEqual(p.default_value.right.value, 4, "Wrong value")
+            self.assertEqual(p.default_value.op, EAdditionOperator.ADD, "Wrong operation")
+            self.assertEqual(p.description, "", "Wrong description")
 
 
     def test_visitMultiplicationExpression(self):
         model = self.parse_code("model eval group g : \"group description\" { def param1 int : meter = 3 * 4 }")
 
-        group:ParameterGroup = model._groups.get("g")
+        group:ParameterGroup = model.groups.get("g")
 
         self.assertIsInstance(group, ParameterGroup, f"Wrong type {type(group)}")
         self.assertEqual(group.name, "g", "Wrong name")
-        self.assertEqual(group._description, "group description", "Wrong description")
+        self.assertEqual(group.description, "group description", "Wrong description")
 
         t = BaseType("int")
-        self.assertEqual(len(group._parameters.values()), 1, "Wrong number of parameters")
-        for p in group._parameters.values():
+        self.assertEqual(len(group.parameters.values()), 1, "Wrong number of parameters")
+        for p in group.parameters.values():
             self.assertEqual(p.name, "param1", "Wrong param name")
-            self.assertEqual(p._type, t, "Wrong type")
+            self.assertEqual(p.type, t, "Wrong type")
             # TODO
-#            self.assertEqual(p._unit, u, "Should be meter")
-            self.assertIsInstance(p._default_value, MultiplicationExpression, "Wrong expression type")
-            self.assertIsInstance(p._default_value.left, IntValue, "Wrong value type")
-            self.assertEqual(p._default_value.left.value, 3, "Wrong value")
-            self.assertIsInstance(p._default_value.right, IntValue, "Wrong value type")
-            self.assertEqual(p._default_value.right.value, 4, "Wrong value")
-            self.assertEqual(p._default_value.op, EMultiplicationOperator.MULT, "Wrong operator")
-            self.assertEqual(p._description, "", "Wrong description")
+#            self.assertEqual(p.unit, u, "Should be meter")
+            self.assertIsInstance(p.default_value, MultiplicationExpression, "Wrong expression type")
+            self.assertIsInstance(p.default_value.left, IntValue, "Wrong value type")
+            self.assertEqual(p.default_value.left.value, 3, "Wrong value")
+            self.assertIsInstance(p.default_value.right, IntValue, "Wrong value type")
+            self.assertEqual(p.default_value.right.value, 4, "Wrong value")
+            self.assertEqual(p.default_value.op, EMultiplicationOperator.MULT, "Wrong operator")
+            self.assertEqual(p.description, "", "Wrong description")
 
     def test_visitValueExpression_parenthesis(self):
         ctx = DeclarationParser.ValueExpressionContext(parser=None, parent=None)
@@ -241,14 +237,14 @@ class TestArithmeticGeneratorDeclarationVisitor(AbstractTestGeneratorDeclaration
             }
             """)
 
-        group:ParameterGroup = model._groups.get("test")
-        parameter_a:Parameter = group._parameters.get("param_a")
-        parameter_b:Parameter = group._parameters.get("param_b")
+        group:ParameterGroup = model.groups.get("test")
+        parameter_a:Parameter = group.parameters.get("param_a")
+        parameter_b:Parameter = group.parameters.get("param_b")
 
         self.assertNotEqual(parameter_a, None, "Missing parameter a")
         self.assertNotEqual(parameter_b, None, "Missing parameter b")
 
-        expression:ArithmeticExpression = parameter_b._default_value
+        expression:ArithmeticExpression = parameter_b.default_value
 
         self.assertNotEqual(expression, None, "Missing expression")
 
@@ -267,15 +263,15 @@ class TestArithmeticGeneratorDeclarationVisitor(AbstractTestGeneratorDeclaration
             }
             """)
 
-        group_a:ParameterGroup = model._groups.get("test")
-        parameter_a:Parameter = group_a._parameters.get("param_a")
-        group_b:ParameterGroup = model._groups.get("test2")
-        parameter_b:Parameter = group_b._parameters.get("param_b")
+        group_a:ParameterGroup = model.groups.get("test")
+        parameter_a:Parameter = group_a.parameters.get("param_a")
+        group_b:ParameterGroup = model.groups.get("test2")
+        parameter_b:Parameter = group_b.parameters.get("param_b")
 
         self.assertNotEqual(parameter_a, None, "Missing parameter a")
         self.assertNotEqual(parameter_b, None, "Missing parameter b")
 
-        expression:ArithmeticExpression = parameter_b._default_value
+        expression:ArithmeticExpression = parameter_b.default_value
 
         self.assertNotEqual(expression, None, "Missing expression")
 
@@ -293,9 +289,9 @@ class TestArithmeticGeneratorDeclarationVisitor(AbstractTestGeneratorDeclaration
             }
             """)
 
-        group:ParameterGroup = model._groups.get("test")
-        parameter:Parameter = group._parameters.get("param")
-        expression:ArithmeticExpression = parameter._default_value
+        group:ParameterGroup = model.groups.get("test")
+        parameter:Parameter = group.parameters.get("param")
+        expression:ArithmeticExpression = parameter.default_value
 
         self.assertNotEqual(parameter, None, "Missing parameter")
         self.assertNotEqual(expression, None, "Missing expression")
@@ -313,9 +309,9 @@ class TestArithmeticGeneratorDeclarationVisitor(AbstractTestGeneratorDeclaration
             }
             """)
 
-        group:ParameterGroup = model._groups.get("test")
-        parameter:Parameter = group._parameters.get("param")
-        expression:ArithmeticExpression = parameter._default_value
+        group:ParameterGroup = model.groups.get("test")
+        parameter:Parameter = group.parameters.get("param")
+        expression:ArithmeticExpression = parameter.default_value
 
         self.assertNotEqual(parameter, None, "Missing parameter")
         self.assertNotEqual(expression, None, "Missing expression")
@@ -323,6 +319,24 @@ class TestArithmeticGeneratorDeclarationVisitor(AbstractTestGeneratorDeclaration
         self.assertEqual(expression.name, "blue", "Wrong enumeral name")
         self.assertEqual(expression.value, 2, "Wrong enumeral value")
 
+    def test_visitArrayExpression(self):
+        model:DeclarationModel = self.parse_code("""
+                model eval
+                    group my_group : "my group" {
+                        def array int[5] : meter , "array description" = [ 2,4,6,8,10 ]
+                    }
+                """)
+        self.assertEqual(model.name, "eval", "Name not set")
+
+        group:ParameterGroup = model.groups['my_group']
+        self.assertIsInstance(group, ParameterGroup, "Parameter group 'my_group' not found")
+        array:Parameter = group.parameters['array']
+        self.assertIsInstance(array, Parameter, "Parameter 'array' not found.")
+        expr:ArrayExpression = array.default_value
+        self.assertIsInstance(expr, ArrayExpression, "Not an array expression")
+        self.assertEqual(len(expr.elements), 5, "Wrong number of elements")
+        for element in expr.elements:
+            self.assertIsInstance(element, IntValue, "Wrong value type")
 
 if __name__ == '__main__':
     unittest.main()

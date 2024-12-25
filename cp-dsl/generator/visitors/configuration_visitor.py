@@ -1,7 +1,3 @@
-"""SymbolTableVisitor module."""
-
-__author__ = "reiner"
-
 #  Copyright (c) 2023.  OceanDSL (https://oceandsl.uni-kiel.de)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,17 +12,25 @@ __author__ = "reiner"
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+__author__ = "reiner"
+
 # util imports
-from typing import Generic, Callable
+from typing import Generic, Callable, Dict, List
 
 # antlr4
 from antlr4.tree.Tree import ParseTree
-from antlr4 import InputStream, CommonTokenStream
+from antlr4.Token import CommonToken
+from antlr4 import ParserRuleContext, TerminalNode
 
 # user relative imports
-from model.symbols import T
-from model.declaration_model import DeclarationModel, ParameterGroup, Feature
+from model.symbols import Scope, T, P
+from model.declaration_model import DeclarationModel, ParameterGroup, Feature, Parameter, SelectorExpression
 from model.unit_model import UnitPrefix
+from model.arithmetic_model import ArithmeticExpression, MultiplicationExpression, EMultiplicationOperator, EAdditionOperator, \
+    ArrayExpression, IntValue, FloatValue, StringValue
+from model.type_system import EnumeralType, base_types
+from common.logger import GeneratorLogger
+from common.unit_processing import parse_unit
 
 from conflspserver.gen.python.Configuration.ConfigurationLexer import ConfigurationLexer
 from conflspserver.gen.python.Configuration.ConfigurationParser import ConfigurationParser
@@ -36,47 +40,257 @@ import os
 
 
 class GeneratorConfigurationVisitor(ConfigurationVisitor, Generic[T]):
-    _symbol_table: DeclarationModel
+    _model: DeclarationModel
 
     _generator_selector: str
 
-    def __init__(self, symbol_table: DeclarationModel, cwd: str = "."):
+    def __init__(self, model: DeclarationModel, logger: GeneratorLogger):
         super().__init__()
         # creates a new symboltable with no duplicate symbols
-        self._symbol_table = symbol_table
+        self._model = model
         # TODO scope marker
         # self._scope = self._symbol_table.addNewSymbolOfType( ScopedSymbol, None )
-        self._scope = self._symbol_table
-        self.cwd = cwd
+        self._scope = self._model
+        self._type_scope = None
+        self._logger = logger
+        self.cwd = "."
+
         self.configuration_list = []
+
+    def print_symbol(self, elements:list, level:int):
+        result = ""
+        for i in range(0,level+1):
+            name = elements[i].text
+            if result == "":
+                result = f"{name}"
+            else:
+                result = f"{result}.{name}"
+        return result
 
     @property
     def symbol_table(self) -> DeclarationModel:
-        return self._symbol_table
+        return self._model
 
     @property
     def generator_selector(self) -> str:
         return self._generator_selector
 
     def default_result(self) -> DeclarationModel:
-        return self._symbol_table
+        return self._model
 
     def visitConfigurationModel(self, ctx: ConfigurationParser.ConfigurationModelContext):
-        return super().visitConfigurationModel(ctx)
+        model_name = ctx.declarationModel.text
+        if self._model.name == model_name:
+            self._model.configuration_name = ctx.name.text
+            for activation in ctx.featureActivations:
+                self.visitFeatureActivation(activation)
+            for feature in ctx.featureConfigurations:
+                self.visitFeatureConfiguration(feature)
+            for group in ctx.parameterGroups:
+                self.visitParameterGroup(group)
+
+            return self._model
+        else:
+            print(f"ERROR: wrong declaration model {model_name}")
+
+    def visitArithmeticExpression(self, ctx: ConfigurationParser.ArithmeticExpressionContext):
+        if ctx.left is not None:
+            if ctx.right is not None:
+                left = self.visit(ctx.left)
+                right = self.visit(ctx.right)
+                op = self.visitEAdditionOperator(ctx.op)
+                return ArithmeticExpression(ctx=ctx,left=left,right=right,op=op)
+            else:
+                return self.visit(ctx.left)
+
+        if len(ctx.children) == 1:
+            expression = ctx.children[0]
+            if isinstance(expression, ConfigurationParser.MultiplicationExpressionContext):
+                return self.visitMultiplicationExpression(expression)
+            else:
+                print(f"ERROR unsupported type in ArithmeticExpression {type(expression)}")
+                return None
+        else:
+            print("ERROR")
+            return None
+
+    def visitEAdditionOperator(self, ctx: ConfigurationParser.EAdditionOperatorContext):
+        value = ctx.getText()
+        if value == EAdditionOperator.ADD.value:
+            return EAdditionOperator.ADD
+        if value == EAdditionOperator.SUB.value:
+            return EAdditionOperator.SUB
+
+        print("Illegal addition operator")
+        return None
+
+    def visitMultiplicationExpression(self, ctx: ConfigurationParser.MultiplicationExpressionContext):
+        if ctx.left is not None:
+            if ctx.right is not None:
+                left = self.visit(ctx.left)
+                right = self.visit(ctx.right)
+                op = self.visitEMultiplicationOperator(ctx.op)
+                return MultiplicationExpression(ctx=ctx,left=left,right=right,op=op)
+            else:
+                return self.visit(ctx.left)
+
+        if len(ctx.children) == 1:
+            expression = ctx.children[0]
+            if isinstance(expression, ConfigurationParser.ValueExpressionContext):
+                return self.visitValueExpression(expression)
+            else:
+                print(f"ERROR unsupported type in ValueExpressionContext {type(expression)}")
+                return None
+        else:
+            print("ERROR")
+            return None
+
+    def visitEMultiplicationOperator(self, ctx: ConfigurationParser.EMultiplicationOperatorContext):
+        value = ctx.getText()
+        if value == EMultiplicationOperator.MULT.value:
+            return EMultiplicationOperator.MULT
+        if value == EMultiplicationOperator.DIV.value:
+            return EMultiplicationOperator.DIV
+        if value == EMultiplicationOperator.MOD.value:
+            return EMultiplicationOperator.MOD
+
+        return None
+
+    def visitValueExpression(self, ctx: ConfigurationParser.ValueExpressionContext):
+        if ctx.parenthesisExpression() is not None:
+            return self.visitParenthesisExpression(ctx.parenthesisExpression())
+        elif ctx.literalExpression() is not None:
+            return self.visitLiteralExpression(ctx.literalExpression())
+        elif ctx.namedElementReference() is not None:
+            return self.visitNamedElementReference(ctx.namedElementReference())
+        elif ctx.arrayExpression() is not None:
+            return self.visitArrayExpression(ctx.arrayExpression())
+        else:
+            print(f"ERROR something {ctx} {type(ctx)}")
+            return None
+
+    def visitParenthesisExpression(self, ctx: ConfigurationParser.ParenthesisExpressionContext):
+        return self.visitArithmeticExpression(ctx.arithmeticExpression())
+
+    def visitArrayExpression(self, ctx: ConfigurationParser.ArrayExpressionContext):
+        elements:List[ArithmeticExpression] = []
+        for element in ctx.elements:
+            elements.append(self.visit(element))
+        return ArrayExpression(ctx=ctx, elements=elements)
+
+    def visitLiteralExpression(self, ctx: ConfigurationParser.LiteralExpressionContext):
+        return self.visitLiteral(ctx.literal())
+
+    def visitLiteral(self, ctx: ConfigurationParser.LiteralContext):
+        if len(ctx.children) == 1:
+            literal = ctx.children[0]
+            return self.visit(literal)
+        else:
+            print("ERROR")
+            return None
+
+    def visitLongValue(self, ctx: ConfigurationParser.LongValueContext):
+        return IntValue(ctx, base_types["long"], int(ctx.value.text))
+
+    def visitDoubleValue(self, ctx: ConfigurationParser.DoubleValueContext):
+        return FloatValue(ctx, base_types["double"], float(ctx.value.text))
+
+    def visitStringValue(self, ctx: ConfigurationParser.StringValueContext):
+        return StringValue(ctx, base_types["string"], ctx.value.text[1:-1])
+
+    def visitNamedElementReference(self, ctx: ConfigurationParser.NamedElementReferenceContext):
+        depth = len(ctx.elements)
+        scope = self._scope
+        if depth > 1:
+            for i in range(1,depth):
+                scope = scope.parent
+
+        # check whether it is a parameter
+        parameter_level = 0
+        param = True
+        for i in range(0,depth):
+            scope = scope.resolve_symbol(ctx.elements[i].text)
+            if scope is None:
+                parameter_level = i
+                param = False
+                break
+
+        if param:
+            return scope
+
+        # check whether it is an enumeration
+        if depth == 2: # Can be an enumeration
+            data_type = self._model.types.get(ctx.elements[0].text)
+            if isinstance(data_type, EnumeralType):
+                enumeral = data_type.enumerals.get(ctx.elements[1].text, None)
+                if enumeral is None:
+                    self._logger.strict(ctx, f"Symbol {self.print_symbol(ctx.elements, 2)} does not refer to an enumeral nor parameter and parameter group")
+                    return None
+                else:
+                    return enumeral
+            else:
+                self._logger.strict(ctx, f"Symbol {self.print_symbol(ctx.elements, 1)} does not refer to an enumeration type nor parameter and parameter group")
+                return None
+
+        # check whether it is an enumeration inferred by parameter type
+        data_type = self._type_scope
+        if isinstance(data_type, EnumeralType) or isinstance(data_type, InlineEnumeralType):
+            enumeral = data_type.enumerals.get(ctx.elements[0].text, None)
+            if enumeral is None:
+                self._logger.strict(ctx, f"Symbol {self.print_symbol(ctx.elements, 2)} does not refer to an enumeral nor parameter and parameter group")
+                return None
+            else:
+                return enumeral
+
+        # Strange cases
+        self._logger.strict(ctx, f"Symbol {self.print_symbol(ctx.elements, len(ctx.elements))} cannot be resolved.")
+        return None
 
     def visitParameterAssignment(self, ctx: ConfigurationParser.ParameterAssignmentContext):
         # define the given Parameter
         var_name = ctx.declaration.getText()  # set and get the variable name here
-        prefix = self.visit(ctx.unit) if ctx.unit is not None else UnitPrefix.NoP
-        # isArray = True if len(ctx.selectors) > 0 else False
-        symbol = self._scope.get_all_nested_symbols_sync(var_name)[0]
-        if prefix != UnitPrefix.NoP:
-            symbol.unit.prefix = prefix
-        symbol.configuration.append(ctx)
-        self.configuration_list.append((symbol, len(symbol.configuration) - 1))
+        parameter:Parameter = self._scope.parameters.get(var_name)
+        var_type = None
+        if ctx.unit.getText() is not None:
+            var_type = parse_unit(ctx.unit.text)
+
+        self._type_scope = parameter.type
+
+        if parameter is None:
+            print(f"ERROR: Parameter {var_name} does not exist in {self._scope.name}")
+            self._type_scope = None
+            return None
+        else:
+            if len(ctx.selectors) > 0:
+                selectors = []
+                for s in ctx.selectors:
+                    selectors.append(self.visitSelector(s))
+
+                value = self.visitArithmeticExpression(ctx.value)
+                value.unit = var_type
+                selector_expression = SelectorExpression(selectors, value)
+                parameter.entries.append(selector_expression)
+            else:
+                value = self.visitArithmeticExpression(ctx.value)
+                value.unit = var_type
+                parameter.entries.append()
+
+            return parameter
 
     def visitParameterGroup(self, ctx: ConfigurationParser.ParameterGroupContext):
-        self.withScope(ParameterGroup, ctx, ctx.declaration.text, lambda: self.visitChildren(ctx))
+        group_name = ctx.declaration.text
+        group:ParameterGroup = self._scope.resolve_parameter_group(group_name)
+        if group == None:
+            print(f"ERROR: Missing group {group_name}")
+            return None
+
+        parent_scope = self._scope
+        self._scope = group
+
+        for parameter_ctx in ctx.parameters:
+            self.visitParameterAssignment(parameter_ctx)
+
+        return group
 
     def visitSelector(self, ctx: ConfigurationParser.SelectorContext):
         vector = []
@@ -93,17 +307,35 @@ class GeneratorConfigurationVisitor(ConfigurationVisitor, Generic[T]):
         return self.stringToPrefix(ctx.unit.text)
 
     def visitFeatureConfiguration(self, ctx: ConfigurationParser.FeatureConfigurationContext):
-        self.withScope(Feature, ctx, ctx.declaration.text, lambda: self.visitChildren(ctx))
+        feature_name = ctx.declaration.text
+        feature:Feature = self._scope.resolve_feature(feature_name)
+        if feature == None:
+            print(f"ERROR: Missing {feature_name}")
+            return None
+        else:
+            feature.is_activated = True
+
+            parent_scope = self._scope
+            self._scope = feature
+            for activation in ctx.featureActivations:
+                self.visitFeatureActivation(activation)
+            for configuration in ctx.featureConfigurations:
+                self.visitFeatureConfiguration(configuration)
+            for group in ctx.parameterGroups:
+                self.visitParameterGroup(group)
+            self._scope = parent_scope
+
+            return feature
 
     def visitFeatureActivation(self, ctx: ConfigurationParser.FeatureActivationContext):
-        for feature in self._scope.get_nested_symbols_of_type_sync(Feature):
-            if feature.name == ctx.declaration.text:
-                try:
-                    # if is_activated is set to false it is not none
-                    feature.is_activated = True if ctx.deactivated else False
-                except AttributeError:
-                    print("WARNING: There was a None in Feature Configuration of " + str(feature.name))
-                    pass
+        feature_name = ctx.declaration.text
+        feature:Feature = self._scope.resolve_feature(feature_name)
+        if feature == None:
+            print(f"ERROR: Missing {feature_name} for activate {ctx.deactivated}")
+            return None
+        else:
+            feature.is_activated = not ctx.deactivated
+            return feature
 
     def visitInclude(self, ctx: ConfigurationParser.IncludeContext):
         info = ctx.importedNamespace.text.split(".")
@@ -121,7 +353,7 @@ class GeneratorConfigurationVisitor(ConfigurationVisitor, Generic[T]):
         # go through all symbols
         for i in range(1, len(info)):
             scope = table.get_all_nested_symbols_sync(info[i])[0]
-        self._symbol_table.addSymbol(scope)
+        self._model.addSymbol(scope)
 
     def stringToPrefix(self, input: str):
         for prefix in UnitPrefix:
@@ -138,7 +370,7 @@ class GeneratorConfigurationVisitor(ConfigurationVisitor, Generic[T]):
         :param action: Lambda function to add children symbols to symboltable
         :return: Current scope
         """
-        scope = self._symbol_table.get_all_nested_symbols_sync(name)
+        scope = self._model.get_all_nested_symbols_sync(name)
         if len(scope) < 1:
             print("Symbol with name " + str(name) + " could not be found")
             return
