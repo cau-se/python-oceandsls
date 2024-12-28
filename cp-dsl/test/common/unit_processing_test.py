@@ -17,7 +17,7 @@ __author__ = "reiner"
 import unittest
 
 from common.unit_processing import parse_unit, tokenize, resolve, process_tokens
-from model.unit_model import UnitKind, UnitPrefix, UnitSpecification, SIUnit, DivisionUnit, ExponentUnit
+from model.unit_model import UnitKind, UnitPrefix, UnitSpecification, SIUnit, DivisionUnit, ExponentUnit, CustomUnit
 
 from test_utils import AbstractTestGeneratorConfigurationVisitor
 
@@ -243,6 +243,13 @@ class TestGeneratorConfigurationVisitor(AbstractTestGeneratorConfigurationVisito
         self.assertEqual(unit_2.unit.prefix, UnitPrefix.Milli)
         self.assertEqual(unit_2.unit.kind, UnitKind.Meter)
         self.assertEqual(unit_2.exponent, -2)
+
+    def test_parse_unit_user_defined(self):
+        spec = parse_unit("pebbles", [ "pebbles" ])
+        self.assertIsInstance(spec, UnitSpecification)
+        self.assertIsInstance(spec.units[0], CustomUnit)
+        self.assertEqual(spec.units[0].name, "pebbles")
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -304,7 +304,7 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
                 left = self.visit(ctx.left)
                 right = self.visit(ctx.right)
                 op = self.visitEAdditionOperator(ctx.op)
-                return ArithmeticExpression(ctx=ctx,left=left,right=right,op=op)
+                return ArithmeticExpression(ctx=ctx, unit=None, left=left, right=right, op=op)
             else:
                 return self.visit(ctx.left)
 
@@ -335,7 +335,7 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
                 left = self.visit(ctx.left)
                 right = self.visit(ctx.right)
                 op = self.visitEMultiplicationOperator(ctx.op)
-                return MultiplicationExpression(ctx=ctx,left=left,right=right,op=op)
+                return MultiplicationExpression(ctx=ctx, unit=None, left=left, right=right, op=op)
             else:
                 return self.visit(ctx.left)
 
@@ -381,7 +381,7 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
         elements:List[ArithmeticExpression] = []
         for element in ctx.elements:
             elements.append(self.visit(element))
-        return ArrayExpression(ctx=ctx, elements=elements)
+        return ArrayExpression(ctx=ctx, unit=None, elements=elements)
 
     def visitLiteralExpression(self, ctx: DeclarationParser.LiteralExpressionContext):
         return self.visitLiteral(ctx.literal())
@@ -395,13 +395,13 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
             return None
 
     def visitLongValue(self, ctx: DeclarationParser.LongValueContext):
-        return IntValue(ctx, base_types["long"], int(ctx.value.text))
+        return IntValue(ctx=ctx, unit=None, type=base_types["long"], value=int(ctx.value.text))
 
     def visitDoubleValue(self, ctx: DeclarationParser.DoubleValueContext):
-        return FloatValue(ctx, base_types["double"], float(ctx.value.text))
+        return FloatValue(ctx=ctx, unit=None, type=base_types["double"], value=float(ctx.value.text))
 
     def visitStringValue(self, ctx: DeclarationParser.StringValueContext):
-        return StringValue(ctx, base_types["string"], ctx.value.text[1:-1])
+        return StringValue(ctx=ctx, unit=None, type=base_types["string"], value=ctx.value.text[1:-1])
 
     def visitNamedElementReference(self, ctx: DeclarationParser.NamedElementReferenceContext):
         depth = len(ctx.elements)

@@ -15,7 +15,7 @@
 __author__ = "reiner"
 
 # util imports
-from typing import Generic, Callable, Dict, List
+from typing import Generic, Callable, List
 
 # antlr4
 from antlr4.tree.Tree import ParseTree
@@ -99,7 +99,7 @@ class GeneratorConfigurationVisitor(ConfigurationVisitor, Generic[T]):
                 left = self.visit(ctx.left)
                 right = self.visit(ctx.right)
                 op = self.visitEAdditionOperator(ctx.op)
-                return ArithmeticExpression(ctx=ctx,left=left,right=right,op=op)
+                return ArithmeticExpression(ctx=ctx, unit=None, left=left, right=right, op=op)
             else:
                 return self.visit(ctx.left)
 
@@ -130,7 +130,7 @@ class GeneratorConfigurationVisitor(ConfigurationVisitor, Generic[T]):
                 left = self.visit(ctx.left)
                 right = self.visit(ctx.right)
                 op = self.visitEMultiplicationOperator(ctx.op)
-                return MultiplicationExpression(ctx=ctx,left=left,right=right,op=op)
+                return MultiplicationExpression(ctx=ctx, unit=None, left=left, right=right, op=op)
             else:
                 return self.visit(ctx.left)
 
@@ -176,7 +176,7 @@ class GeneratorConfigurationVisitor(ConfigurationVisitor, Generic[T]):
         elements:List[ArithmeticExpression] = []
         for element in ctx.elements:
             elements.append(self.visit(element))
-        return ArrayExpression(ctx=ctx, elements=elements)
+        return ArrayExpression(ctx=ctx, unit=None, elements=elements)
 
     def visitLiteralExpression(self, ctx: ConfigurationParser.LiteralExpressionContext):
         return self.visitLiteral(ctx.literal())
@@ -190,13 +190,13 @@ class GeneratorConfigurationVisitor(ConfigurationVisitor, Generic[T]):
             return None
 
     def visitLongValue(self, ctx: ConfigurationParser.LongValueContext):
-        return IntValue(ctx, base_types["long"], int(ctx.value.text))
+        return IntValue(ctx=ctx, unit=None, type=base_types["long"], value=int(ctx.value.text))
 
     def visitDoubleValue(self, ctx: ConfigurationParser.DoubleValueContext):
-        return FloatValue(ctx, base_types["double"], float(ctx.value.text))
+        return FloatValue(ctx=ctx, unit=None, type=base_types["double"], value=float(ctx.value.text))
 
     def visitStringValue(self, ctx: ConfigurationParser.StringValueContext):
-        return StringValue(ctx, base_types["string"], ctx.value.text[1:-1])
+        return StringValue(ctx=ctx, unit=None, type=base_types["string"], value=ctx.value.text[1:-1])
 
     def visitNamedElementReference(self, ctx: ConfigurationParser.NamedElementReferenceContext):
         depth = len(ctx.elements)
@@ -250,9 +250,11 @@ class GeneratorConfigurationVisitor(ConfigurationVisitor, Generic[T]):
         # define the given Parameter
         var_name = ctx.declaration.getText()  # set and get the variable name here
         parameter:Parameter = self._scope.parameters.get(var_name)
-        var_type = None
-        if ctx.unit.getText() is not None:
-            var_type = parse_unit(ctx.unit.text)
+        var_unit = None
+        if ctx.unit is not None:
+            unit:ConfigurationParser.UnitSpecificationContext = ctx.unit
+
+            var_unit = parse_unit(unit.unit.text)
 
         self._type_scope = parameter.type
 
@@ -267,13 +269,13 @@ class GeneratorConfigurationVisitor(ConfigurationVisitor, Generic[T]):
                     selectors.append(self.visitSelector(s))
 
                 value = self.visitArithmeticExpression(ctx.value)
-                value.unit = var_type
+                value.unit = var_unit
                 selector_expression = SelectorExpression(selectors, value)
                 parameter.entries.append(selector_expression)
             else:
                 value = self.visitArithmeticExpression(ctx.value)
-                value.unit = var_type
-                parameter.entries.append()
+                value.unit = var_unit
+                parameter.entries.append(value)
 
             return parameter
 

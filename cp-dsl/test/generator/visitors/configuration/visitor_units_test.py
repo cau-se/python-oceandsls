@@ -38,7 +38,7 @@ class TestGeneratorConfigurationVisitor(AbstractTestGeneratorConfigurationVisito
                     param: 4 m/kg
                 }
 
-                """)
+                """, model)
 
 if __name__ == '__main__':
     unittest.main()

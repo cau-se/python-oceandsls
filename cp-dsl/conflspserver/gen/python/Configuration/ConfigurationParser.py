@@ -97,18 +97,18 @@ class ConfigurationParser ( Parser ):
 
     sharedContextCache = PredictionContextCache()
 
-    literalNames = [ "<INVALID>", "'configuration'", "':'", "'activate'", 
-                     "','", "'include'", "'!'", "'feature'", "'{'", "'}'", 
-                     "'group'", "'['", "']'", "'.'", "'+'", "'-'", "'*'", 
+    literalNames = [ "<INVALID>", "'configuration'", "':'", "'activate'",
+                     "','", "'include'", "'!'", "'feature'", "'{'", "'}'",
+                     "'group'", "'['", "']'", "'.'", "'+'", "'-'", "'*'",
                      "'/'", "'%'", "'('", "')'" ]
 
-    symbolicNames = [ "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
-                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
-                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
-                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
-                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
-                      "<INVALID>", "ID", "ELONG", "EDOUBLE", "EBoolean", 
-                      "INT", "STRING", "WS", "ML_COMMENT", "SL_COMMENT", 
+    symbolicNames = [ "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>",
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>",
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>",
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>",
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>",
+                      "<INVALID>", "ID", "ELONG", "EDOUBLE", "EBoolean",
+                      "INT", "STRING", "WS", "ML_COMMENT", "SL_COMMENT",
                       "ANY_OTHER" ]
 
     RULE_configurationModel = 0
@@ -137,13 +137,13 @@ class ConfigurationParser ( Parser ):
     RULE_doubleValue = 23
     RULE_booleanValue = 24
 
-    ruleNames =  [ "configurationModel", "include", "featureActivation", 
-                   "featureConfiguration", "parameterGroup", "parameterAssignment", 
-                   "selector", "elementSelector", "rangeSelector", "unitSpecification", 
-                   "qualifiedName", "arithmeticExpression", "eAdditionOperator", 
-                   "multiplicationExpression", "eMultiplicationOperator", 
-                   "valueExpression", "literalExpression", "literal", "parenthesisExpression", 
-                   "arrayExpression", "namedElementReference", "stringValue", 
+    ruleNames =  [ "configurationModel", "include", "featureActivation",
+                   "featureConfiguration", "parameterGroup", "parameterAssignment",
+                   "selector", "elementSelector", "rangeSelector", "unitSpecification",
+                   "qualifiedName", "arithmeticExpression", "eAdditionOperator",
+                   "multiplicationExpression", "eMultiplicationOperator",
+                   "valueExpression", "literalExpression", "literal", "parenthesisExpression",
+                   "arrayExpression", "namedElementReference", "stringValue",
                    "longValue", "doubleValue", "booleanValue" ]
 
     EOF = Token.EOF

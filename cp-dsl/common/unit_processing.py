@@ -1,4 +1,4 @@
-from model.unit_model import UnitSpecification, Unit, UnitKind, UnitPrefix, SIUnit, ExponentUnit, DivisionUnit
+from model.unit_model import UnitSpecification, Unit, UnitKind, UnitPrefix, SIUnit, ExponentUnit, DivisionUnit, CustomUnit
 from typing import List
 
 prefix = { 'q': UnitPrefix.Quecto,
@@ -38,7 +38,11 @@ kind = { 's': UnitKind.Second,
         'Pa': UnitKind.Pascal
         }
 
-def parse_unit(unit : str) -> UnitSpecification:
+def parse_unit(unit : str, user_defined_units:list = []) -> UnitSpecification:
+    for u in user_defined_units:
+        if unit == u:
+            return UnitSpecification([CustomUnit(unit)])
+
     token_list = tokenize(unit)
     token_list = resolve(token_list)
     token_list = process_tokens(token_list)
