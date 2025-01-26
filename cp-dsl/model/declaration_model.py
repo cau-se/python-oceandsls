@@ -86,6 +86,7 @@ class Selector:
 class SelectorExpression:
     selectors : List[Selector]
     expression : ArithmeticExpression
+
 class Parameter(NamedElement):
 
     type: NamedType
@@ -98,11 +99,10 @@ class Parameter(NamedElement):
         super().__init__(name, parent)
         self.type = type
         self.unit = unit
-        self.config_unit = None
         self.description = description
-        self.default_value = None
-        self.value = None
-        self.entries = []
+        self.default_value = None # declaration value spec
+        self.value = None # computed value
+        self.entries = [] # entries for the computed value
 
 
 class ParameterGroup(NamedElement):

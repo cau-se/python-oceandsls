@@ -21,6 +21,8 @@ from model.type_system import RangeType, BaseType
 
 from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
 
+from model.declaration_model import DeclarationModel
+from model.type_system import EnumeralType
 
 from test_utils import AbstractTestGeneratorDeclarationVisitor
 
@@ -38,7 +40,7 @@ class TestGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisitor):
         self.assertEqual(result.description, "group description", "Wrong description")
 
 
-    def test_visitParamAssignStat(self):
+    def test_visitParamAssignStat_basic_type(self):
         model = self.parse_code("model eval group g : \"group description\" { def param1 int : meter = 0 }")
 
         group:ParameterGroup = model.groups.get("g")
@@ -52,6 +54,8 @@ class TestGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisitor):
         for p in group.parameters.values():
             self.assertEqual(p.name, "param1", "Wrong param name")
             self.assertEqual(p.type, t, "Wrong type")
+            print(f"DEFAULT VALUE TYPE {type(p.default_value)}")
+
             # TODO
 #            self.assertEqual(p._unit, u, "Should be meter")
             self.assertEqual(p.default_value.value, 0, "Wrong value")
@@ -68,6 +72,41 @@ class TestGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisitor):
         self.assertIsInstance(result, RangeType, "wrong type")
         self.assertEqual(result.name, "r", "wrong type name")
 
+    def test_visitParamAssignStat_enumeration(self):
+        model:DeclarationModel = self.parse_code("""
+            model eval
+                types
+                    enum Color { red, green, blue }
+                group group_name : "group description" {
+                    def param1 Color : "pixel" = green
+                }
+        """)
+
+        group:ParameterGroup = model.groups.get("group_name")
+
+        self.assertIsInstance(group, ParameterGroup, f"Wrong type {type(group)}")
+        self.assertEqual(group.name, "group_name", "Wrong name")
+        self.assertEqual(group.description, "group description", "Wrong description")
+
+        t:EnumeralType = model.types["Color"]
+
+        self.assertEqual(len(group.parameters.values()), 1, "Wrong number of parameters")
+        for p in group.parameters.values():
+            self.assertEqual(p.name, "param1", "Wrong param name")
+            self.assertEqual(p.type, t, "Wrong type")
+            self.assertEqual(p.default_value.value, t.enumerals["green"].value, "Wrong value")
+            self.assertEqual(p.description, "", "Wrong description")
+
+    def test_visitParamType_type_reference(self):
+        param_type_context = DeclarationParser.ParamTypeContext(parent=None, parser=None)
+        type_reference = DeclarationParser.TypeReferenceContext(parent=param_type_context, parser=None)
+        type_reference.type_ = self.set_token("r")
+        param_type_context.addChild(type_reference)
+
+        result = self.make_visitor(type=RangeType(name="r", type=int, minimum=0, maximum=10)).visitParamType(param_type_context)
+
+        self.assertIsInstance(result, RangeType, "wrong type")
+        self.assertEqual(result.name, "r", "wrong type name")
 
 if __name__ == '__main__':
     unittest.main()

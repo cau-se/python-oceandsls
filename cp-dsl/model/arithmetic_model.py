@@ -63,7 +63,6 @@ class FloatValue(AbstractTypedValue):
 
     value: float
 
-
 @dataclass
 class StringValue(AbstractTypedValue):
 

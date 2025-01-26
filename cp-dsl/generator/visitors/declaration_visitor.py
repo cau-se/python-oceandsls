@@ -452,7 +452,9 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
         self._logger.strict(ctx, f"Symbol {self.print_symbol(ctx.elements, len(ctx.elements))} cannot be resolved.")
         return None
 
-    def print_symbol(self, elements:list, level:int):
+    def print_symbol(self, elements, level:int):
+        if len(elements) < level+1:
+            level=len(elements)-1
         result = ""
         for i in range(0,level+1):
             name = elements[i].text

@@ -22,13 +22,13 @@ from conflspserver.gen.python.Configuration.ConfigurationLexer import Configurat
 from conflspserver.gen.python.Configuration.ConfigurationParser import ConfigurationParser
 from dcllspserver.gen.python.Declaration.DeclarationLexer import DeclarationLexer
 from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
-from visitors.configuration_visitor import GeneratorConfigurationVisitor
-from visitors.declaration_visitor import GeneratorDeclarationVisitor
-from conflspserver.utils.calculator import ConfigurationCalculator
-from dcllspserver.utils.calculator import DeclarationCalculator
-from generators.uvic.code_generator import UvicCodeGenerator
-from generators.mitgcm.code_generator import MitGcmCodeGenerator
-from generators.eval.code_generator import EvalCodeGenerator
+from generator.visitors.configuration_visitor import GeneratorConfigurationVisitor
+from generator.visitors.declaration_visitor import GeneratorDeclarationVisitor
+from generator.calculator.calculator import ConfigurationCalculator
+from generator.calculator.calculator_dec import DeclarationCalculator
+from generator.generators.uvic.code_generator import UvicCodeGenerator
+from generator.generators.mitgcm.code_generator import MitGcmCodeGenerator
+from generator.generators.eval.code_generator import EvalCodeGenerator
 from model.declaration_model import DeclarationModel
 from common.logger import GeneratorLogger
 
@@ -42,6 +42,12 @@ def parse_configuration_file(configuration_path: str) -> ConfigurationParser:
 
     return ConfigurationParser(stream)
 
+def make_configuration_model(model: DeclarationModel, input_path: str):
+    configuration_tree = parse_configuration_file(input_configuration_path)
+    print(f"Parse configuration model {input_path}")
+    GeneratorConfigurationVisitor(model, logger).visit(configuration_tree.configurationModel())
+
+    return model
 
 def parse_declaration_file(declaration_path: str) -> DeclarationParser:
     input_stream = FileStream(declaration_path, "utf-8")
@@ -51,20 +57,12 @@ def parse_declaration_file(declaration_path: str) -> DeclarationParser:
     return DeclarationParser(stream)
 
 
-def compute_declaration(symbol_table: DeclarationModel, input_path: str):
+def make_declaration_model(model: DeclarationModel, input_path: str):
     tree = parse_declaration_file(input_path)
-    print("Visit declaration model")
-    GeneratorDeclarationVisitor(symbol_table, logger).visit(tree.declarationModel())
-    print("Compute declaration")
-    try:
-        calculator = DeclarationCalculator(symbol_table, logger)
-        result = calculator.calculate()
-        print("Computed declaration")
-        return result
-    except AttributeError as e:
-        print("ERROR: Could not parse Declaration-File correctly")
-        print(e)
-        return None
+    print(f"Parse declaration model {input_path}")
+    GeneratorDeclarationVisitor(model, logger).visit(tree.declarationModel())
+
+    return model
 
 
 if __name__ == '__main__':
@@ -133,25 +131,21 @@ if __name__ == '__main__':
     input_declaration_path = os.path.join(input_directory_path, f"{used_declaration_model}.decl")
     print(f"declaration model {input_declaration_path}")
 
-    # 4 compute model
-    # 4.1 creates a new symboltable with no duplicate symbols
-    print("Create symbol table")
-    symbol_table = DeclarationModel()
-    # 4.2 declaration
-    declaration_result = compute_declaration(symbol_table, input_declaration_path)
-    exit(2)
-    if declaration_result is None:
-        print("Declaration error")
+    # 4 process declaration model
+    model = make_declaration_model(DeclarationModel(), input_declaration_path)
+
+    if model is None:
+        print("Declaration model error")
         exit(1)
 
-    # 4.3 configuration
-    print("Visit configuration")
-    configuration_visitor = GeneratorConfigurationVisitor(symbol_table, estimated_working_directory)
-    configuration_tree = parse_configuration_file(input_configuration_path)
-    configuration_visitor.visit(configuration_tree.configurationModel())
+    # 5 process configuration model
+    model = make_configuration_model(model, input_configuration_path)
+
+    # 6 Compute configuration
     print("Compute configuration")
-    table = ConfigurationCalculator(declaration_result, configuration_visitor.configuration_list, logger).calculate()
+    table = ConfigurationCalculator(model, logger).calculate()
     print("Completed")
+    exit(2)
     # 5 provide model to generator
     if used_declaration_model == 'uvic':
         try:

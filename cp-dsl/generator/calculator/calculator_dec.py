@@ -21,7 +21,7 @@ import operator as op
 # Relative Imports
 from model.declaration_model import DeclarationModel, Parameter, ScopedSymbol
 from model.type_system import EnumeralType
-from ..gen.python.Declaration.DeclarationParser import DeclarationParser
+from ...dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
 from common.logger import GeneratorLogger
 
 
