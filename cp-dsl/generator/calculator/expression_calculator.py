@@ -34,10 +34,11 @@ class ExpressionCalculator():
         elif isinstance(expression, (Enumeral, IntValue, FloatValue, StringValue)):
             result = expression
         else:
-            print(f"Internal error. Cannot handle {expression} of type {type(expression)}")
+            self.logger.error(f"Internal error. Cannot handle {expression} of type {type(expression)}")
             exit(2)
 
     def calculate_and_overlay(self, parameter:Parameter, entry:SelectorExpression):
         # compute values
-
+        self.logger.error("Calculate and overlay not implemented")
+        exit(1)
         # adjust for unit
