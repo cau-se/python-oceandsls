@@ -14,7 +14,7 @@
 
 import unittest
 from os import path
-from unittest.mock import patch, mock_open, MagicMock
+from unittest.mock import patch, mock_open, Mock, MagicMock
 from parameterized import parameterized
 import subprocess
 
@@ -26,7 +26,7 @@ from fxca.util.fxtran_utils import (
     logger
 )
 
-class TestYourModule(unittest.TestCase):
+class TestFxtranUtils(unittest.TestCase):
     # Define constants for the test cases
     TEST_XML_PATH = "test.xml"
     TEST_DIR = "test_dir"
@@ -55,6 +55,11 @@ class TestYourModule(unittest.TestCase):
             # Test case for filtering XML with public elements
             # Input: A valid XML path and a list of modules with public elements
             # Expected Result: The function should process the XML and return the expected results.
+
+            ("filter_xml_test_with_modules_and_public", TEST_XML_PATH, True, [MODULE_MOCK], {}, ([("var1", "INTEGER", "moduleMock")], [("function", "test_function", ["arg1"], None, "moduleMock", False)])),
+            # Test case for filtering XML with modules and public elements
+            # Input: XML structure with a module and public elements
+            # Expected Result: The function should return the correct variables and scopes.
     ])
     @patch("fxca.util.fxtran_utils.ET.parse")
     @patch("fxca.util.fxtran_utils.PublicObj")
@@ -62,11 +67,22 @@ class TestYourModule(unittest.TestCase):
         # Setup the mocks
         mock_tree = mock_et_parse.return_value
         mock_tree.getroot.return_value.iter.return_value = []  # Mocking an empty XML structure
+        # mock_tree.getroot.return_value.iter.return_value = [
+        #         # Mocking XML elements
+        #         Mock(tag="{http://fxtran.net/#syntax}module-stmt"),
+        #         Mock(tag="{http://fxtran.net/#syntax}T-decl-stmt"),
+        #         Mock(tag="{http://fxtran.net/#syntax}public-stmt"),
+        #         Mock(tag="{http://fxtran.net/#syntax}contains-stmt"),
+        #         Mock(tag="{http://fxtran.net/#syntax}function-stmt"),
+        #         Mock(tag="{http://fxtran.net/#syntax}end-function-stmt"),
+        #         Mock(tag="{http://fxtran.net/#syntax}end-module-stmt")
+        # ]
+        # mock_public_obj.return_value.is_public.return_value = need_public
 
         result = filter_xml(xml_path, need_public, modules, files)
 
         # Assertions
-        self.assertEqual(result, expected_result)
+        self.assertEqual(expected_result, result)
 
     @parameterized.expand([
             ("get_files_test", TEST_DIR, TEST_PATTERN, TEST_FILES),
