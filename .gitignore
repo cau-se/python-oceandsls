@@ -187,5 +187,3 @@ example-dsl/examplelspserver/other/
 #BGC-DSL tmp files
 bgc-dsl/bgcLSPServer/other/
 antlrLib/dist/
-
-.qodo
