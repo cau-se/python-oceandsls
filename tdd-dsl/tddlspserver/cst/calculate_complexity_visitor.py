@@ -26,12 +26,27 @@ from typing import Callable, Generic
 # Antlr4
 from antlr4.tree.Tree import ParseTree
 
+import sys
+import pkgutil
+
+# Print the current Python path
+# TODO remove
+print("Current Python Path:")
+for path in sys.path:
+    print(f" - {path}")
+
+# List all available modules
+# TODO remove
+#print("\nAvailable Modules:")
+#for module_info in pkgutil.iter_modules():
+#    print(f" - {module_info.name}")
+
 # Package imports
-from ..fxca.util.fxtran_utils import get_files, write_decorate_src_xml
-from ..gen.python.TestSuite.TestSuiteParser import TestSuiteParser
-from ..gen.python.TestSuite.TestSuiteVisitor import TestSuiteVisitor
-from ..utils.calculate_complexity import calculate_metrics
-from ..symboltable.symbol_table import MetricSymbol, SymbolTable, SymbolTableOptions, P, T, TestCaseSymbol
+from fxca.util.fxtran_utils import get_files, write_decorate_src_xml
+from gen.python.TestSuite.TestSuiteParser import TestSuiteParser
+from gen.python.TestSuite.TestSuiteVisitor import TestSuiteVisitor
+from utils.calculate_complexity import calculate_metrics
+from symboltable.symbol_table import MetricSymbol, SymbolTable, SymbolTableOptions, P, T, TestCaseSymbol
 
 # Debug Log
 LOGGER = getLogger(__name__)
