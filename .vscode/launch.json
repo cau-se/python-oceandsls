@@ -1,0 +1,17 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: tdd-dsl.tddlspserver",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "tdd-dsl.tddlspserver",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/antlrLib:${workspaceFolder}/tdd-dsl:${workspaceFolder}/example-dsl:${workspaceFolder}/tdd-dsl/tests:${workspaceFolder}/tdd-dsl/tddlspserver:${workspaceFolder}/antlrLib/codeCompletionCore:${workspaceFolder}/antlrLib/tests:${workspaceFolder}/example-dsl/tests:${workspaceFolder}/example-dsl/examplelspserver"
+            }
+        }
+    ]
+}
