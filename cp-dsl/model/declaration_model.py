@@ -24,7 +24,7 @@ from .symbols import Scope, NamedElement
 from .symbols import UnitSymbol
 from .type_system import NamedType, Type
 from .unit_model import UnitSpecification
-from .arithmetic_model import ArithmeticExpression
+from .arithmetic_model import AbstractExpression
 
 #
 # Model elements of the DSL
@@ -45,29 +45,26 @@ from .arithmetic_model import ArithmeticExpression
 class DeclarationModel(Scope):
 
     def __init__(self, name: str = None):
-        super().__init__(None)  # DeclarationModel has no parent
+        super().__init__(parent=None)  # DeclarationModel has no parent
         self.name = name
         self.configuration_name = None
         self.groups = {}
         self.features = {}
-        self.types = {}
+        self.types:dict[str,NamedType] = {}
 
-    def add_new_type(self, type: Type):
-        if isinstance(type, NamedType):
-            self.types[type.name] = type
-        else:
-            self.types[type.__hash__] = type
+    def add_new_type(self, type: NamedType) -> None:
+        self.types[type.name] = type
 
-    def resolve_type(self, name: str):
+    def resolve_type(self, name: str) -> NamedType:
         return self.types.get(name, None)
 
-    def resolve_feature(self, name:str):
+    def resolve_feature(self, name:str) -> Feature:
         return self.features.get(name, None)
 
-    def resolve_parameter_group(self, name:str):
+    def resolve_parameter_group(self, name:str) -> ParameterGroup:
         return self.groups.get(name, None)
 
-    def resolve_symbol(self, name: str):
+    def resolve_symbol(self, name: str) -> NamedElement:
         feature = self.features.get(name, None)
         if feature is None:
             return self.groups.get(name, None)
@@ -85,14 +82,14 @@ class Selector:
 @dataclass
 class SelectorExpression:
     selectors : List[Selector]
-    expression : ArithmeticExpression
+    expression : AbstractExpression
 
 class Parameter(NamedElement):
 
     type: NamedType
     unit: UnitSymbol
     description: str
-    default_value: ArithmeticExpression = None
+    default_value: AbstractExpression = None
     value = None
 
     def __init__(self, name: str, type: NamedType, unit: UnitSymbol, description: str = None, parent=None) -> None:
@@ -116,9 +113,9 @@ class ParameterGroup(NamedElement):
         self.parameters = {}
 
     def resolve_parameters(self, name: str) -> Parameter:
-        return self.parameters.get(name, None)
+        return self.parameters.get(name)
 
-    def resolve_symbol(self, name):
+    def resolve_symbol(self, name:str) -> Parameter:
         return self.resolve_parameters(name)
 
 #
