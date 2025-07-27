@@ -1,6 +1,6 @@
 {
   // set Python Interpreter relative to workspaceFolder to virtual environment '.venv'
-  "python.defaultInterpreterPath": "${workspaceFolder}/../.venv/bin/python",
+  "python.defaultInterpreterPath": "${workspaceFolder}/../venv-basic/bin/python",
   // alternative
   //"python.defaultInterpreterPath": "../.venv",
   // deprecated
@@ -8,7 +8,7 @@
 
   // Pylance VSCode code analysis and auto-completion
   "python.analysis.extraPaths": [
-    "{workspaceFolder}/../.venv/lib/python3.10/site-packages/:${workspaceFolder}/../antlrLib/"
+    "{workspaceFolder}/../venv-basic/lib/python3.13/site-packages/:${workspaceFolder}/../antlrLib/"
   ],
   // Object with environment variables that will be added to the VS Code process to be used by the terminal on OS X
   "terminal.integrated.env.osx": {

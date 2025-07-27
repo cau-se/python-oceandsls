@@ -24,7 +24,7 @@ from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationPar
 from common.logger import GeneratorLogger
 from common.configuration import CompileFlags
 
-from test_utils import AbstractTestGeneratorDeclarationVisitor
+from gen.visitors.test_utils import AbstractTestGeneratorDeclarationVisitor
 
 class TestFeatureGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisitor):
 

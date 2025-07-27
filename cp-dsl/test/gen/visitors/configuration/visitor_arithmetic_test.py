@@ -27,9 +27,9 @@ from conflspserver.gen.python.Configuration.ConfigurationParser import Configura
 from common.logger import GeneratorLogger
 from common.configuration import CompileFlags
 
-from test_utils import AbstractTestGeneratorConfigurationVisitor
+from gen.visitors.test_utils import AbstractTestGeneratorConfigurationVisitor
 
-class TestGeneratorConfigurationVisitor(AbstractTestGeneratorConfigurationVisitor):
+class TestArithmeticGeneratorConfigurationVisitor(AbstractTestGeneratorConfigurationVisitor):
 
     logger = GeneratorLogger(CompileFlags.STRICT)
 

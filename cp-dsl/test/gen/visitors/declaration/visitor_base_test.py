@@ -16,9 +16,9 @@ __author__ = "reiner"
 
 import unittest
 
-from test_utils import AbstractTestGeneratorDeclarationVisitor
+from gen.visitors.test_utils import AbstractTestGeneratorDeclarationVisitor
 
-class TestGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisitor):
+class TestBaseGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisitor):
 
     def test_visitDeclarationModel(self):
         model = self.parse_code("model eval")

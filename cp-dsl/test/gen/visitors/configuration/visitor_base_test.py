@@ -18,9 +18,9 @@ import unittest
 
 from model.declaration_model import DeclarationModel
 
-from test_utils import AbstractTestGeneratorConfigurationVisitor
+from gen.visitors.test_utils import AbstractTestGeneratorConfigurationVisitor
 
-class TestGeneratorConfigurationVisitor(AbstractTestGeneratorConfigurationVisitor):
+class TestBaseGeneratorConfigurationVisitor(AbstractTestGeneratorConfigurationVisitor):
 
     def test_visitConfigurationModel_plain(self):
         model = self.parse_declaration_code("model eval")

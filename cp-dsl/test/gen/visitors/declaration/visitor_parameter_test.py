@@ -24,9 +24,9 @@ from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationPar
 from model.declaration_model import DeclarationModel
 from model.type_system import EnumeralType
 
-from test_utils import AbstractTestGeneratorDeclarationVisitor
+from gen.visitors.test_utils import AbstractTestGeneratorDeclarationVisitor
 
-class TestGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisitor):
+class TestParameterGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisitor):
 
     def test_visitParamGroupAssignStat(self):
         ctx = DeclarationParser.ParamGroupAssignStatContext(parser=None, ctx=DeclarationParser.DeclarationModelContext(parser=None))

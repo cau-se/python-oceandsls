@@ -18,9 +18,9 @@ import unittest
 
 from model.declaration_model import DeclarationModel, Feature
 
-from test_utils import AbstractTestGeneratorConfigurationVisitor
+from gen.visitors.test_utils import AbstractTestGeneratorConfigurationVisitor
 
-class TestGeneratorConfigurationVisitor(AbstractTestGeneratorConfigurationVisitor):
+class TestFeatureGeneratorConfigurationVisitor(AbstractTestGeneratorConfigurationVisitor):
 
     def test_visitFeatureConfiguration(self):
         model = self.parse_declaration_code("""

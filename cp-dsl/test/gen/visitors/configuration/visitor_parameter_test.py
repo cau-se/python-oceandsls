@@ -19,9 +19,9 @@ import unittest
 from model.declaration_model import DeclarationModel, ParameterGroup, Parameter, SelectorExpression
 from model.arithmetic_model import IntValue, ArrayExpression
 
-from test_utils import AbstractTestGeneratorConfigurationVisitor
+from gen.visitors.test_utils import AbstractTestGeneratorConfigurationVisitor
 
-class TestGeneratorConfigurationVisitor(AbstractTestGeneratorConfigurationVisitor):
+class TestParameterGeneratorConfigurationVisitor(AbstractTestGeneratorConfigurationVisitor):
 
     def create_declaration_model(self):
         model = self.parse_declaration_code("""

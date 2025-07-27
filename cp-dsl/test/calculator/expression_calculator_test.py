@@ -36,7 +36,7 @@ class Test(unittest.TestCase):
 
         t1 = ParameterGroup(name="t1", description="test one", parent=model)
 
-        p1 = Parameter(name="p1"m description="parameter one", type=None, unit=None, parent=t1)
+        p1 = Parameter(name="p1", description="parameter one", type=None, unit=None, parent=t1)
         left = FloatValue(None, None, base_types["float"], 5.0)
         expression = ArithmeticExpression(None, None, left=left, right=None, op=EAdditionOperator.ADD)
         p1.default_value = expression
