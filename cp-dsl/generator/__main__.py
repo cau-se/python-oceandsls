@@ -29,7 +29,8 @@ from generator.calculator.calculator_dec import DeclarationCalculator
 from generator.generators.uvic.code_generator import UvicCodeGenerator
 from generator.generators.mitgcm.code_generator import MitGcmCodeGenerator
 from generator.generators.eval.code_generator import EvalCodeGenerator
-from model.declaration_model import DeclarationModel
+from model.declaration_model import DeclarationModel, Feature, ParameterGroup, Parameter, UnitSymbol
+from model.arithmetic_model import AbstractExpression
 from common.logger import GeneratorLogger
 
 logger: GeneratorLogger
@@ -64,6 +65,46 @@ def make_declaration_model(model: DeclarationModel, input_path: str):
 
     return model
 
+def check_unit_compatibility(target_unit:UnitSymbol, source_unit:UnitSymbol, element:Parameter):
+    pass
+
+def derive_expression_unit(expression:AbstractExpression) -> UnitSymbol:
+    
+
+def check_parameter_integrity(parameter: Parameter):
+    target_unit = parameter.unit
+    source_default_unit = derive_expression_unit(parameter.default_value)
+    check_unit_compatibility(target_unit, source_default_unit, parameter)
+
+    for entry in parameter.entries:
+        source_entry_unit = derive_expression_unit(entry.expression)
+        check_unit_compatibility(target_unit, source_entry_unit, parameter)
+
+def check_parameter_group_integrity(group: ParameterGroup):
+    for parameter in group.parameters.values():
+        check_parameter_integrity(parameter)
+
+def check_feature_integrity(feature: Feature):
+    if feature.is_activated:
+        for r in feature.requires:
+            if not r.is_activated:
+                logger.logger.error(f"Feature missing. Feature {feature.name} requires {r.name}, but {r.name} is not activated.")
+        for group in feature.groups:
+            check_parameter_group_integrity(group)
+
+def check_all_features_integrity(model: DeclarationModel):
+    for feature in model.features.values():
+        check_feature_integrity(feature)
+
+def check_all_parameters_integrity(model: DeclarationModel):
+    for group in model.groups.values():
+        check_parameter_group_integrity(group)
+    for feature in model.features.values():
+        check_feature_integrity(feature)
+
+def check_model_integrity(model: DeclarationModel):
+    check_all_features_integrity(model)
+    check_all_parameters_integrity(model)
 
 if __name__ == '__main__':
     compile_mode: CompileFlags = CompileFlags.RELAX
@@ -141,7 +182,10 @@ if __name__ == '__main__':
     # 5 process configuration model
     model = make_configuration_model(model, input_configuration_path)
 
-    # 6 Compute configuration
+    # 6 check model integrity
+    model = check_model_integrity(model)
+
+    # 7 Compute configuration
     print("Compute configuration")
     table = ConfigurationCalculator(model, logger).calculate()
     print("Completed")

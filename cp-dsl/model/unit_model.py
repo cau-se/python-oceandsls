@@ -17,8 +17,6 @@ from enum import Enum
 from dataclasses import dataclass
 from typing import List
 
-from .utils import classproperty
-
 #
 # units of datatypes
 #

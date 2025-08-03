@@ -19,9 +19,9 @@ __author__ = "stu222808"
 import operator as op
 
 # Relative Imports
-from model.declaration_model import DeclarationModel, Parameter, ParameterGroup
+from model.declaration_model import DeclarationModel, Parameter, ParameterGroup, Feature
 from common.logger import GeneratorLogger
-from .expression_calculator import ExpressionCalculator
+from generator.calculator.expression_calculator import ExpressionCalculator
 
 class Calculator():
     '''A calculator for configured values of parameters'''
@@ -30,20 +30,30 @@ class Calculator():
         self.model = model
         self.logger = logger
 
+    def calculate(self):
+        for group in self.model.groups.values():
+            self.calculate_group(group)
+        for feature in self.model.features.values():
+            self.calculate_feature(feature)
+
     def calculate_parameter(self, parameter:Parameter):
         if parameter.value == None:
             # 1. calculate the default value
-            ExpressionCalculator(self.model).calculate(parameter)
+            ExpressionCalculator(self.model, self.logger).calculate(parameter)
             # 2. calculate all entries over the default value
             for entry in parameter.entries:
-                ExpressionCalculator(self.model).calculate_and_overlay(parameter, entry)
+                ExpressionCalculator(self.model, self.logger).calculate_and_overlay(parameter, entry)
 
     def calculate_group(self, group:ParameterGroup):
-        for parameter in group.parameters:
+        for parameter in group.parameters.values():
             self.calculate_parameter(parameter)
 
-    def calculate(self):
-        for group in self.model.groups:
-            self.calculate_group(group)
-        for feature in self.model.features:
-            self.calculate_feature(feature)
+    def calculate_feature(self, feature:Feature):
+        if feature.is_activated:
+            for group in feature.groups.values():
+                self.calculate_group(group)
+            for feature_group in feature.feature_sets:
+                for child_feature in feature_group.features.values():
+                    self.calculate_feature(child_feature)
+
+

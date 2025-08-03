@@ -38,10 +38,10 @@ class Scope:
 
     parent: Scope
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent:Scope):
         self.parent = parent
 
-    def resolve_symbol(self, name: str):
+    def resolve_symbol(self, name: str) -> NamedElement:
         raise NotImplementedError(f"Name {name} not found {self}")
 
 
@@ -49,7 +49,7 @@ class NamedElement(Scope):
 
     name: str
 
-    def __init__(self, name: str, parent=None) -> None:
+    def __init__(self, name: str, parent:Scope) -> None:
         super().__init__(parent)
         self.name = name
 

@@ -20,11 +20,10 @@ from typing import Optional, Coroutine, TypeVar, List, Dict
 # Antlr4
 from antlr4.tree.Tree import ParseTree
 
-from .symbols import Scope, NamedElement
-from .symbols import UnitSymbol
-from .type_system import NamedType, Type
-from .unit_model import UnitSpecification
-from .arithmetic_model import AbstractExpression
+from model.symbols import Scope, NamedElement
+from model.type_system import NamedType
+from model.unit_model import UnitSpecification
+from model.arithmetic_model import AbstractExpression
 
 #
 # Model elements of the DSL
@@ -46,10 +45,10 @@ class DeclarationModel(Scope):
 
     def __init__(self, name: str = None):
         super().__init__(parent=None)  # DeclarationModel has no parent
-        self.name = name
-        self.configuration_name = None
-        self.groups = {}
-        self.features = {}
+        self.name:str = name
+        self.configuration_name:str = None
+        self.groups:dict[str,ParameterGroup] = {}
+        self.features:dict[str, Feature] = {}
         self.types:dict[str,NamedType] = {}
 
     def add_new_type(self, type: NamedType) -> None:
@@ -87,19 +86,19 @@ class SelectorExpression:
 class Parameter(NamedElement):
 
     type: NamedType
-    unit: UnitSymbol
+    unit: UnitSpecification
     description: str
     default_value: AbstractExpression = None
     value = None
 
-    def __init__(self, name: str, type: NamedType, unit: UnitSymbol, description: str = None, parent=None) -> None:
+    def __init__(self, name: str, type: NamedType, unit: UnitSpecification, description: str, parent:Scope) -> None:
         super().__init__(name, parent)
         self.type = type
         self.unit = unit
         self.description = description
         self.default_value = None # declaration value spec
         self.value = None # computed value
-        self.entries = [] # entries for the computed value
+        self.entries:list[SelectorExpression] = [] # entries for the computed value
 
 
 class ParameterGroup(NamedElement):

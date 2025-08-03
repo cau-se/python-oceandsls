@@ -1,6 +1,6 @@
 {
   // set Python Interpreter relative to workspaceFolder to virtual environment '.venv'
-  "python.defaultInterpreterPath": "${workspaceFolder}/../venv-basic/bin/python",
+  "python.defaultInterpreterPath": "${userHome}/../venv-basic/bin/python",
   // alternative
   //"python.defaultInterpreterPath": "../.venv",
   // deprecated
@@ -16,7 +16,7 @@
   },
   // Object with environment variables that will be added to the VS Code process to be used by the terminal on Linux
   "terminal.integrated.env.linux": {
-    "PYTHONPATH": "${workspaceFolder}/.."
+    "PYTHONPATH": "${workspaceFolder}"
   },
   // Object with environment variables that will be added to the VS Code process to be used by the terminal on Windows
   "terminal.integrated.env.windows": {
