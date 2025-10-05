@@ -16,6 +16,8 @@ from model.declaration_model import DeclarationModel, ParameterGroup, Parameter,
 from model.arithmetic_model import AbstractExpression, ArithmeticExpression, MultiplicationExpression, IntValue, FloatValue, StringValue
 from model.unit_model import UnitSpecification
 
+from cfunits import Unit
+
 from common.logger import GeneratorLogger
 
 class UnitCalculator:
@@ -27,7 +29,7 @@ class UnitCalculator:
     def resolve_unit(self, expression:ArithmeticExpression) -> UnitSpecification:
         left_unit = self.resolve_unit(expression.left)
         right_unit = self.resolve_unit(expression.right)
-        return self.combine_units(left_unit, right_unit)
+        return self.conform_units(left_unit, right_unit)
 
     def resolve_unit(self, expression:AbstractExpression) -> UnitSpecification:
         if isinstance(expression, ArithmeticExpression):

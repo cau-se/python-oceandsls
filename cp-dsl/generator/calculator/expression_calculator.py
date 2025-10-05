@@ -38,7 +38,7 @@ class ExpressionCalculator():
 
     def calculate_expression(self, expression:AbstractExpression) -> AbstractTypedValue:
         if isinstance(expression, ArithmeticExpression):
-            result = self.calc_arithmetic_expression(expression)
+            result = self.calc_arithmetic_expr  ession(expression)
         elif isinstance(expression, MultiplicationExpression):
             result = self.calc_multiplication_expression(expression)
         elif isinstance(expression, (Enumeral, IntValue, FloatValue, StringValue)):
