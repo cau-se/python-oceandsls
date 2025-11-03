@@ -8,15 +8,26 @@
             "name": "Python Debugger: cp-dsl compiler",
             "type": "debugpy",
             "request": "launch",
-            "program": "__main__.py",
+            "program": "${workspaceFolder}/__main__.py",
             "args": [
                 "-i",
-                "/home/reiner/Projects/OceanDSL/python-oceandsls/cp-dsl/input/testing/basic/global.oconf"
+                "${workspaceFolder}/cp-dsl/input/testing/basic/global.oconf"
             ],
             "console": "integratedTerminal",
             "env": {
-                "PYTHONPATH": "/home/reiner/Projects/OceanDSL/python-oceandsls/cp-dsl"
+                "PYTHONPATH": "${workspaceFolder}/cp-dsl"
+            }
+        },
+        {
+            "name": "Python Debugger: tdd-dsl.tddlspserver",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "tdd-dsl.tddlspserver",
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/antlrLib:${workspaceFolder}/tdd-dsl:${workspaceFolder}/example-dsl:${workspaceFolder}/tdd-dsl/tests:${workspaceFolder}/tdd-dsl/tddlspserver:${workspaceFolder}/antlrLib/codeCompletionCore:${workspaceFolder}/antlrLib/tests:${workspaceFolder}/example-dsl/tests:${workspaceFolder}/example-dsl/examplelspserver"
             }
         }
     ]
 }
+

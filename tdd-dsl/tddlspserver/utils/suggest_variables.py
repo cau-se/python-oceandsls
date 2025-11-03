@@ -87,7 +87,7 @@ def get_all_symbols_of_type(scope: ScopedSymbol, symbol_type: type):
     return symbols
 
 
-def suggest_symbols(symbol_table: SymbolTable, position: TokenPosition, symbol_type: Type = VariableSymbol) -> List[str]:
+def suggest_symbols(symbol_table: SymbolTable, position: TokenPosition, symbol_type: Type = VariableSymbol, descending_sort=False) -> List[str]:
     if position:
         context = position.context
         scope = get_scope(context, symbol_table)
@@ -102,10 +102,10 @@ def suggest_symbols(symbol_table: SymbolTable, position: TokenPosition, symbol_t
     else:
         symbols = run_async(symbol_table.get_nested_symbols_of_type, symbol_type)
         text = ""
-    return filter_symbols(text, symbols, symbol_type)
+    return filter_symbols(text, symbols, symbol_type, descending_sort)
 
 
-def filter_symbols(text: str, symbols: List[Symbol], symbol_type: Type = VariableSymbol) -> List[str]:
+def filter_symbols(text: str, symbols: List[Symbol], symbol_type: Type = VariableSymbol, descending_sort=False) -> List[str]:
     match symbol_type:
         case symbol_type if issubclass(symbol_type, PathSymbol):
             candidates = list(map(lambda s: s.value, symbols))
@@ -114,8 +114,7 @@ def filter_symbols(text: str, symbols: List[Symbol], symbol_type: Type = Variabl
 
         case symbol_type if issubclass(symbol_type, MetricSymbol):
             scopes: List = list(map(lambda s: s.value, symbols))
-            # TODO recommendation order: False - low first, high last; True - high first, low last
-            scopes.sort(reverse=False)
+            scopes.sort(reverse=descending_sort)
             candidates: List[str] = list(map(lambda scope: str(scope), scopes))
 
             return candidates

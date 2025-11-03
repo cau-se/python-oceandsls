@@ -1,0 +1,3 @@
+[submodule "tdd-dsl/tddlspserver/llm"]
+	path = tdd-dsl/tddlspserver/llm
+	url = gitlab@git.se.informatik.uni-kiel.de:oceandsl/gpt4all_demo.git

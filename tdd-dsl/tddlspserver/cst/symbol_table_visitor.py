@@ -20,7 +20,7 @@ import os
 import logging
 import shutil
 # Util imports
-from typing import Callable, Generic, List
+from typing import Callable, Dict, Generic, List, Tuple
 
 # Antlr4
 from antlr4.tree.Tree import ParseTree
