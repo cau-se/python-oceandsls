@@ -21,7 +21,6 @@ from os.path import isfile
 
 from .server import bgc_server, did_save
 
-logging.basicConfig(filename="bgcDSL_pygls.log", level=logging.DEBUG, filemode="w")
 
 
 def add_arguments(parser):
@@ -49,6 +48,8 @@ def add_arguments(parser):
         "-f", "--file", dest="file", type=readable_file,
         help="Input file for file generator"
     )
+    parser.add_argument("--log-file", dest="log_file", default=None, help="Write the log to this file")
+    parser.add_argument("--debug", action="store_true", help="Log debug output")
 
 
 def readable_file(file_path: str):
@@ -71,6 +72,9 @@ def main():
     parser = argparse.ArgumentParser()
     add_arguments(parser)
     args = parser.parse_args()
+
+    # Log to stderr (stdout carries the JSON-RPC stream in stdio mode) or to a file with --log-file
+    logging.basicConfig(filename=args.log_file, level=logging.DEBUG if args.debug else logging.INFO)
 
     if args.file:
         # Start cli code gen with given path

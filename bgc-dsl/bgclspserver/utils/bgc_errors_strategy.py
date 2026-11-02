@@ -11,14 +11,9 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from antlr4.error.ErrorStrategy import DefaultErrorStrategy
-from antlr4.error.Errors import InputMismatchException
-from antlr4.Parser import Parser
 
+"""DSL specific name of the shared :class:`odsllib.lsp.error_strategy.InputMismatchErrorStrategy`."""
 
-class BGCErrorStrategy(DefaultErrorStrategy):
+from odsllib.lsp.error_strategy import InputMismatchErrorStrategy
 
-    def reportInputMismatch(self, recognizer: Parser, e: InputMismatchException):
-        msg = " expecting " + e.getExpectedTokens().toString(recognizer.literalNames, recognizer.symbolicNames)
-
-        recognizer.notifyErrorListeners(msg, e.offendingToken, e)
+BGCErrorStrategy = InputMismatchErrorStrategy

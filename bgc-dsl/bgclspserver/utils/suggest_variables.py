@@ -112,4 +112,4 @@ def filter_symbols(text: str, symbols: List[Symbol], symbol_type: Type = Variabl
             if len(text.strip()) == 0:
                 return candidates
             else:
-                return list(filter(lambda c: c.lower().startswith(text), candidates))
+                return list(filter(lambda c: c.lower().startswith(text.lower()), candidates))

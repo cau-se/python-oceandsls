@@ -17,15 +17,18 @@ __author__ = "stu90642"
 #  limitations under the License.
 
 # util imports
+import logging
 from typing import Generic, Callable
 
 # antlr4
 from antlr4.tree.Tree import ParseTree
 
 # user relative imports
-from ..symboltable.symbol_table import SymbolTable, P, T, VariableSymbol, SymbolTableOptions
+from ..symboltable.symbol_table import DuplicateSymbolError, SymbolTable, P, T, VariableSymbol, SymbolTableOptions
 from ..gen.python.BgcDsl.BgcDslParser import BgcDslParser
 from ..gen.python.BgcDsl.BgcDslVisitor import BgcDslVisitor
+
+logger = logging.getLogger(__name__)
 
 
 class SymbolTableVisitor(BgcDslVisitor, Generic[T]):
@@ -45,33 +48,40 @@ class SymbolTableVisitor(BgcDslVisitor, Generic[T]):
     def defaultResult(self) -> SymbolTable:
         return self._symbolTable
 
+    def _add_variable(self, name: str, ctx: ParseTree) -> None:
+        """Add a named element; duplicates are skipped so the remaining symbols stay available for completion."""
+        try:
+            self._symbolTable.add_new_symbol_of_type(VariableSymbol, self._scope, name, ctx)
+        except DuplicateSymbolError as e:
+            logger.debug("Skipping duplicate symbol: %s", e)
+
     # Visit a parse tree produced by BgcDslParser#substanceDeclaration.
     def visitSubstanceDeclaration(self, ctx: BgcDslParser.SubstanceDeclarationContext):
         # TODO
         # save type
         # save unit as node
-        self._symbolTable.addNewSymbolOfType(VariableSymbol, self._scope, ctx.name.text, ctx)
+        self._add_variable(ctx.name.text, ctx)
         return self.visitChildren(ctx)
 
     def visitParameterDeclaration(self, ctx: BgcDslParser.ParameterDeclarationContext):
         # TODO
         # save type
         # save unit, expression as node
-        self._symbolTable.addNewSymbolOfType(VariableSymbol, self._scope, ctx.name.text, ctx)
+        self._add_variable(ctx.name.text, ctx)
         return self.visitChildren(ctx)
 
     def visitEnvironmentVariableDeclaration(self, ctx: BgcDslParser.EnvironmentVariableDeclarationContext):
         # TODO
         # save type
         # save unit, expression as node
-        self._symbolTable.addNewSymbolOfType(VariableSymbol, self._scope, ctx.name.text, ctx)
+        self._add_variable(ctx.name.text, ctx)
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by BgcDslParser#compartment.
     def visitCompartment(self, ctx: BgcDslParser.CompartmentContext):
         # TODO
         # save node as expression
-        self._symbolTable.addNewSymbolOfType(VariableSymbol, self._scope, ctx.name.text, ctx)
+        self._add_variable(ctx.name.text, ctx)
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by BgcDslParser#connection.
@@ -81,7 +91,7 @@ class SymbolTableVisitor(BgcDslVisitor, Generic[T]):
         # save node as expression
         # the name needs to be more complex, here:
         name = ctx.name.text + ' from ' + ctx.sourceCompartment.text + ' to ' + ctx.targetCompartment.text
-        self._symbolTable.addNewSymbolOfType(VariableSymbol, self._scope, name, ctx)
+        self._add_variable(name, ctx)
         return self.visitChildren(ctx)
 
     # def visitFuncExpr(self, ctx: TestGrammarParser.FuncExprContext):
@@ -98,7 +108,7 @@ class SymbolTableVisitor(BgcDslVisitor, Generic[T]):
         :return: Current scope
         """
         # Add scoped symbol to symboltable
-        scope = self._symbol_table.add_new_symbol_of_type(t, self._scope, *my_args, **my_kwargs)
+        scope = self._symbolTable.add_new_symbol_of_type(t, self._scope, *my_args, **my_kwargs)
         scope.context = tree
         # Update Scope to the new symbol and save the old scope (mihgt be changed if scope is inserted above current scope)
         current_scope = self._scope

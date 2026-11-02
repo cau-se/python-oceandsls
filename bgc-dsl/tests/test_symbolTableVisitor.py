@@ -16,18 +16,21 @@ __author__ = "stu90642"
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from antlr4 import *
-from ..bgclspserver.gen.python.BgcDsl.BgcDslLexer import BgcDslLexer
-from ..bgclspserver.gen.python.BgcDsl.BgcDslParser import BgcDslParser
-from ..bgclspserver.cst.symbol_table_visitor import SymbolTableVisitor
-from SymbolTable_copy import ScopedSymbol, SymbolTable, P, T, VariableSymbol, Symbol, RoutineSymbol, SymbolTableOptions
+import os
+
+from antlr4 import CommonTokenStream, FileStream
+from bgclspserver.gen.python.BgcDsl.BgcDslLexer import BgcDslLexer
+from bgclspserver.gen.python.BgcDsl.BgcDslParser import BgcDslParser
+from bgclspserver.cst.symbol_table_visitor import SymbolTableVisitor
+
+EXAMPLE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "input", "example1.bgc")
 import unittest
 
 
 # tests SymbolTableVisitor
 def prepare():
     # write_tdd()
-    input_stream = FileStream('input/example1.bgc')
+    input_stream = FileStream(EXAMPLE, encoding='utf-8')
     # path = write_tdd()
     # input_stream = FileStream(path)
     lexer = BgcDslLexer(input_stream)
@@ -45,7 +48,7 @@ class TestSTVisitor(unittest.TestCase):  # wenn ich eine klasse verwende, dann m
     # tests whether this variable is in the ST
     def test_substance_1(self):
         symbolTable = prepare()
-        symbol = symbolTable.resolveSync('N')  # returnt das symbol-object, das Name N hat.
+        symbol = symbolTable.resolve_sync('N')  # returnt das symbol-object, das Name N hat.
         self.assertIsNotNone(symbol)  # resolveSync returns a VariableSymbol object
         unit = ''.join(list(map(lambda x: x.getText(), symbol.value.unit().elements)))
         self.assertEqual(unit, 'mmol')
@@ -53,7 +56,7 @@ class TestSTVisitor(unittest.TestCase):  # wenn ich eine klasse verwende, dann m
 
     def test_substance_2(self):
         symbolTable = prepare()
-        symbol = symbolTable.resolveSync('DIN')
+        symbol = symbolTable.resolve_sync('DIN')
         self.assertIsNotNone(symbol)  # resolveSync returns a VariableSymbol object
         unit = ''.join(list(map(lambda x: x.getText(), symbol.value.unit().elements)))
         self.assertEqual(unit, 'mmolNm^-3')
@@ -61,7 +64,7 @@ class TestSTVisitor(unittest.TestCase):  # wenn ich eine klasse verwende, dann m
 
     def test_parameter(self):
         symbolTable = prepare()
-        symbol = symbolTable.resolveSync('Q_r_C_N')
+        symbol = symbolTable.resolve_sync('Q_r_C_N')
         self.assertIsNotNone(symbol)  # resolveSync returns a VariableSymbol object
         unit = ''.join(list(map(lambda x: x.getText(), symbol.value.unit().elements)))
         self.assertEqual(unit, 'mmolC(mmolN)^-1')
@@ -69,7 +72,7 @@ class TestSTVisitor(unittest.TestCase):  # wenn ich eine klasse verwende, dann m
 
     def test_compartment(self):
         symbolTable = prepare()
-        symbol = symbolTable.resolveSync('Nif')  # compartment
+        symbol = symbolTable.resolve_sync('Nif')  # compartment
         # checks whether the compartment exists
         self.assertIsNotNone(symbol)
         # checks compartment contents
@@ -92,13 +95,13 @@ class TestSTVisitor(unittest.TestCase):  # wenn ich eine klasse verwende, dann m
 
     def test_connection_1(self):
         symbolTable = prepare()
-        symbol = symbolTable.resolveSync('aggregation from Phy to Det')
+        symbol = symbolTable.resolve_sync('aggregation from Phy to Det')
         self.assertIsNotNone(symbol)
         self.assertEqual(symbol.value.expression.getText(), 'Phy.Phi*Phy.N+Det.Phi*Det.N')
 
     def test_connection_2(self):
         symbolTable = prepare()
-        symbol = symbolTable.resolveSync('assimilation from Nutrients to Nif')
+        symbol = symbolTable.resolve_sync('assimilation from Nutrients to Nif')
         self.assertIsNotNone(symbol)
         self.assertEqual(list(map(lambda x: x.text, symbol.value.substances)), ['N', 'C'])
         self.assertEqual(symbol.value.substanceExpressions[0].getText(), 'N=Nif.assim_DIP*Nif.N')
