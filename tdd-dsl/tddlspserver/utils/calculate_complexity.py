@@ -37,7 +37,7 @@ class UniqueList(list):
         # Reset if closed
         if self.__closed:
             self.clear()
-            __close = False
+            self.__closed = False
 
         # Add elements if not in list
         for element in elements:
@@ -47,7 +47,7 @@ class UniqueList(list):
         # Reset if closed
         if self.__closed:
             self.clear()
-            __close = False
+            self.__closed = False
 
         # Add element if not in list
         if not self.__contains__(element):
