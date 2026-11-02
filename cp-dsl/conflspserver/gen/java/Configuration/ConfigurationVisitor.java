@@ -71,6 +71,12 @@ public interface ConfigurationVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitUnitSpecification(ConfigurationParser.UnitSpecificationContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link ConfigurationParser#unitFactor}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitUnitFactor(ConfigurationParser.UnitFactorContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link ConfigurationParser#qualifiedName}.
 	 * @param ctx the parse tree
 	 * @return the visitor result

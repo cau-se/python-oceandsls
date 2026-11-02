@@ -10,81 +10,91 @@ else:
 
 def serializedATN():
     return [
-        4,1,30,225,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,
+        4,1,31,249,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,
         6,2,7,7,7,2,8,7,8,2,9,7,9,2,10,7,10,2,11,7,11,2,12,7,12,2,13,7,13,
         2,14,7,14,2,15,7,15,2,16,7,16,2,17,7,17,2,18,7,18,2,19,7,19,2,20,
-        7,20,2,21,7,21,2,22,7,22,2,23,7,23,2,24,7,24,1,0,1,0,1,0,1,0,1,0,
-        5,0,56,8,0,10,0,12,0,59,9,0,1,0,1,0,1,0,1,0,5,0,65,8,0,10,0,12,0,
-        68,9,0,3,0,70,8,0,1,0,1,0,5,0,74,8,0,10,0,12,0,77,9,0,1,1,1,1,1,
-        1,1,2,3,2,83,8,2,1,2,1,2,1,3,1,3,1,3,1,3,1,3,1,3,1,3,5,3,94,8,3,
-        10,3,12,3,97,9,3,3,3,99,8,3,1,3,1,3,5,3,103,8,3,10,3,12,3,106,9,
-        3,1,3,1,3,1,4,1,4,1,4,1,4,5,4,114,8,4,10,4,12,4,117,9,4,1,4,1,4,
-        1,5,1,5,1,5,1,5,1,5,5,5,126,8,5,10,5,12,5,129,9,5,1,5,1,5,3,5,133,
-        8,5,1,5,1,5,1,5,3,5,138,8,5,1,6,1,6,3,6,142,8,6,1,7,1,7,1,8,1,8,
-        1,8,1,8,1,9,1,9,1,10,1,10,1,10,5,10,155,8,10,10,10,12,10,158,9,10,
-        1,11,1,11,1,11,1,11,1,11,3,11,165,8,11,1,12,1,12,1,13,1,13,1,13,
-        1,13,1,13,3,13,174,8,13,1,14,1,14,1,15,1,15,1,15,1,15,3,15,182,8,
-        15,1,16,1,16,1,17,1,17,1,17,1,17,3,17,190,8,17,1,18,1,18,1,18,1,
-        18,1,19,1,19,1,19,1,19,5,19,200,8,19,10,19,12,19,203,9,19,3,19,205,
-        8,19,1,19,1,19,1,20,1,20,1,20,5,20,212,8,20,10,20,12,20,215,9,20,
-        1,21,1,21,1,22,1,22,1,23,1,23,1,24,1,24,1,24,0,0,25,0,2,4,6,8,10,
-        12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,48,0,2,1,0,
-        14,15,1,0,16,18,226,0,50,1,0,0,0,2,78,1,0,0,0,4,82,1,0,0,0,6,86,
-        1,0,0,0,8,109,1,0,0,0,10,120,1,0,0,0,12,141,1,0,0,0,14,143,1,0,0,
-        0,16,145,1,0,0,0,18,149,1,0,0,0,20,151,1,0,0,0,22,164,1,0,0,0,24,
-        166,1,0,0,0,26,173,1,0,0,0,28,175,1,0,0,0,30,181,1,0,0,0,32,183,
-        1,0,0,0,34,189,1,0,0,0,36,191,1,0,0,0,38,195,1,0,0,0,40,208,1,0,
-        0,0,42,216,1,0,0,0,44,218,1,0,0,0,46,220,1,0,0,0,48,222,1,0,0,0,
-        50,51,5,1,0,0,51,52,5,21,0,0,52,53,5,2,0,0,53,57,5,21,0,0,54,56,
-        3,2,1,0,55,54,1,0,0,0,56,59,1,0,0,0,57,55,1,0,0,0,57,58,1,0,0,0,
-        58,69,1,0,0,0,59,57,1,0,0,0,60,61,5,3,0,0,61,66,3,4,2,0,62,63,5,
-        4,0,0,63,65,3,4,2,0,64,62,1,0,0,0,65,68,1,0,0,0,66,64,1,0,0,0,66,
-        67,1,0,0,0,67,70,1,0,0,0,68,66,1,0,0,0,69,60,1,0,0,0,69,70,1,0,0,
-        0,70,75,1,0,0,0,71,74,3,8,4,0,72,74,3,6,3,0,73,71,1,0,0,0,73,72,
-        1,0,0,0,74,77,1,0,0,0,75,73,1,0,0,0,75,76,1,0,0,0,76,1,1,0,0,0,77,
-        75,1,0,0,0,78,79,5,5,0,0,79,80,3,20,10,0,80,3,1,0,0,0,81,83,5,6,
-        0,0,82,81,1,0,0,0,82,83,1,0,0,0,83,84,1,0,0,0,84,85,5,21,0,0,85,
-        5,1,0,0,0,86,87,5,7,0,0,87,88,5,21,0,0,88,98,5,8,0,0,89,90,5,3,0,
-        0,90,95,3,4,2,0,91,92,5,4,0,0,92,94,3,4,2,0,93,91,1,0,0,0,94,97,
-        1,0,0,0,95,93,1,0,0,0,95,96,1,0,0,0,96,99,1,0,0,0,97,95,1,0,0,0,
-        98,89,1,0,0,0,98,99,1,0,0,0,99,104,1,0,0,0,100,103,3,8,4,0,101,103,
-        3,6,3,0,102,100,1,0,0,0,102,101,1,0,0,0,103,106,1,0,0,0,104,102,
-        1,0,0,0,104,105,1,0,0,0,105,107,1,0,0,0,106,104,1,0,0,0,107,108,
-        5,9,0,0,108,7,1,0,0,0,109,110,5,10,0,0,110,111,5,21,0,0,111,115,
-        5,8,0,0,112,114,3,10,5,0,113,112,1,0,0,0,114,117,1,0,0,0,115,113,
-        1,0,0,0,115,116,1,0,0,0,116,118,1,0,0,0,117,115,1,0,0,0,118,119,
-        5,9,0,0,119,9,1,0,0,0,120,132,3,20,10,0,121,122,5,11,0,0,122,127,
-        3,12,6,0,123,124,5,4,0,0,124,126,3,12,6,0,125,123,1,0,0,0,126,129,
-        1,0,0,0,127,125,1,0,0,0,127,128,1,0,0,0,128,130,1,0,0,0,129,127,
-        1,0,0,0,130,131,5,12,0,0,131,133,1,0,0,0,132,121,1,0,0,0,132,133,
-        1,0,0,0,133,134,1,0,0,0,134,135,5,2,0,0,135,137,3,22,11,0,136,138,
-        3,18,9,0,137,136,1,0,0,0,137,138,1,0,0,0,138,11,1,0,0,0,139,142,
-        3,14,7,0,140,142,3,16,8,0,141,139,1,0,0,0,141,140,1,0,0,0,142,13,
-        1,0,0,0,143,144,5,22,0,0,144,15,1,0,0,0,145,146,5,22,0,0,146,147,
-        5,2,0,0,147,148,5,22,0,0,148,17,1,0,0,0,149,150,5,21,0,0,150,19,
-        1,0,0,0,151,156,5,21,0,0,152,153,5,13,0,0,153,155,5,21,0,0,154,152,
-        1,0,0,0,155,158,1,0,0,0,156,154,1,0,0,0,156,157,1,0,0,0,157,21,1,
-        0,0,0,158,156,1,0,0,0,159,160,3,26,13,0,160,161,3,24,12,0,161,162,
-        3,22,11,0,162,165,1,0,0,0,163,165,3,26,13,0,164,159,1,0,0,0,164,
-        163,1,0,0,0,165,23,1,0,0,0,166,167,7,0,0,0,167,25,1,0,0,0,168,169,
-        3,30,15,0,169,170,3,28,14,0,170,171,3,26,13,0,171,174,1,0,0,0,172,
-        174,3,30,15,0,173,168,1,0,0,0,173,172,1,0,0,0,174,27,1,0,0,0,175,
-        176,7,1,0,0,176,29,1,0,0,0,177,182,3,36,18,0,178,182,3,40,20,0,179,
-        182,3,38,19,0,180,182,3,32,16,0,181,177,1,0,0,0,181,178,1,0,0,0,
-        181,179,1,0,0,0,181,180,1,0,0,0,182,31,1,0,0,0,183,184,3,34,17,0,
-        184,33,1,0,0,0,185,190,3,42,21,0,186,190,3,44,22,0,187,190,3,46,
-        23,0,188,190,3,48,24,0,189,185,1,0,0,0,189,186,1,0,0,0,189,187,1,
-        0,0,0,189,188,1,0,0,0,190,35,1,0,0,0,191,192,5,19,0,0,192,193,3,
-        22,11,0,193,194,5,20,0,0,194,37,1,0,0,0,195,204,5,11,0,0,196,201,
-        3,22,11,0,197,198,5,4,0,0,198,200,3,22,11,0,199,197,1,0,0,0,200,
-        203,1,0,0,0,201,199,1,0,0,0,201,202,1,0,0,0,202,205,1,0,0,0,203,
-        201,1,0,0,0,204,196,1,0,0,0,204,205,1,0,0,0,205,206,1,0,0,0,206,
-        207,5,12,0,0,207,39,1,0,0,0,208,213,5,21,0,0,209,210,5,13,0,0,210,
-        212,5,21,0,0,211,209,1,0,0,0,212,215,1,0,0,0,213,211,1,0,0,0,213,
-        214,1,0,0,0,214,41,1,0,0,0,215,213,1,0,0,0,216,217,5,26,0,0,217,
-        43,1,0,0,0,218,219,5,22,0,0,219,45,1,0,0,0,220,221,5,23,0,0,221,
-        47,1,0,0,0,222,223,5,24,0,0,223,49,1,0,0,0,23,57,66,69,73,75,82,
-        95,98,102,104,115,127,132,137,141,156,164,173,181,189,201,204,213
+        7,20,2,21,7,21,2,22,7,22,2,23,7,23,2,24,7,24,2,25,7,25,1,0,1,0,1,
+        0,1,0,1,0,5,0,58,8,0,10,0,12,0,61,9,0,1,0,1,0,1,0,1,0,5,0,67,8,0,
+        10,0,12,0,70,9,0,3,0,72,8,0,1,0,1,0,5,0,76,8,0,10,0,12,0,79,9,0,
+        1,1,1,1,1,1,1,2,3,2,85,8,2,1,2,1,2,1,3,1,3,1,3,1,3,1,3,1,3,1,3,5,
+        3,96,8,3,10,3,12,3,99,9,3,3,3,101,8,3,1,3,1,3,5,3,105,8,3,10,3,12,
+        3,108,9,3,1,3,1,3,1,4,1,4,1,4,1,4,5,4,116,8,4,10,4,12,4,119,9,4,
+        1,4,1,4,1,5,1,5,1,5,1,5,1,5,5,5,128,8,5,10,5,12,5,131,9,5,1,5,1,
+        5,1,5,1,5,1,5,1,5,5,5,139,8,5,10,5,12,5,142,9,5,1,5,1,5,3,5,146,
+        8,5,1,5,1,5,1,5,3,5,151,8,5,1,6,1,6,3,6,155,8,6,1,7,1,7,1,8,1,8,
+        1,8,1,8,1,9,1,9,1,9,5,9,166,8,9,10,9,12,9,169,9,9,1,10,1,10,1,10,
+        3,10,174,8,10,1,11,1,11,1,11,5,11,179,8,11,10,11,12,11,182,9,11,
+        1,12,1,12,1,12,1,12,1,12,3,12,189,8,12,1,13,1,13,1,14,1,14,1,14,
+        1,14,1,14,3,14,198,8,14,1,15,1,15,1,16,1,16,1,16,1,16,3,16,206,8,
+        16,1,17,1,17,1,18,1,18,1,18,1,18,3,18,214,8,18,1,19,1,19,1,19,1,
+        19,1,20,1,20,1,20,1,20,5,20,224,8,20,10,20,12,20,227,9,20,3,20,229,
+        8,20,1,20,1,20,1,21,1,21,1,21,5,21,236,8,21,10,21,12,21,239,9,21,
+        1,22,1,22,1,23,1,23,1,24,1,24,1,25,1,25,1,25,0,0,26,0,2,4,6,8,10,
+        12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,48,50,0,3,
+        1,0,15,16,1,0,19,20,2,0,15,16,21,21,253,0,52,1,0,0,0,2,80,1,0,0,
+        0,4,84,1,0,0,0,6,88,1,0,0,0,8,111,1,0,0,0,10,122,1,0,0,0,12,154,
+        1,0,0,0,14,156,1,0,0,0,16,158,1,0,0,0,18,162,1,0,0,0,20,170,1,0,
+        0,0,22,175,1,0,0,0,24,188,1,0,0,0,26,190,1,0,0,0,28,197,1,0,0,0,
+        30,199,1,0,0,0,32,205,1,0,0,0,34,207,1,0,0,0,36,213,1,0,0,0,38,215,
+        1,0,0,0,40,219,1,0,0,0,42,232,1,0,0,0,44,240,1,0,0,0,46,242,1,0,
+        0,0,48,244,1,0,0,0,50,246,1,0,0,0,52,53,5,1,0,0,53,54,5,25,0,0,54,
+        55,5,2,0,0,55,59,5,25,0,0,56,58,3,2,1,0,57,56,1,0,0,0,58,61,1,0,
+        0,0,59,57,1,0,0,0,59,60,1,0,0,0,60,71,1,0,0,0,61,59,1,0,0,0,62,63,
+        5,3,0,0,63,68,3,4,2,0,64,65,5,4,0,0,65,67,3,4,2,0,66,64,1,0,0,0,
+        67,70,1,0,0,0,68,66,1,0,0,0,68,69,1,0,0,0,69,72,1,0,0,0,70,68,1,
+        0,0,0,71,62,1,0,0,0,71,72,1,0,0,0,72,77,1,0,0,0,73,76,3,8,4,0,74,
+        76,3,6,3,0,75,73,1,0,0,0,75,74,1,0,0,0,76,79,1,0,0,0,77,75,1,0,0,
+        0,77,78,1,0,0,0,78,1,1,0,0,0,79,77,1,0,0,0,80,81,5,5,0,0,81,82,3,
+        22,11,0,82,3,1,0,0,0,83,85,5,6,0,0,84,83,1,0,0,0,84,85,1,0,0,0,85,
+        86,1,0,0,0,86,87,5,25,0,0,87,5,1,0,0,0,88,89,5,7,0,0,89,90,5,25,
+        0,0,90,100,5,8,0,0,91,92,5,3,0,0,92,97,3,4,2,0,93,94,5,4,0,0,94,
+        96,3,4,2,0,95,93,1,0,0,0,96,99,1,0,0,0,97,95,1,0,0,0,97,98,1,0,0,
+        0,98,101,1,0,0,0,99,97,1,0,0,0,100,91,1,0,0,0,100,101,1,0,0,0,101,
+        106,1,0,0,0,102,105,3,8,4,0,103,105,3,6,3,0,104,102,1,0,0,0,104,
+        103,1,0,0,0,105,108,1,0,0,0,106,104,1,0,0,0,106,107,1,0,0,0,107,
+        109,1,0,0,0,108,106,1,0,0,0,109,110,5,9,0,0,110,7,1,0,0,0,111,112,
+        5,10,0,0,112,113,5,25,0,0,113,117,5,8,0,0,114,116,3,10,5,0,115,114,
+        1,0,0,0,116,119,1,0,0,0,117,115,1,0,0,0,117,118,1,0,0,0,118,120,
+        1,0,0,0,119,117,1,0,0,0,120,121,5,9,0,0,121,9,1,0,0,0,122,145,3,
+        22,11,0,123,124,5,11,0,0,124,129,3,12,6,0,125,126,5,4,0,0,126,128,
+        3,12,6,0,127,125,1,0,0,0,128,131,1,0,0,0,129,127,1,0,0,0,129,130,
+        1,0,0,0,130,132,1,0,0,0,131,129,1,0,0,0,132,133,5,12,0,0,133,146,
+        1,0,0,0,134,135,5,13,0,0,135,140,3,12,6,0,136,137,5,4,0,0,137,139,
+        3,12,6,0,138,136,1,0,0,0,139,142,1,0,0,0,140,138,1,0,0,0,140,141,
+        1,0,0,0,141,143,1,0,0,0,142,140,1,0,0,0,143,144,5,14,0,0,144,146,
+        1,0,0,0,145,123,1,0,0,0,145,134,1,0,0,0,145,146,1,0,0,0,146,147,
+        1,0,0,0,147,148,5,2,0,0,148,150,3,24,12,0,149,151,3,18,9,0,150,149,
+        1,0,0,0,150,151,1,0,0,0,151,11,1,0,0,0,152,155,3,14,7,0,153,155,
+        3,16,8,0,154,152,1,0,0,0,154,153,1,0,0,0,155,13,1,0,0,0,156,157,
+        5,22,0,0,157,15,1,0,0,0,158,159,5,22,0,0,159,160,5,2,0,0,160,161,
+        5,22,0,0,161,17,1,0,0,0,162,167,3,20,10,0,163,164,7,0,0,0,164,166,
+        3,20,10,0,165,163,1,0,0,0,166,169,1,0,0,0,167,165,1,0,0,0,167,168,
+        1,0,0,0,168,19,1,0,0,0,169,167,1,0,0,0,170,173,5,25,0,0,171,172,
+        5,17,0,0,172,174,5,22,0,0,173,171,1,0,0,0,173,174,1,0,0,0,174,21,
+        1,0,0,0,175,180,5,25,0,0,176,177,5,18,0,0,177,179,5,25,0,0,178,176,
+        1,0,0,0,179,182,1,0,0,0,180,178,1,0,0,0,180,181,1,0,0,0,181,23,1,
+        0,0,0,182,180,1,0,0,0,183,184,3,28,14,0,184,185,3,26,13,0,185,186,
+        3,24,12,0,186,189,1,0,0,0,187,189,3,28,14,0,188,183,1,0,0,0,188,
+        187,1,0,0,0,189,25,1,0,0,0,190,191,7,1,0,0,191,27,1,0,0,0,192,193,
+        3,32,16,0,193,194,3,30,15,0,194,195,3,28,14,0,195,198,1,0,0,0,196,
+        198,3,32,16,0,197,192,1,0,0,0,197,196,1,0,0,0,198,29,1,0,0,0,199,
+        200,7,2,0,0,200,31,1,0,0,0,201,206,3,38,19,0,202,206,3,42,21,0,203,
+        206,3,40,20,0,204,206,3,34,17,0,205,201,1,0,0,0,205,202,1,0,0,0,
+        205,203,1,0,0,0,205,204,1,0,0,0,206,33,1,0,0,0,207,208,3,36,18,0,
+        208,35,1,0,0,0,209,214,3,44,22,0,210,214,3,46,23,0,211,214,3,48,
+        24,0,212,214,3,50,25,0,213,209,1,0,0,0,213,210,1,0,0,0,213,211,1,
+        0,0,0,213,212,1,0,0,0,214,37,1,0,0,0,215,216,5,13,0,0,216,217,3,
+        24,12,0,217,218,5,14,0,0,218,39,1,0,0,0,219,228,5,11,0,0,220,225,
+        3,24,12,0,221,222,5,4,0,0,222,224,3,24,12,0,223,221,1,0,0,0,224,
+        227,1,0,0,0,225,223,1,0,0,0,225,226,1,0,0,0,226,229,1,0,0,0,227,
+        225,1,0,0,0,228,220,1,0,0,0,228,229,1,0,0,0,229,230,1,0,0,0,230,
+        231,5,12,0,0,231,41,1,0,0,0,232,237,5,25,0,0,233,234,5,18,0,0,234,
+        236,5,25,0,0,235,233,1,0,0,0,236,239,1,0,0,0,237,235,1,0,0,0,237,
+        238,1,0,0,0,238,43,1,0,0,0,239,237,1,0,0,0,240,241,5,27,0,0,241,
+        45,1,0,0,0,242,243,5,22,0,0,243,47,1,0,0,0,244,245,5,23,0,0,245,
+        49,1,0,0,0,246,247,5,24,0,0,247,51,1,0,0,0,26,59,68,71,75,77,84,
+        97,100,104,106,117,129,140,145,150,154,167,173,180,188,197,205,213,
+        225,228,237
     ]
 
 class ConfigurationParser ( Parser ):
@@ -97,18 +107,18 @@ class ConfigurationParser ( Parser ):
 
     sharedContextCache = PredictionContextCache()
 
-    literalNames = [ "<INVALID>", "'configuration'", "':'", "'activate'",
-                     "','", "'include'", "'!'", "'feature'", "'{'", "'}'",
-                     "'group'", "'['", "']'", "'.'", "'+'", "'-'", "'*'",
-                     "'/'", "'%'", "'('", "')'" ]
+    literalNames = [ "<INVALID>", "'configuration'", "':'", "'activate'", 
+                     "','", "'include'", "'!'", "'feature'", "'{'", "'}'", 
+                     "'group'", "'['", "']'", "'('", "')'", "'*'", "'/'", 
+                     "'^'", "'.'", "'+'", "'-'", "'%'" ]
 
-    symbolicNames = [ "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>",
-                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>",
-                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>",
-                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>",
-                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>",
-                      "<INVALID>", "ID", "ELONG", "EDOUBLE", "EBoolean",
-                      "INT", "STRING", "WS", "ML_COMMENT", "SL_COMMENT",
+    symbolicNames = [ "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                      "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
+                      "<INVALID>", "<INVALID>", "ELONG", "EDOUBLE", "EBoolean", 
+                      "ID", "INT", "STRING", "WS", "ML_COMMENT", "SL_COMMENT", 
                       "ANY_OTHER" ]
 
     RULE_configurationModel = 0
@@ -121,29 +131,30 @@ class ConfigurationParser ( Parser ):
     RULE_elementSelector = 7
     RULE_rangeSelector = 8
     RULE_unitSpecification = 9
-    RULE_qualifiedName = 10
-    RULE_arithmeticExpression = 11
-    RULE_eAdditionOperator = 12
-    RULE_multiplicationExpression = 13
-    RULE_eMultiplicationOperator = 14
-    RULE_valueExpression = 15
-    RULE_literalExpression = 16
-    RULE_literal = 17
-    RULE_parenthesisExpression = 18
-    RULE_arrayExpression = 19
-    RULE_namedElementReference = 20
-    RULE_stringValue = 21
-    RULE_longValue = 22
-    RULE_doubleValue = 23
-    RULE_booleanValue = 24
+    RULE_unitFactor = 10
+    RULE_qualifiedName = 11
+    RULE_arithmeticExpression = 12
+    RULE_eAdditionOperator = 13
+    RULE_multiplicationExpression = 14
+    RULE_eMultiplicationOperator = 15
+    RULE_valueExpression = 16
+    RULE_literalExpression = 17
+    RULE_literal = 18
+    RULE_parenthesisExpression = 19
+    RULE_arrayExpression = 20
+    RULE_namedElementReference = 21
+    RULE_stringValue = 22
+    RULE_longValue = 23
+    RULE_doubleValue = 24
+    RULE_booleanValue = 25
 
-    ruleNames =  [ "configurationModel", "include", "featureActivation",
-                   "featureConfiguration", "parameterGroup", "parameterAssignment",
-                   "selector", "elementSelector", "rangeSelector", "unitSpecification",
-                   "qualifiedName", "arithmeticExpression", "eAdditionOperator",
-                   "multiplicationExpression", "eMultiplicationOperator",
-                   "valueExpression", "literalExpression", "literal", "parenthesisExpression",
-                   "arrayExpression", "namedElementReference", "stringValue",
+    ruleNames =  [ "configurationModel", "include", "featureActivation", 
+                   "featureConfiguration", "parameterGroup", "parameterAssignment", 
+                   "selector", "elementSelector", "rangeSelector", "unitSpecification", 
+                   "unitFactor", "qualifiedName", "arithmeticExpression", 
+                   "eAdditionOperator", "multiplicationExpression", "eMultiplicationOperator", 
+                   "valueExpression", "literalExpression", "literal", "parenthesisExpression", 
+                   "arrayExpression", "namedElementReference", "stringValue", 
                    "longValue", "doubleValue", "booleanValue" ]
 
     EOF = Token.EOF
@@ -167,16 +178,17 @@ class ConfigurationParser ( Parser ):
     T__17=18
     T__18=19
     T__19=20
-    ID=21
+    T__20=21
     ELONG=22
     EDOUBLE=23
     EBoolean=24
-    INT=25
-    STRING=26
-    WS=27
-    ML_COMMENT=28
-    SL_COMMENT=29
-    ANY_OTHER=30
+    ID=25
+    INT=26
+    STRING=27
+    WS=28
+    ML_COMMENT=29
+    SL_COMMENT=30
+    ANY_OTHER=31
 
     def __init__(self, input:TokenStream, output:TextIO = sys.stdout):
         super().__init__(input, output)
@@ -265,70 +277,70 @@ class ConfigurationParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 50
-            self.match(ConfigurationParser.T__0)
-            self.state = 51
-            localctx.name = self.match(ConfigurationParser.ID)
             self.state = 52
-            self.match(ConfigurationParser.T__1)
+            self.match(ConfigurationParser.T__0)
             self.state = 53
+            localctx.name = self.match(ConfigurationParser.ID)
+            self.state = 54
+            self.match(ConfigurationParser.T__1)
+            self.state = 55
             localctx.declarationModel = self.match(ConfigurationParser.ID)
-            self.state = 57
+            self.state = 59
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             while _la==5:
-                self.state = 54
+                self.state = 56
                 localctx._include = self.include()
                 localctx.includes.append(localctx._include)
-                self.state = 59
+                self.state = 61
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
 
-            self.state = 69
+            self.state = 71
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==3:
-                self.state = 60
+                self.state = 62
                 self.match(ConfigurationParser.T__2)
-                self.state = 61
+                self.state = 63
                 localctx._featureActivation = self.featureActivation()
                 localctx.featureActivations.append(localctx._featureActivation)
-                self.state = 66
+                self.state = 68
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
                 while _la==4:
-                    self.state = 62
+                    self.state = 64
                     self.match(ConfigurationParser.T__3)
-                    self.state = 63
+                    self.state = 65
                     localctx._featureActivation = self.featureActivation()
                     localctx.featureActivations.append(localctx._featureActivation)
-                    self.state = 68
+                    self.state = 70
                     self._errHandler.sync(self)
                     _la = self._input.LA(1)
 
 
 
-            self.state = 75
+            self.state = 77
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             while _la==7 or _la==10:
-                self.state = 73
+                self.state = 75
                 self._errHandler.sync(self)
                 token = self._input.LA(1)
                 if token in [10]:
-                    self.state = 71
+                    self.state = 73
                     localctx._parameterGroup = self.parameterGroup()
                     localctx.parameterGroups.append(localctx._parameterGroup)
                     pass
                 elif token in [7]:
-                    self.state = 72
+                    self.state = 74
                     localctx._featureConfiguration = self.featureConfiguration()
                     localctx.featureConfigurations.append(localctx._featureConfiguration)
                     pass
                 else:
                     raise NoViableAltException(self)
 
-                self.state = 77
+                self.state = 79
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
 
@@ -379,9 +391,9 @@ class ConfigurationParser ( Parser ):
         self.enterRule(localctx, 2, self.RULE_include)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 78
+            self.state = 80
             self.match(ConfigurationParser.T__4)
-            self.state = 79
+            self.state = 81
             localctx.importedNamespace = self.qualifiedName()
         except RecognitionException as re:
             localctx.exception = re
@@ -431,15 +443,15 @@ class ConfigurationParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 82
+            self.state = 84
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==6:
-                self.state = 81
+                self.state = 83
                 localctx.deactivated = self.match(ConfigurationParser.T__5)
 
 
-            self.state = 84
+            self.state = 86
             localctx.declaration = self.match(ConfigurationParser.ID)
         except RecognitionException as re:
             localctx.exception = re
@@ -515,61 +527,61 @@ class ConfigurationParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 86
-            self.match(ConfigurationParser.T__6)
-            self.state = 87
-            localctx.declaration = self.match(ConfigurationParser.ID)
             self.state = 88
+            self.match(ConfigurationParser.T__6)
+            self.state = 89
+            localctx.declaration = self.match(ConfigurationParser.ID)
+            self.state = 90
             self.match(ConfigurationParser.T__7)
-            self.state = 98
+            self.state = 100
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la==3:
-                self.state = 89
+                self.state = 91
                 self.match(ConfigurationParser.T__2)
-                self.state = 90
+                self.state = 92
                 localctx._featureActivation = self.featureActivation()
                 localctx.featureActivations.append(localctx._featureActivation)
-                self.state = 95
+                self.state = 97
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
                 while _la==4:
-                    self.state = 91
+                    self.state = 93
                     self.match(ConfigurationParser.T__3)
-                    self.state = 92
+                    self.state = 94
                     localctx._featureActivation = self.featureActivation()
                     localctx.featureActivations.append(localctx._featureActivation)
-                    self.state = 97
+                    self.state = 99
                     self._errHandler.sync(self)
                     _la = self._input.LA(1)
 
 
 
-            self.state = 104
+            self.state = 106
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             while _la==7 or _la==10:
-                self.state = 102
+                self.state = 104
                 self._errHandler.sync(self)
                 token = self._input.LA(1)
                 if token in [10]:
-                    self.state = 100
+                    self.state = 102
                     localctx._parameterGroup = self.parameterGroup()
                     localctx.parameterGroups.append(localctx._parameterGroup)
                     pass
                 elif token in [7]:
-                    self.state = 101
+                    self.state = 103
                     localctx._featureConfiguration = self.featureConfiguration()
                     localctx.featureConfigurations.append(localctx._featureConfiguration)
                     pass
                 else:
                     raise NoViableAltException(self)
 
-                self.state = 106
+                self.state = 108
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
 
-            self.state = 107
+            self.state = 109
             self.match(ConfigurationParser.T__8)
         except RecognitionException as re:
             localctx.exception = re
@@ -627,24 +639,24 @@ class ConfigurationParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 109
-            self.match(ConfigurationParser.T__9)
-            self.state = 110
-            localctx.declaration = self.match(ConfigurationParser.ID)
             self.state = 111
+            self.match(ConfigurationParser.T__9)
+            self.state = 112
+            localctx.declaration = self.match(ConfigurationParser.ID)
+            self.state = 113
             self.match(ConfigurationParser.T__7)
-            self.state = 115
+            self.state = 117
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while _la==21:
-                self.state = 112
+            while _la==25:
+                self.state = 114
                 localctx._parameterAssignment = self.parameterAssignment()
                 localctx.parameters.append(localctx._parameterAssignment)
-                self.state = 117
+                self.state = 119
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
 
-            self.state = 118
+            self.state = 120
             self.match(ConfigurationParser.T__8)
         except RecognitionException as re:
             localctx.exception = re
@@ -713,43 +725,68 @@ class ConfigurationParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 120
+            self.state = 122
             localctx.declaration = self.qualifiedName()
-            self.state = 132
+            self.state = 145
             self._errHandler.sync(self)
-            _la = self._input.LA(1)
-            if _la==11:
-                self.state = 121
+            token = self._input.LA(1)
+            if token in [11]:
+                self.state = 123
                 self.match(ConfigurationParser.T__10)
-                self.state = 122
+                self.state = 124
                 localctx._selector = self.selector()
                 localctx.selectors.append(localctx._selector)
-                self.state = 127
+                self.state = 129
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
                 while _la==4:
-                    self.state = 123
+                    self.state = 125
                     self.match(ConfigurationParser.T__3)
-                    self.state = 124
+                    self.state = 126
                     localctx._selector = self.selector()
                     localctx.selectors.append(localctx._selector)
-                    self.state = 129
+                    self.state = 131
                     self._errHandler.sync(self)
                     _la = self._input.LA(1)
 
-                self.state = 130
+                self.state = 132
                 self.match(ConfigurationParser.T__11)
+                pass
+            elif token in [13]:
+                self.state = 134
+                self.match(ConfigurationParser.T__12)
+                self.state = 135
+                localctx._selector = self.selector()
+                localctx.selectors.append(localctx._selector)
+                self.state = 140
+                self._errHandler.sync(self)
+                _la = self._input.LA(1)
+                while _la==4:
+                    self.state = 136
+                    self.match(ConfigurationParser.T__3)
+                    self.state = 137
+                    localctx._selector = self.selector()
+                    localctx.selectors.append(localctx._selector)
+                    self.state = 142
+                    self._errHandler.sync(self)
+                    _la = self._input.LA(1)
 
-
-            self.state = 134
+                self.state = 143
+                self.match(ConfigurationParser.T__13)
+                pass
+            elif token in [2]:
+                pass
+            else:
+                pass
+            self.state = 147
             self.match(ConfigurationParser.T__1)
-            self.state = 135
+            self.state = 148
             localctx.value = self.arithmeticExpression()
-            self.state = 137
+            self.state = 150
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,13,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input,14,self._ctx)
             if la_ == 1:
-                self.state = 136
+                self.state = 149
                 localctx.unit = self.unitSpecification()
 
 
@@ -802,18 +839,18 @@ class ConfigurationParser ( Parser ):
         localctx = ConfigurationParser.SelectorContext(self, self._ctx, self.state)
         self.enterRule(localctx, 12, self.RULE_selector)
         try:
-            self.state = 141
+            self.state = 154
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,14,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input,15,self._ctx)
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 139
+                self.state = 152
                 self.elementSelector()
                 pass
 
             elif la_ == 2:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 140
+                self.state = 153
                 self.rangeSelector()
                 pass
 
@@ -864,7 +901,7 @@ class ConfigurationParser ( Parser ):
         self.enterRule(localctx, 14, self.RULE_elementSelector)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 143
+            self.state = 156
             localctx.element = self.match(ConfigurationParser.ELONG)
         except RecognitionException as re:
             localctx.exception = re
@@ -916,11 +953,11 @@ class ConfigurationParser ( Parser ):
         self.enterRule(localctx, 16, self.RULE_rangeSelector)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 145
+            self.state = 158
             localctx.lowerBound = self.match(ConfigurationParser.ELONG)
-            self.state = 146
+            self.state = 159
             self.match(ConfigurationParser.T__1)
-            self.state = 147
+            self.state = 160
             localctx.upperBound = self.match(ConfigurationParser.ELONG)
         except RecognitionException as re:
             localctx.exception = re
@@ -937,10 +974,13 @@ class ConfigurationParser ( Parser ):
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
             self.parser = parser
-            self.unit = None # Token
 
-        def ID(self):
-            return self.getToken(ConfigurationParser.ID, 0)
+        def unitFactor(self, i:int=None):
+            if i is None:
+                return self.getTypedRuleContexts(ConfigurationParser.UnitFactorContext)
+            else:
+                return self.getTypedRuleContext(ConfigurationParser.UnitFactorContext,i)
+
 
         def getRuleIndex(self):
             return ConfigurationParser.RULE_unitSpecification
@@ -966,10 +1006,89 @@ class ConfigurationParser ( Parser ):
 
         localctx = ConfigurationParser.UnitSpecificationContext(self, self._ctx, self.state)
         self.enterRule(localctx, 18, self.RULE_unitSpecification)
+        self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 149
-            localctx.unit = self.match(ConfigurationParser.ID)
+            self.state = 162
+            self.unitFactor()
+            self.state = 167
+            self._errHandler.sync(self)
+            _la = self._input.LA(1)
+            while _la==15 or _la==16:
+                self.state = 163
+                _la = self._input.LA(1)
+                if not(_la==15 or _la==16):
+                    self._errHandler.recoverInline(self)
+                else:
+                    self._errHandler.reportMatch(self)
+                    self.consume()
+                self.state = 164
+                self.unitFactor()
+                self.state = 169
+                self._errHandler.sync(self)
+                _la = self._input.LA(1)
+
+        except RecognitionException as re:
+            localctx.exception = re
+            self._errHandler.reportError(self, re)
+            self._errHandler.recover(self, re)
+        finally:
+            self.exitRule()
+        return localctx
+
+
+    class UnitFactorContext(ParserRuleContext):
+        __slots__ = 'parser'
+
+        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+            super().__init__(parent, invokingState)
+            self.parser = parser
+
+        def ID(self):
+            return self.getToken(ConfigurationParser.ID, 0)
+
+        def ELONG(self):
+            return self.getToken(ConfigurationParser.ELONG, 0)
+
+        def getRuleIndex(self):
+            return ConfigurationParser.RULE_unitFactor
+
+        def enterRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "enterUnitFactor" ):
+                listener.enterUnitFactor(self)
+
+        def exitRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "exitUnitFactor" ):
+                listener.exitUnitFactor(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitUnitFactor" ):
+                return visitor.visitUnitFactor(self)
+            else:
+                return visitor.visitChildren(self)
+
+
+
+
+    def unitFactor(self):
+
+        localctx = ConfigurationParser.UnitFactorContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 20, self.RULE_unitFactor)
+        self._la = 0 # Token type
+        try:
+            self.enterOuterAlt(localctx, 1)
+            self.state = 170
+            self.match(ConfigurationParser.ID)
+            self.state = 173
+            self._errHandler.sync(self)
+            _la = self._input.LA(1)
+            if _la==17:
+                self.state = 171
+                self.match(ConfigurationParser.T__16)
+                self.state = 172
+                self.match(ConfigurationParser.ELONG)
+
+
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -1015,21 +1134,21 @@ class ConfigurationParser ( Parser ):
     def qualifiedName(self):
 
         localctx = ConfigurationParser.QualifiedNameContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 20, self.RULE_qualifiedName)
+        self.enterRule(localctx, 22, self.RULE_qualifiedName)
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 151
+            self.state = 175
             self.match(ConfigurationParser.ID)
-            self.state = 156
+            self.state = 180
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while _la==13:
-                self.state = 152
-                self.match(ConfigurationParser.T__12)
-                self.state = 153
+            while _la==18:
+                self.state = 176
+                self.match(ConfigurationParser.T__17)
+                self.state = 177
                 self.match(ConfigurationParser.ID)
-                self.state = 158
+                self.state = 182
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
 
@@ -1087,24 +1206,24 @@ class ConfigurationParser ( Parser ):
     def arithmeticExpression(self):
 
         localctx = ConfigurationParser.ArithmeticExpressionContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 22, self.RULE_arithmeticExpression)
+        self.enterRule(localctx, 24, self.RULE_arithmeticExpression)
         try:
-            self.state = 164
+            self.state = 188
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,16,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input,19,self._ctx)
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 159
+                self.state = 183
                 localctx.left = self.multiplicationExpression()
-                self.state = 160
+                self.state = 184
                 localctx.op = self.eAdditionOperator()
-                self.state = 161
+                self.state = 185
                 localctx.right = self.arithmeticExpression()
                 pass
 
             elif la_ == 2:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 163
+                self.state = 187
                 self.multiplicationExpression()
                 pass
 
@@ -1149,13 +1268,13 @@ class ConfigurationParser ( Parser ):
     def eAdditionOperator(self):
 
         localctx = ConfigurationParser.EAdditionOperatorContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 24, self.RULE_eAdditionOperator)
+        self.enterRule(localctx, 26, self.RULE_eAdditionOperator)
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 166
+            self.state = 190
             _la = self._input.LA(1)
-            if not(_la==14 or _la==15):
+            if not(_la==19 or _la==20):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
@@ -1214,24 +1333,24 @@ class ConfigurationParser ( Parser ):
     def multiplicationExpression(self):
 
         localctx = ConfigurationParser.MultiplicationExpressionContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 26, self.RULE_multiplicationExpression)
+        self.enterRule(localctx, 28, self.RULE_multiplicationExpression)
         try:
-            self.state = 173
+            self.state = 197
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,17,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input,20,self._ctx)
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 168
+                self.state = 192
                 localctx.left = self.valueExpression()
-                self.state = 169
+                self.state = 193
                 localctx.op = self.eMultiplicationOperator()
-                self.state = 170
+                self.state = 194
                 localctx.right = self.multiplicationExpression()
                 pass
 
             elif la_ == 2:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 172
+                self.state = 196
                 self.valueExpression()
                 pass
 
@@ -1276,13 +1395,13 @@ class ConfigurationParser ( Parser ):
     def eMultiplicationOperator(self):
 
         localctx = ConfigurationParser.EMultiplicationOperatorContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 28, self.RULE_eMultiplicationOperator)
+        self.enterRule(localctx, 30, self.RULE_eMultiplicationOperator)
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 175
+            self.state = 199
             _la = self._input.LA(1)
-            if not((((_la) & ~0x3f) == 0 and ((1 << _la) & 458752) != 0)):
+            if not((((_la) & ~0x3f) == 0 and ((1 << _la) & 2195456) != 0)):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
@@ -1342,29 +1461,29 @@ class ConfigurationParser ( Parser ):
     def valueExpression(self):
 
         localctx = ConfigurationParser.ValueExpressionContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 30, self.RULE_valueExpression)
+        self.enterRule(localctx, 32, self.RULE_valueExpression)
         try:
-            self.state = 181
+            self.state = 205
             self._errHandler.sync(self)
             token = self._input.LA(1)
-            if token in [19]:
+            if token in [13]:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 177
+                self.state = 201
                 self.parenthesisExpression()
                 pass
-            elif token in [21]:
+            elif token in [25]:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 178
+                self.state = 202
                 self.namedElementReference()
                 pass
             elif token in [11]:
                 self.enterOuterAlt(localctx, 3)
-                self.state = 179
+                self.state = 203
                 self.arrayExpression()
                 pass
-            elif token in [22, 23, 24, 26]:
+            elif token in [22, 23, 24, 27]:
                 self.enterOuterAlt(localctx, 4)
-                self.state = 180
+                self.state = 204
                 self.literalExpression()
                 pass
             else:
@@ -1414,10 +1533,10 @@ class ConfigurationParser ( Parser ):
     def literalExpression(self):
 
         localctx = ConfigurationParser.LiteralExpressionContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 32, self.RULE_literalExpression)
+        self.enterRule(localctx, 34, self.RULE_literalExpression)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 183
+            self.state = 207
             localctx.value = self.literal()
         except RecognitionException as re:
             localctx.exception = re
@@ -1474,29 +1593,29 @@ class ConfigurationParser ( Parser ):
     def literal(self):
 
         localctx = ConfigurationParser.LiteralContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 34, self.RULE_literal)
+        self.enterRule(localctx, 36, self.RULE_literal)
         try:
-            self.state = 189
+            self.state = 213
             self._errHandler.sync(self)
             token = self._input.LA(1)
-            if token in [26]:
+            if token in [27]:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 185
+                self.state = 209
                 self.stringValue()
                 pass
             elif token in [22]:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 186
+                self.state = 210
                 self.longValue()
                 pass
             elif token in [23]:
                 self.enterOuterAlt(localctx, 3)
-                self.state = 187
+                self.state = 211
                 self.doubleValue()
                 pass
             elif token in [24]:
                 self.enterOuterAlt(localctx, 4)
-                self.state = 188
+                self.state = 212
                 self.booleanValue()
                 pass
             else:
@@ -1546,15 +1665,15 @@ class ConfigurationParser ( Parser ):
     def parenthesisExpression(self):
 
         localctx = ConfigurationParser.ParenthesisExpressionContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 36, self.RULE_parenthesisExpression)
+        self.enterRule(localctx, 38, self.RULE_parenthesisExpression)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 191
-            self.match(ConfigurationParser.T__18)
-            self.state = 192
+            self.state = 215
+            self.match(ConfigurationParser.T__12)
+            self.state = 216
             localctx.expression = self.arithmeticExpression()
-            self.state = 193
-            self.match(ConfigurationParser.T__19)
+            self.state = 217
+            self.match(ConfigurationParser.T__13)
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -1603,35 +1722,35 @@ class ConfigurationParser ( Parser ):
     def arrayExpression(self):
 
         localctx = ConfigurationParser.ArrayExpressionContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 38, self.RULE_arrayExpression)
+        self.enterRule(localctx, 40, self.RULE_arrayExpression)
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 195
+            self.state = 219
             self.match(ConfigurationParser.T__10)
-            self.state = 204
+            self.state = 228
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if (((_la) & ~0x3f) == 0 and ((1 << _la) & 99092480) != 0):
-                self.state = 196
+            if (((_la) & ~0x3f) == 0 and ((1 << _la) & 197142528) != 0):
+                self.state = 220
                 localctx._arithmeticExpression = self.arithmeticExpression()
                 localctx.elements.append(localctx._arithmeticExpression)
-                self.state = 201
+                self.state = 225
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
                 while _la==4:
-                    self.state = 197
+                    self.state = 221
                     self.match(ConfigurationParser.T__3)
-                    self.state = 198
+                    self.state = 222
                     localctx._arithmeticExpression = self.arithmeticExpression()
                     localctx.elements.append(localctx._arithmeticExpression)
-                    self.state = 203
+                    self.state = 227
                     self._errHandler.sync(self)
                     _la = self._input.LA(1)
 
 
 
-            self.state = 206
+            self.state = 230
             self.match(ConfigurationParser.T__11)
         except RecognitionException as re:
             localctx.exception = re
@@ -1680,23 +1799,23 @@ class ConfigurationParser ( Parser ):
     def namedElementReference(self):
 
         localctx = ConfigurationParser.NamedElementReferenceContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 40, self.RULE_namedElementReference)
+        self.enterRule(localctx, 42, self.RULE_namedElementReference)
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 208
+            self.state = 232
             localctx._ID = self.match(ConfigurationParser.ID)
             localctx.elements.append(localctx._ID)
-            self.state = 213
+            self.state = 237
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while _la==13:
-                self.state = 209
-                self.match(ConfigurationParser.T__12)
-                self.state = 210
+            while _la==18:
+                self.state = 233
+                self.match(ConfigurationParser.T__17)
+                self.state = 234
                 localctx._ID = self.match(ConfigurationParser.ID)
                 localctx.elements.append(localctx._ID)
-                self.state = 215
+                self.state = 239
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
 
@@ -1743,10 +1862,10 @@ class ConfigurationParser ( Parser ):
     def stringValue(self):
 
         localctx = ConfigurationParser.StringValueContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 42, self.RULE_stringValue)
+        self.enterRule(localctx, 44, self.RULE_stringValue)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 216
+            self.state = 240
             localctx.value = self.match(ConfigurationParser.STRING)
         except RecognitionException as re:
             localctx.exception = re
@@ -1791,10 +1910,10 @@ class ConfigurationParser ( Parser ):
     def longValue(self):
 
         localctx = ConfigurationParser.LongValueContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 44, self.RULE_longValue)
+        self.enterRule(localctx, 46, self.RULE_longValue)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 218
+            self.state = 242
             localctx.value = self.match(ConfigurationParser.ELONG)
         except RecognitionException as re:
             localctx.exception = re
@@ -1839,10 +1958,10 @@ class ConfigurationParser ( Parser ):
     def doubleValue(self):
 
         localctx = ConfigurationParser.DoubleValueContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 46, self.RULE_doubleValue)
+        self.enterRule(localctx, 48, self.RULE_doubleValue)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 220
+            self.state = 244
             localctx.value = self.match(ConfigurationParser.EDOUBLE)
         except RecognitionException as re:
             localctx.exception = re
@@ -1887,10 +2006,10 @@ class ConfigurationParser ( Parser ):
     def booleanValue(self):
 
         localctx = ConfigurationParser.BooleanValueContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 48, self.RULE_booleanValue)
+        self.enterRule(localctx, 50, self.RULE_booleanValue)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 222
+            self.state = 246
             localctx.value = self.match(ConfigurationParser.EBoolean)
         except RecognitionException as re:
             localctx.exception = re

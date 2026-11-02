@@ -98,6 +98,15 @@ class ConfigurationListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by ConfigurationParser#unitFactor.
+    def enterUnitFactor(self, ctx:ConfigurationParser.UnitFactorContext):
+        pass
+
+    # Exit a parse tree produced by ConfigurationParser#unitFactor.
+    def exitUnitFactor(self, ctx:ConfigurationParser.UnitFactorContext):
+        pass
+
+
     # Enter a parse tree produced by ConfigurationParser#qualifiedName.
     def enterQualifiedName(self, ctx:ConfigurationParser.QualifiedNameContext):
         pass

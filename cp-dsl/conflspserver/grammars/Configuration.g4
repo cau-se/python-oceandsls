@@ -40,19 +40,26 @@ parameterGroup              :   'group' declaration=ID '{'
                             ;
 
 //TODO add ParameterDeclaration reference for declaration = QualifiedName
-parameterAssignment         :   declaration = qualifiedName ('[' selectors+=selector (',' selectors+=selector)*  ']')? ':' value=arithmeticExpression (unit=unitSpecification)?
+// Array elements and ranges can be selected with brackets or, as in Fortran and the CP-DSL paper, with parentheses:
+// levels[1] : 5, levels(4:5) : [ 1, 2 ]
+parameterAssignment         :   declaration = qualifiedName
+                                (   '[' selectors+=selector (',' selectors+=selector)*  ']'
+                                |   '(' selectors+=selector (',' selectors+=selector)*  ')'
+                                )? ':' value=arithmeticExpression (unit=unitSpecification)?
                             ;
 
 selector                    :   elementSelector | rangeSelector;
 elementSelector             :   element=ELONG;
 rangeSelector               :   lowerBound=ELONG ':' upperBound=ELONG;
 
-unitSpecification           :   unit=ID
+// Units follow the value, e.g. 9.81 m/s^2 or 2 km/h. They are composed from identifiers (instead of a special
+// identifier token containing '*', '/' and '^'), so references in expressions like SIZE.sNx*SIZE.nSx stay products.
+unitSpecification           :   unitFactor (('*' | '/') unitFactor)*
+                            ;
+
+unitFactor                  :   ID ('^' ELONG)?
                             ;
 
 qualifiedName               :   ID ('.' ID)*
                             ;
 
-/** Lexer rules (start uppercase)*/
-
-ID                          : ( [a-zA-Z] | '_') ( [a-zA-Z] | '_' | [0-9] | '^' | '-' | '*' | '/' )*; // override identifiers

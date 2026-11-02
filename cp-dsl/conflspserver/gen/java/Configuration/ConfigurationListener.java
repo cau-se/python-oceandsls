@@ -108,6 +108,16 @@ public interface ConfigurationListener extends ParseTreeListener {
 	 */
 	void exitUnitSpecification(ConfigurationParser.UnitSpecificationContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link ConfigurationParser#unitFactor}.
+	 * @param ctx the parse tree
+	 */
+	void enterUnitFactor(ConfigurationParser.UnitFactorContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ConfigurationParser#unitFactor}.
+	 * @param ctx the parse tree
+	 */
+	void exitUnitFactor(ConfigurationParser.UnitFactorContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link ConfigurationParser#qualifiedName}.
 	 * @param ctx the parse tree
 	 */

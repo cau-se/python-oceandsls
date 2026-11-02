@@ -137,6 +137,18 @@ public class ConfigurationBaseListener implements ConfigurationListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterUnitFactor(ConfigurationParser.UnitFactorContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitUnitFactor(ConfigurationParser.UnitFactorContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterQualifiedName(ConfigurationParser.QualifiedNameContext ctx) { }
 	/**
 	 * {@inheritDoc}

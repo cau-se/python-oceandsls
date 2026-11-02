@@ -59,6 +59,11 @@ class ConfigurationVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by ConfigurationParser#unitFactor.
+    def visitUnitFactor(self, ctx:ConfigurationParser.UnitFactorContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by ConfigurationParser#qualifiedName.
     def visitQualifiedName(self, ctx:ConfigurationParser.QualifiedNameContext):
         return self.visitChildren(ctx)
