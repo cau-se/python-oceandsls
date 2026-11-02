@@ -17,7 +17,7 @@ from os import path
 from unittest.mock import patch, mock_open
 from parameterized import parameterized
 
-from filewriter.file_writer import (
+from tddlspserver.filewriter.file_writer import (
     difflib_merge,
     cmake_merge,
     remove_fortran_subroutine_or_function,
@@ -147,8 +147,8 @@ add_subdirectory(tests)"""
             (1, "dummy_hash", False),     # mtime == getmtime and hash is the same
             (2, "dummy_hash", False),     # mtime > getmtime and hash is the same
     ])
-    @patch("filewriter.file_writer.getmtime", return_value=1)
-    @patch("filewriter.file_writer.hash_file", return_value="dummy_hash")
+    @patch("tddlspserver.filewriter.file_writer.getmtime", return_value=1)
+    @patch("tddlspserver.filewriter.file_writer.hash_file", return_value="dummy_hash")
     def test_file_modified(self, mtime, file_hash, expected_result, mock_hash, mock_getmtime):
         path = "dummy_path"
         result = file_modified(path, mtime, file_hash)
@@ -190,12 +190,12 @@ add_subdirectory(tests)"""
             ("existing_file_not_modified", FILE_EXISTS, DIR_EXISTS, FILE_NOT_MODIFIED,SHOULD_INSERT, FILE_PATH, NEW_CONTENT, MOD_CONTENT, EXISTING_CONTENT,MODIFIED_TIME, MOCKED_HASH,  f"{NEW_CONTENT}\n{EXISTING_CONTENT}", (MODIFIED_TIME, MOCKED_HASH, EXISTING_CONTENT)),
     ])
     @patch("builtins.open", new_callable=mock_open)
-    @patch("filewriter.file_writer.exists")
-    @patch("filewriter.file_writer.makedirs")
-    @patch("filewriter.file_writer.isdir")
-    @patch("filewriter.file_writer.file_modified")
-    @patch("filewriter.file_writer.hash_file")
-    @patch("filewriter.file_writer.getmtime")
+    @patch("tddlspserver.filewriter.file_writer.exists")
+    @patch("tddlspserver.filewriter.file_writer.makedirs")
+    @patch("tddlspserver.filewriter.file_writer.isdir")
+    @patch("tddlspserver.filewriter.file_writer.file_modified")
+    @patch("tddlspserver.filewriter.file_writer.hash_file")
+    @patch("tddlspserver.filewriter.file_writer.getmtime")
     def test_write_file(self, test_name, file_exists, dir_exists, is_file_modified,should_insert, file_path, new_content, mod_content, existing_content, modified_time, mocked_hash, expected_written,expected_result,
                         mock_getmtime, mock_hash_file, mock_file_modified, mock_isdir, mock_makedirs, mock_exists, mock_file):
 

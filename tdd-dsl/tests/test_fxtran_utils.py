@@ -18,7 +18,7 @@ from unittest.mock import patch, mock_open, MagicMock
 from parameterized import parameterized
 import subprocess
 
-from fxca.util.fxtran_utils import (
+from tddlspserver.fxca.util.fxtran_utils import (
     filter_xml,
     get_files,
     get_subdirectories,
@@ -56,8 +56,8 @@ class TestFxtranUtils(unittest.TestCase):
             # Input: A valid XML path and a list of modules with public elements
             # Expected Result: The function should process the XML and return the expected results.
     ])
-    @patch("fxca.util.fxtran_utils.ET.parse")
-    @patch("fxca.util.fxtran_utils.PublicObj")
+    @patch("tddlspserver.fxca.util.fxtran_utils.ET.parse")
+    @patch("tddlspserver.fxca.util.fxtran_utils.PublicObj")
     def test_filter_xml(self, test_name, xml_path, need_public, modules, files, expected_result, mock_public_obj, mock_et_parse):
         # Setup the mocks
         mock_tree = mock_et_parse.return_value
@@ -84,7 +84,7 @@ class TestFxtranUtils(unittest.TestCase):
             # Input: A directory with files in subdirectories
             # Expected Result: The function should return a list of matching files from subdirectories.
     ])
-    @patch("fxca.util.fxtran_utils.os.walk")
+    @patch("tddlspserver.fxca.util.fxtran_utils.os.walk")
     def test_get_files( self, test_name, test_path, pattern, expected_files, mock_os_walk ):
         # Setup the mock
         if expected_files:
@@ -129,7 +129,7 @@ class TestFxtranUtils(unittest.TestCase):
             # # Input: A directory with nested subdirectories
             # # Expected Result: The function should return a list of all subdirectory names.
     ])
-    @patch("fxca.util.fxtran_utils.os.scandir")
+    @patch("tddlspserver.fxca.util.fxtran_utils.os.scandir")
     def test_get_subdirectories(self, test_name, test_path, recursive, expected_subdirs, mock_os_scandir):
         # Setup the mock
         if expected_subdirs:
@@ -159,9 +159,9 @@ class TestFxtranUtils(unittest.TestCase):
             # Input: A directory with no Fortran files
             # Expected Result: The function should not attempt to create directories or run the fxtran command.
     ])
-    @patch("fxca.util.fxtran_utils.get_files")
-    @patch("fxca.util.fxtran_utils.pathlib.Path.mkdir")
-    @patch("fxca.util.fxtran_utils.subprocess.check_output")
+    @patch("tddlspserver.fxca.util.fxtran_utils.get_files")
+    @patch("tddlspserver.fxca.util.fxtran_utils.pathlib.Path.mkdir")
+    @patch("tddlspserver.fxca.util.fxtran_utils.subprocess.check_output")
     def test_write_decorate_src_xml(self, test_name, test_files, src_dir, out_dir, fxtran_path, mock_check_output, mock_mkdir, mock_get_files):
         # Setup the mocks
         if test_name == "write_decorate_src_xml_test":
@@ -187,9 +187,9 @@ class TestFxtranUtils(unittest.TestCase):
             # Input: A directory with Fortran files and an output directory where permission is denied
             # Expected Result: The function should raise a RuntimeError with a permission denied message.
     ])
-    @patch("fxca.util.fxtran_utils.get_files")
-    @patch("fxca.util.fxtran_utils.pathlib.Path.mkdir")
-    @patch("fxca.util.fxtran_utils.subprocess.check_output")
+    @patch("tddlspserver.fxca.util.fxtran_utils.get_files")
+    @patch("tddlspserver.fxca.util.fxtran_utils.pathlib.Path.mkdir")
+    @patch("tddlspserver.fxca.util.fxtran_utils.subprocess.check_output")
     def test_write_decorate_src_xml_permission_error(self, test_name, test_files, src_dir, out_dir, fxtran_path, mock_check_output, mock_mkdir, mock_get_files):
         # Setup the mocks
         mock_get_files.return_value = test_files
@@ -207,9 +207,9 @@ class TestFxtranUtils(unittest.TestCase):
             # Input: A directory with Fortran files and a valid output directory
             # Expected Result: The function should log a warning when the fxtran command fails.
     ])
-    @patch("fxca.util.fxtran_utils.get_files")
-    @patch("fxca.util.fxtran_utils.pathlib.Path.mkdir")
-    @patch("fxca.util.fxtran_utils.subprocess.check_output")
+    @patch("tddlspserver.fxca.util.fxtran_utils.get_files")
+    @patch("tddlspserver.fxca.util.fxtran_utils.pathlib.Path.mkdir")
+    @patch("tddlspserver.fxca.util.fxtran_utils.subprocess.check_output")
     def test_write_decorate_src_xml_fxtran_error(self, test_name, test_files, src_dir, out_dir, fxtran_path, mock_check_output, mock_mkdir, mock_get_files):
         # Setup the mocks
         mock_get_files.return_value = test_files

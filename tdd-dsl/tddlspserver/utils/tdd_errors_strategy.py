@@ -1,7 +1,3 @@
-"""Input mismatch report error strategy."""
-
-__author__ = "sgu"
-
 #  Copyright (c) 2023.  OceanDSL (https://oceandsl.uni-kiel.de)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,14 +12,8 @@ __author__ = "sgu"
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from antlr4.error.ErrorStrategy import DefaultErrorStrategy
-from antlr4.error.Errors import InputMismatchException
-from antlr4.Parser import Parser
+"""DSL specific name of the shared :class:`odsllib.lsp.error_strategy.InputMismatchErrorStrategy`."""
 
+from odsllib.lsp.error_strategy import InputMismatchErrorStrategy
 
-class TDDErrorStrategy(DefaultErrorStrategy):
-
-    def reportInputMismatch(self, recognizer: Parser, e: InputMismatchException):
-        msg = " expecting " + e.getExpectedTokens().toString(recognizer.literalNames, recognizer.symbolicNames)
-
-        recognizer.notifyErrorListeners(msg, e.offendingToken, e)
+TDDErrorStrategy = InputMismatchErrorStrategy

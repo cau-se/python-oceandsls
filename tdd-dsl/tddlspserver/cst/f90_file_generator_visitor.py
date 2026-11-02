@@ -24,7 +24,6 @@ from typing import Dict, List, Optional, Tuple
 # Jinja2
 from jinja2 import Environment, FileSystemLoader
 
-from symboltable import symbol_table
 # User relative imports
 from ..symboltable.symbol_table import FunctionSymbol, FundamentalType, SymbolTable, ModuleSymbol, RoutineSymbol, Type, VariableSymbol
 from ..filewriter.file_writer import write_file

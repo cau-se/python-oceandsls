@@ -26,7 +26,7 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from typing import Dict, List, Set, Tuple
 
-from symboltable.symbol_table import ModuleSymbol
+from ...symboltable.symbol_table import ModuleSymbol
 
 logger = logging.getLogger(__name__)
 
