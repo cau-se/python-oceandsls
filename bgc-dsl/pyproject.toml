@@ -1,36 +1,54 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
-
-[tool.setuptools.packages.find]
-exclude = ["input", "client", "node_modules"]
 
 [project]
 name = "BGC-Language-Server"
-version = "0.40.0"
+version = "0.41.0"
 authors = [
-    { name = "TODO", email = "TODO" },
+    { name = "OceanDSL", email = "sgu@informatik.uni-kiel.de" },
 ]
-description = "A program for a language server based on the bgc ocean-dsl."
+description = "BGC-DSL: language server for specifying biogeochemical (BGC) ocean models."
 readme = "README.md"
 requires-python = ">=3.10"
+license = "Apache-2.0"
+license-files = ["LICENSE.txt"]
 dependencies = [
-    "odsllib >= 0.38",
+    "odsllib>=0.40.0,<1",
+    # The generated parser (bgclspserver/gen) is built with ANTLR 4.13.1
+    "antlr4-python3-runtime>=4.13.1,<4.14",
+    "pygls>=1.1,<2",
+    "lsprotocol>=2023.0.0",
 ]
 classifiers = [
-    'Development Status :: 3 - Alpha',
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: Apache Software License",
+    "Intended Audience :: Science/Research",
     "Operating System :: OS Independent",
     "Topic :: Software Development",
+    "Topic :: Scientific/Engineering",
 ]
 
-license = { text = "Apache License (2.0)" }
+[project.optional-dependencies]
+test = ["pytest>=7"]
 
 [project.urls]
 "oceandsl · GitLab" = "https://git.se.informatik.uni-kiel.de/oceandsl"
 "OceanDSL · GitHub" = "https://github.com/cau-se/python-oceandsls"
 
 [project.scripts]
-bgc_dsl = "bgcLSPServer.__main__:main"
+bgc_dsl = "bgclspserver.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["bgclspserver*"]
+exclude = ["bgclspserver.gen.java*"]
+namespaces = false
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+filterwarnings = ["ignore::pytest.PytestCollectionWarning"]

@@ -1,0 +1,6 @@
+include LICENSE.txt README.md
+recursive-include bgclspserver/grammars *.g4
+recursive-include tests *.py
+recursive-include input *.bgc
+prune bgclspserver/gen/java
+global-exclude __pycache__ *.py[cod]

@@ -1,5 +1,32 @@
 # BGC-DSL for biogeochemical models
 
+BGC-DSL describes biogeochemical (BGC) ocean models: substances, parameters, diagnostics, compartments
+with their states and update rules, and connections exchanging substances between compartments
+(see `input/*.bgc`). This package provides a language server with syntax diagnostics, content assist and
+semantic highlighting. Code generation is not implemented yet.
+
+## Installation and usage
+
+```
+pip install BGC-Language-Server
+bgc_dsl                 # language server over stdio (use --tcp/--ws [--host --port] for sockets)
+bgc_dsl -f model.bgc    # check a model from the command line
+```
+
+## Development
+
+```
+pip install -e ../antlrLib -e ".[test]"
+pytest
+```
+
+The parser in `bgclspserver/gen` is generated from `bgclspserver/grammars/BgcDsl.g4` with ANTLR 4.13.1
+(`make BgcDsl` in the repository root).
+
+---
+
+# Development environment
+
 ## Optional: check python packages
 - update package manager tools
   - `python -m pip install --upgrade pip setuptools wheel`
