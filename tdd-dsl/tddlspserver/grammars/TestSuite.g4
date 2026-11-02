@@ -62,11 +62,11 @@ testVars                : 'var' ':' NEWLINE
 testVar                 : decl=varDeclaration ( ( ('=' value=expr)? comment=optionalDesc ) | (comment=optionalDesc (elements+=varElement)+) ) /** Ends on newline */
                         ;
 
-varElement              : '-' name=ID (',' keys+=f90StdKey (',' keys+=f90StdKey)*)? '=' value=expr comment=optionalDesc /** Ends on newline */
+varElement              : '-' name=identifier (',' keys+=f90StdKey (',' keys+=f90StdKey)*)? '=' value=expr comment=optionalDesc /** Ends on newline */
                         ;
 
 /** Declaration of variables used in test cases  */
-varDeclaration          : name=ID ':' type=paramType (',' keys+=f90StdKey (',' keys+=f90StdKey)*)?
+varDeclaration          : name=identifier ':' type=paramType (',' keys+=f90StdKey (',' keys+=f90StdKey)*)?
                         ;
 
 /** Modules used in the test; ends on newline*/

@@ -1,0 +1,26 @@
+suite test_suite:
+test test_dicalp:
+    overwrite: pf, cmake
+    srcpath: 'tdd-dsl/input/tdd_dev/OPPLA_dic_example'
+    modules:
+        dic_example
+        et_mock
+    var:
+        test_env: TYPE(dic_sys)
+            - Hsolve, PROC = Hsolve_F06
+        test_box: TYPE(grid_cell)
+            - salinity, POINTER = 35D0
+            - temperature, POINTER = 25D0
+            - depth, POINTER = 1D1
+            - DIC, POINTER = 2D3
+            - DIP, POINTER = 1D1
+            - silc, POINTER = 1D1
+            - alkalinity, POINTER = 2.1D3
+    assert Equal:
+        in:
+            call: test_env%co2(test_box, 4)
+            test_box%CO2, mol * kg ** -1
+        out:
+            3D-5, mol * kg ** -1
+        tolerance: 1D-6
+        failmessage: 'fails CO2 concentration'

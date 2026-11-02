@@ -512,6 +512,15 @@ class TestSuiteListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by TestSuiteParser#identifier.
+    def enterIdentifier(self, ctx:TestSuiteParser.IdentifierContext):
+        pass
+
+    # Exit a parse tree produced by TestSuiteParser#identifier.
+    def exitIdentifier(self, ctx:TestSuiteParser.IdentifierContext):
+        pass
+
+
     # Enter a parse tree produced by TestSuiteParser#parensUnit.
     def enterParensUnit(self, ctx:TestSuiteParser.ParensUnitContext):
         pass
@@ -563,6 +572,15 @@ class TestSuiteListener(ParseTreeListener):
 
     # Exit a parse tree produced by TestSuiteParser#siUnit.
     def exitSiUnit(self, ctx:TestSuiteParser.SiUnitContext):
+        pass
+
+
+    # Enter a parse tree produced by TestSuiteParser#unitSymbolName.
+    def enterUnitSymbolName(self, ctx:TestSuiteParser.UnitSymbolNameContext):
+        pass
+
+    # Exit a parse tree produced by TestSuiteParser#unitSymbolName.
+    def exitUnitSymbolName(self, ctx:TestSuiteParser.UnitSymbolNameContext):
         pass
 
 

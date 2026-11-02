@@ -27,13 +27,20 @@ import CommonLexerRules;
 
 /** Arithmetic expression for value calculation */
 unitSpec        : '(' type=unitSpec ')'                       # parensUnit /** Parenthesized expression */
-                | left=unitSpec op=('*' | '/') right=unitSpec # mulDivUnit /** Multiplication, Division have precedence */
-                | type=unitSpec op='**' ('-') exponent=INT    # expUnit    /** Addition, Subtraction have not precedence */
+                | type=unitSpec op='**' (sign='-')? exponent=(INT | NUM) # expUnit /** Exponent binds stronger than '*' and '/'; the lexer reads -1 in 'kg ** -1' as NUM */
+                | left=unitSpec op=('*' | '/') right=unitSpec # mulDivUnit /** Multiplication, Division */
                 | type=siUnit                                 # stdUnit
                 | type=customUnit                             # cstUnit
                 ;
 
 siUnit          : (prefix=unitPrefix)? type=siType
+                | symbol=ID                                   /** Prefixed or derived symbols the lexer reads as one identifier, e.g. kg, km, ms */
+                ;
+
+/** Unit prefixes and symbols that are also valid Fortran identifiers (usable as variable names) */
+unitSymbolName  : 'noP' | 'Q' | 'R' | 'Y' | 'Z' | 'E' | 'P' | 'T' | 'G' | 'M' | 'k' | 'h' | 'da' | 'd' | 'c' | 'm'
+                | 'n' | 'p' | 'f' | 'a' | 'z' | 'y' | 'r' | 'q' | 's' | 'g' | 'A' | 'K' | 'mol' | 'cd' | 'Pa' | 'J'
+                | 't'
                 ;
 
 customUnit      : name=STRING

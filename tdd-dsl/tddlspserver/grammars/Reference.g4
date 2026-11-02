@@ -27,9 +27,9 @@ import CommonLexerRules;
 
 /** Arithmetic expression for value calculation */
 expr                    : '(' inner=expr ')'                                # parensExpr    /** Parenthesized expression */
+                        | op=('+' | '-') inner=expr                         # signExpr      /** Unary sign binds stronger than binary operators */
                         | left=expr op=('*' | '/') right=expr               # mulDivExpr    /** Multiplication, Division have precedence */
                         | left=expr op=('+' | '-') right=expr               # addSubExpr    /** Addition, Subtraction have not precedence */
-                        | op=('+' | '-') inner=expr                         # signExpr
                         | value=(NUM | DP)                                  # numberExpr
                         | value=STRING                                      # strExpr
                         | value=INT                                         # intExpr
@@ -45,5 +45,10 @@ reference               : procedure                                         # fu
 procedure               : name=varID '(' (args+=expr(',' args+=expr)*)? ')' # prcRef   /** Procedure call like f(), f(x), f(1,2) */
                         ;
 
-varID                   : baseName=ID ('%' elementName=ID)?
+varID                   : baseName=identifier ('%' elementName=identifier)?
+                        ;
+
+/** Identifier; also accepts unit symbols such as m, s, K or t, which are common Fortran variable names */
+identifier              : ID
+                        | unitSymbolName
                         ;

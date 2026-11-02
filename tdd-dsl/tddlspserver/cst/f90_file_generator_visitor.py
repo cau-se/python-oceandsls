@@ -337,8 +337,8 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
 
     # Visit a parse tree produced by TestSuiteParser#specDesc.
     def visitSpecDesc(self, ctx: TestSuiteParser.SpecDescContext):
-        # Get unit of expression
-        return self.visit(ctx.type_)
+        # Get the complete unit specification of the expression, e.g. 'K' or 'mol*kg**-1'
+        return ctx.type_.getText()
 
     # Visit a parse tree produced by TestSuiteParser#customUnit.
     def visitCustomUnit(self, ctx: TestSuiteParser.CustomUnitContext):
@@ -347,8 +347,8 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
 
     # Visit a parse tree produced by TestSuiteParser#siUnit.
     def visitSiUnit(self, ctx: TestSuiteParser.SiUnitContext):
-        # Return si unit
-        return ctx.type_.value.text
+        # Return the si unit including its prefix, e.g. 'kg' or 'K'
+        return ctx.getText()
 
     # Visit a parse tree produced by TestSuiteParser#funRef.
     def visitFunRef(self, ctx: TestSuiteParser.FunRefContext):
@@ -419,7 +419,7 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
         return varType
 
     def visitVarID(self, ctx: TestSuiteParser.VarIDContext):
-        return ctx.baseName.text + "%" + ctx.elementName.text if ctx.elementName else ctx.baseName.text
+        return ctx.getText()  # baseName or baseName%elementName
 
     # Visit a parse tree produced by TestSuiteParser#parensExpr.
     def visitParensExpr(self, ctx: TestSuiteParser.ParensExprContext):

@@ -80,7 +80,7 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
 
     # Visit a parse tree produced by TestSuiteParser#varElement.
     def visitVarElement(self, ctx: TestSuiteParser.VarElementContext):
-        name = ctx.name.text
+        name = ctx.name.getText()
         value = ctx.value
         keys = []
         for key in ctx.keys:
@@ -89,7 +89,7 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
 
     # Visit a parse tree produced by TestSuiteParser#varDeclaration.
     def visitVarDeclaration(self, ctx: TestSuiteParser.VarDeclarationContext):
-        name = ctx.name.text
+        name = ctx.name.getText()
         # Map variable type to symboltable type
         var_type = get_fundamental_type(self.visit(ctx.type_)) if ctx.type_ else None
         keys = []
@@ -156,7 +156,7 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
 
     # Visit a parse tree produced by TestSuiteParser#varID.
     def visitVarID(self, ctx: TestSuiteParser.VarIDContext):
-        return ctx.baseName.text + "%" + ctx.elementName.text if ctx.elementName else ctx.baseName.text
+        return ctx.getText()  # baseName or baseName%elementName
 
     # Visit a parse tree produced by TestSuiteParser#enm.
     def visitEnm(self, ctx: TestSuiteParser.EnmContext):

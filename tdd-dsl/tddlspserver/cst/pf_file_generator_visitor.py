@@ -202,7 +202,7 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
         # Reset foundPar flag for left side
         self.found_par = False
         decl = self.visit(ctx.varDeclaration())
-        name = ctx.decl.name.text
+        name = ctx.decl.name.getText()
 
         self.found_ref = False
         # Reset foundRef flag for right side
@@ -233,7 +233,7 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
     # Visit a parse tree produced by TestSuiteParser#varElement.
     def visitVarElement(self, ctx: TestSuiteParser.VarElementContext):
         template = self.environment.get_template(self.file_templates[ctx.getRuleIndex()])
-        name = ctx.name.text
+        name = ctx.name.getText()
         value = self.visit(ctx.expr())
         is_var: bool = True
         for key in ctx.keys:
@@ -247,7 +247,7 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
     # Visit a parse tree produced by TestSuiteParser#varDeclaration.
     def visitVarDeclaration(self, ctx: TestSuiteParser.VarDeclarationContext):
         template = self.environment.get_template(self.file_templates[ctx.getRuleIndex()])
-        name = ctx.ID().getText()
+        name = ctx.name.getText()
         type = self.visit(ctx.type_)
         keys = []
         self.is_var = True
@@ -287,7 +287,7 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
         return template.render(name=name)
 
     def visitVarID(self, ctx: TestSuiteParser.VarIDContext):
-        return ctx.baseName.text + "%" + ctx.elementName.text if ctx.elementName else ctx.baseName.text
+        return ctx.getText()  # baseName or baseName%elementName
 
     # Visit a parse tree produced by TestSuiteParser#enm.
     def visitEnm(self, ctx: TestSuiteParser.EnmContext):

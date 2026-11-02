@@ -636,6 +636,16 @@ public interface TestSuiteListener extends ParseTreeListener {
 	 */
 	void exitVarID(TestSuiteParser.VarIDContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link TestSuiteParser#identifier}.
+	 * @param ctx the parse tree
+	 */
+	void enterIdentifier(TestSuiteParser.IdentifierContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link TestSuiteParser#identifier}.
+	 * @param ctx the parse tree
+	 */
+	void exitIdentifier(TestSuiteParser.IdentifierContext ctx);
+	/**
 	 * Enter a parse tree produced by the {@code parensUnit}
 	 * labeled alternative in {@link TestSuiteParser#unitSpec}.
 	 * @param ctx the parse tree
@@ -705,6 +715,16 @@ public interface TestSuiteListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitSiUnit(TestSuiteParser.SiUnitContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link TestSuiteParser#unitSymbolName}.
+	 * @param ctx the parse tree
+	 */
+	void enterUnitSymbolName(TestSuiteParser.UnitSymbolNameContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link TestSuiteParser#unitSymbolName}.
+	 * @param ctx the parse tree
+	 */
+	void exitUnitSymbolName(TestSuiteParser.UnitSymbolNameContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link TestSuiteParser#customUnit}.
 	 * @param ctx the parse tree

@@ -289,6 +289,11 @@ class TestSuiteVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by TestSuiteParser#identifier.
+    def visitIdentifier(self, ctx:TestSuiteParser.IdentifierContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by TestSuiteParser#parensUnit.
     def visitParensUnit(self, ctx:TestSuiteParser.ParensUnitContext):
         return self.visitChildren(ctx)
@@ -316,6 +321,11 @@ class TestSuiteVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by TestSuiteParser#siUnit.
     def visitSiUnit(self, ctx:TestSuiteParser.SiUnitContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by TestSuiteParser#unitSymbolName.
+    def visitUnitSymbolName(self, ctx:TestSuiteParser.UnitSymbolNameContext):
         return self.visitChildren(ctx)
 
 

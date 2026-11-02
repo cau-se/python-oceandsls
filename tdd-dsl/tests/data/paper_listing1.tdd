@@ -1,0 +1,26 @@
+suite test_suite:
+test test_fT_ME:
+    overwrite: pf, cmake
+    srcpath: 'tdd-dsl/input/tdd_dev/UVic_example_opem'
+    modules:
+        cfo_example
+    var:
+        dp: integer, PARAMETER = KIND(0D0)
+        xIntercept: real(dp) = 283D0 / 19D0
+        yIntercept: real(dp) = -(283D0 / 520D0)
+    assert Equal:
+        in:
+            fT_ME(xIntercept), K # custom comment when input is 14,89473684 Kelvin
+        out:
+            0D0, K # output should equal 0 Kelvin
+        tolerance: 1D-12
+        failmessage: 'fails x-Intercept at 14.89D0'
+        # comment for pFUnit file: asserts x-Intercept
+    assert Equal:
+        in:
+            fT_ME(0D0), K # custom comment when input is 0 Kelvin
+        out:
+            yIntercept, K # output should equal -0,5442307692 Kelvin
+        tolerance: 1D-12
+        failmessage: 'fails y-Intercept at -54.42D-2'
+        # more comment for pFUnit file: asserts y-Intercept
