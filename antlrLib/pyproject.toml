@@ -1,27 +1,48 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "odsllib"
-version = "0.38"
+version = "0.40.0"
 authors = [
     { name = "sgu", email = "sgu@informatik.uni-kiel.de" },
 ]
-description = "A port of antlr4-c3 (https://github.com/mike-lischke/antlr4-c3) for the OceanDSL project."
+description = "Shared library of the OceanDSL languages: antlr4-c3 port and language server infrastructure."
 readme = "README.md"
 requires-python = ">=3.10"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+dependencies = [
+    # Generated parsers of all OceanDSL languages are built with ANTLR 4.13.1; the runtime must match major.minor.
+    "antlr4-python3-runtime>=4.13.1,<4.14",
+    # pygls 2.x changed the server API (pygls.server.LanguageServer moved to pygls.lsp.server)
+    "pygls>=1.1,<2",
+    "lsprotocol>=2023.0.0",
+]
 classifiers = [
-    'Development Status :: 3 - Alpha',
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
     "Topic :: Software Development :: Libraries",
 ]
 
-license = { text = "Apache License (2.0)" }
+[project.optional-dependencies]
+test = ["pytest>=7"]
 
 [project.urls]
 "oceandsl · GitLab" = "https://git.se.informatik.uni-kiel.de/oceandsl"
-"OceanDSL · GitHub" = "https://github.com/OceanDSL"
+"OceanDSL · GitHub" = "https://github.com/cau-se/python-oceandsls"
+
+[tool.setuptools]
+# codeCompletionCore is the deprecated import location of odsllib <= 0.38
+packages = ["odsllib", "odsllib.lsp", "codeCompletionCore"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+filterwarnings = ["ignore::pytest.PytestCollectionWarning"]
