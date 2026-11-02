@@ -1,0 +1,7 @@
+# Development environment for all Python packages of this repository: pip install -r requirements-dev.txt
+-e ./antlrLib[test]
+-e ./tdd-dsl[test]
+-e ./bgc-dsl[test]
+-e ./cp-dsl[test]
+build
+twine

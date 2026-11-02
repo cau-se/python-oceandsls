@@ -1,5 +1,44 @@
-# enable ANTLR support
-antlr4 := java -jar /home/reiner/Projects/OceanDSL/python-oceandsls/antlr-4.13.1-complete.jar
+# enable ANTLR support (override with: make ANTLR_JAR=/path/to/antlr-4.13.1-complete.jar ...)
+ANTLR_JAR ?= /usr/local/lib/antlr-4.13.1-complete.jar
+antlr4 := java -jar $(ANTLR_JAR)
+
+#########################################################
+#           Python packages (test, build, publish)
+#########################################################
+# odsllib (antlrLib) is the shared library required by the DSL packages; it is built and uploaded first.
+
+PYTHON ?= python3
+PY_PACKAGES = antlrLib tdd-dsl bgc-dsl cp-dsl
+DIST = dist
+
+.PHONY: install-dev test dist check-dist publish-test publish clean-dist
+
+# Editable installs of all packages with test dependencies plus build tools
+install-dev:
+	$(PYTHON) -m pip install -r requirements-dev.txt
+
+# Run the test suites of all packages
+test:
+	@for p in $(PY_PACKAGES); do echo "== $$p"; (cd $$p && $(PYTHON) -m pytest -q) || exit 1; done
+
+# Build sdists and wheels of all packages into $(DIST)
+dist: clean-dist
+	@for p in $(PY_PACKAGES); do $(PYTHON) -m build --outdir $(DIST) $$p || exit 1; done
+
+# Validate the distributions' metadata (README rendering etc.) as PyPI will
+check-dist: dist
+	$(PYTHON) -m twine check --strict $(DIST)/*
+
+# Upload to TestPyPI first, then to PyPI (credentials via ~/.pypirc or TWINE_USERNAME/TWINE_PASSWORD)
+publish-test: check-dist
+	$(PYTHON) -m twine upload --repository testpypi $(DIST)/*
+
+publish: check-dist
+	$(PYTHON) -m twine upload $(DIST)/odsllib-*
+	ls $(DIST)/* | grep -v '/odsllib-' | xargs $(PYTHON) -m twine upload
+
+clean-dist:
+	rm -rf $(DIST)
 
 #########################################################
 #                    example DSL
@@ -24,6 +63,7 @@ all_pkg_EXP: $(EXPPKGTARGETS)
 $(EXPPKGTARGETS): %: $(EXPSRCDIR)/%.g4
 	rm -rf $(EXPOBJDIR)/python/$@ $(EXPOBJDIR)/java/$@
 	cd $(<D); $(antlr4) $(<F) -o ../../../$(EXPOBJDIR)/python/$@ -visitor -package $@ -Dlanguage=Python3
+	touch $(EXPOBJDIR)/__init__.py $(EXPOBJDIR)/python/__init__.py $(EXPOBJDIR)/python/$@/__init__.py  # packages for setuptools
 	cd $(<D); $(antlr4) $(<F) -o ../../../$(EXPOBJDIR)/java/$@ -visitor -package $@ 
 	javac $(EXPOBJDIR)/java/$@/*.java
 
@@ -67,6 +107,7 @@ all_pkg_BGC: $(BGCPKGTARGETS)
 $(BGCPKGTARGETS): %: $(BGCSRCDIR)/%.g4
 	rm -rf $(BGCOBJDIR)/python/$@ $(BGCOBJDIR)/java/$@
 	cd $(<D); $(antlr4) $(<F) -o ../../../$(BGCOBJDIR)/python/$@ -visitor -package $@ -Dlanguage=Python3
+	touch $(BGCOBJDIR)/__init__.py $(BGCOBJDIR)/python/__init__.py $(BGCOBJDIR)/python/$@/__init__.py  # packages for setuptools
 	cd $(<D); $(antlr4) $(<F) -o ../../../$(BGCOBJDIR)/java/$@ -visitor -package $@ 
 	javac $(BGCOBJDIR)/java/$@/*.java
 
@@ -110,6 +151,7 @@ all_pkg_CP: $(CPPKGTARGETS)
 $(CPPKGTARGETS): %: $(CPSRCDIR)/%.g4
 	rm -rf $(CPOBJDIR)/python/$@ $(CPOBJDIR)/java/$@
 	cd $(<D); $(antlr4) $(<F) -o ../../../$(CPOBJDIR)/python/$@ -visitor -package $@ -Dlanguage=Python3
+	touch $(CPOBJDIR)/__init__.py $(CPOBJDIR)/python/__init__.py $(CPOBJDIR)/python/$@/__init__.py  # packages for setuptools
 	cd $(<D); $(antlr4) $(<F) -o ../../../$(CPOBJDIR)/java/$@ -visitor -package $@ 
 	javac $(CPOBJDIR)/java/$@/*.java
 
@@ -153,6 +195,7 @@ all_pkg_DCL: $(DCLPKGTARGETS)
 $(DCLPKGTARGETS): %: $(DCLSRCDIR)/%.g4
 	rm -rf $(DCLOBJDIR)/python/$@ $(DCLOBJDIR)/java/$@
 	cd $(<D); $(antlr4) $(<F) -o ../../../$(DCLOBJDIR)/python/$@ -visitor -package $@ -Dlanguage=Python3
+	touch $(DCLOBJDIR)/__init__.py $(DCLOBJDIR)/python/__init__.py $(DCLOBJDIR)/python/$@/__init__.py  # packages for setuptools
 	cd $(<D); $(antlr4) $(<F) -o ../../../$(DCLOBJDIR)/java/$@ -visitor -package $@ 
 	javac $(DCLOBJDIR)/java/$@/*.java
 
@@ -196,6 +239,7 @@ all_pkg_TDD: $(TDDPKGTARGETS)
 $(TDDPKGTARGETS): %: $(TDDSRCDIR)/%.g4
 	rm -rf $(TDDOBJDIR)/python/$@ $(TDDOBJDIR)/java/$@
 	cd $(<D); $(antlr4) $(<F) -o ../../../$(TDDOBJDIR)/python/$@ -visitor -package $@ -Dlanguage=Python3
+	touch $(TDDOBJDIR)/__init__.py $(TDDOBJDIR)/python/__init__.py $(TDDOBJDIR)/python/$@/__init__.py  # packages for setuptools
 	cd $(<D); $(antlr4) $(<F) -o ../../../$(TDDOBJDIR)/java/$@ -visitor -package $@ 
 	javac $(TDDOBJDIR)/java/$@/*.java
 

@@ -14,6 +14,35 @@ This project contains multiple DSLs for ocean and earth system models.
 
 Documentation including the languages and architecture can be found in the `doc`.
 
+## Python packages
+
+| Directory   | Distribution (PyPI)      | Import packages                            | Commands                               |
+|-------------|--------------------------|--------------------------------------------|----------------------------------------|
+| `antlrLib`  | `odsllib`                | `odsllib` (`codeCompletionCore`, legacy)   | –                                      |
+| `tdd-dsl`   | `TDD-Language`           | `tddlspserver`                             | `tdd_dsl`                              |
+| `bgc-dsl`   | `BGC-Language-Server`    | `bgclspserver`                             | `bgc_dsl`                              |
+| `cp-dsl`    | `CP-DSL-Language-Server` | `conflspserver`, `dcllspserver`, `cpdsl`   | `cp_dsl`, `dcl_dsl`, `cp_dsl_generate` |
+
+`odsllib` contains the functionality shared by all DSLs: the antlr4-c3 port for grammar based
+completion and the language server infrastructure (`odsllib.lsp`: parsing with diagnostics,
+caret/token mapping, keyword completion, semantic tokens and the `AntlrLanguageServer` base class).
+The DSL packages depend on it and only add their grammar, symbol tables, checks and generators.
+
+Development, tests and distributions (Python >= 3.10):
+
+```
+python -m venv .venv && source .venv/bin/activate
+make install-dev      # editable installs of all packages + build/twine
+make test             # pytest in every package (includes LSP end-to-end tests over stdio)
+make check-dist       # build sdists/wheels into dist/ and run twine check --strict
+make publish-test     # upload to TestPyPI
+make publish          # upload odsllib first, then the DSL packages
+```
+
+Parsers are generated with ANTLR 4.13.1 (`make ANTLR_JAR=/path/to/antlr-4.13.1-complete.jar TestSuite`,
+see the targets per DSL in the `Makefile`). The generated code must match the
+`antlr4-python3-runtime` 4.13.x pinned by the packages.
+
 ## License
 
 Apache 2.0
