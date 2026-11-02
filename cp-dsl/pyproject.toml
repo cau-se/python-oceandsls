@@ -1,37 +1,66 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
-
-[tool.setuptools.packages.find]
-exclude = ["input", "client", "node_modules"]
 
 [project]
 name = "CP-DSL-Language-Server"
-version = "0.40.0"
+version = "0.41.0"
 authors = [
-    { name = "TODO", email = "TODO" },
+    { name = "Reiner Jung" },
+    { name = "sgu", email = "sgu@informatik.uni-kiel.de" },
 ]
-description = "A program for a language server based on the configuration and declaration ocean-dsl."
+description = "CP-DSL: configuration and parametrization of ocean models (language servers and generator)."
 readme = "README.md"
 requires-python = ">=3.10"
+license = "Apache-2.0"
+license-files = ["LICENSE.txt"]
 dependencies = [
-    "odsllib >= 0.38",
+    "odsllib>=0.40.0,<1",
+    # The generated parsers (conflspserver/gen, dcllspserver/gen) are built with ANTLR 4.13.1
+    "antlr4-python3-runtime>=4.13.1,<4.14",
+    "pygls>=1.1,<2",
+    "lsprotocol>=2023.0.0",
+    "Jinja2>=3.0",
 ]
 classifiers = [
-    'Development Status :: 3 - Alpha',
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: Apache Software License",
+    "Intended Audience :: Science/Research",
     "Operating System :: OS Independent",
     "Topic :: Software Development",
+    "Topic :: Scientific/Engineering",
 ]
 
-license = { text = "Apache License (2.0)" }
+[project.optional-dependencies]
+# Unit conversion (cpdsl.generator.calculator.unit_calculator) needs cfunits and the UDUNITS-2 C library
+units = ["cfunits"]
+test = ["pytest>=7"]
 
 [project.urls]
 "oceandsl · GitLab" = "https://git.se.informatik.uni-kiel.de/oceandsl"
 "OceanDSL · GitHub" = "https://github.com/cau-se/python-oceandsls"
 
 [project.scripts]
-cp_dsl = "confLSPServer.__main__:main"
-dcl_dsl = "dclLSPServer.__main__:main"
+cp_dsl = "conflspserver.__main__:main"
+dcl_dsl = "dcllspserver.__main__:main"
+cp_dsl_generate = "cpdsl.generator.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["conflspserver*", "dcllspserver*", "cpdsl*"]
+exclude = ["conflspserver.gen.java*", "dcllspserver.gen.java*"]
+namespaces = false
+
+[tool.setuptools.package-data]
+"cpdsl.generator.generators.mitgcm.templates" = ["*.template", "*.j2"]
+"cpdsl.generator.generators.uvic.templates" = ["*.template"]
+
+[tool.pytest.ini_options]
+pythonpath = [".", "test"]
+testpaths = ["test"]
+# test modules in different folders share names (e.g. visitor_base_test.py)
+addopts = "--import-mode=importlib"
+filterwarnings = ["ignore::pytest.PytestCollectionWarning"]

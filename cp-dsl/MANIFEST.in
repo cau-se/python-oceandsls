@@ -1,0 +1,9 @@
+include LICENSE.txt README.md
+recursive-include conflspserver/grammars *.g4
+recursive-include dcllspserver/grammars *.g4
+recursive-include test *.py
+recursive-include input *.decl *.oconf *.template
+prune conflspserver/gen/java
+prune dcllspserver/gen/java
+exclude cpdsl/model/rubbish
+global-exclude __pycache__ *.py[cod]

@@ -12,6 +12,28 @@ the build and setup of models.
 This documentation shows how to setup VSCode, Vi and Emacs with the LSP
 service.
 
+## Python package
+
+```
+pip install CP-DSL-Language-Server
+```
+
+The package provides
+
+- `dcl_dsl` – language server for declaration models (`*.decl`): syntax and model checks
+  (unknown types and features, redefinitions), content assist for keywords, feature references,
+  types and value references, and an outline,
+- `cp_dsl` – language server for configurations (`*.oconf`): syntax checks, references to
+  undeclared features, groups and parameters, feature dependencies (`requires`, `excludes`,
+  `required`), and content assist with the declared descriptions. The declaration model
+  `<model>.decl` is expected next to the configuration (`configuration <name> : <model>`),
+- `cp_dsl_generate -i <configuration>.oconf` – the generator (work in progress).
+
+Both servers communicate over stdio by default (`--tcp`/`--ws` with `--host`/`--port` for sockets)
+and can check a single file with `-f FILE`. The shared library `odsllib` is installed as dependency.
+
+For development: `pip install -e ../antlrLib -e ".[test]"` and `pytest`.
+
 ## License
 
 Apache 2.0
