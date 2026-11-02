@@ -23,11 +23,11 @@ from unittest import TestCase
 from antlr4 import InputStream, CommonTokenStream, DiagnosticErrorListener
 
 # antlr4-c3
-from codeCompletionCore.CodeCompletionCore import CodeCompletionCore
+from odsllib.code_completion_core import CodeCompletionCore
 
-# grammar imports (example-DSL module dependency)
-from examplelspserver.gen.python.TestExprCore.TestExprCoreLexer import TestExprCoreLexer
-from examplelspserver.gen.python.TestExprCore.TestExprCoreParser import TestExprCoreParser
+# grammar imports (test grammar generated into tests/gen)
+from tests.gen.TestExprCore.TestExprCoreLexer import TestExprCoreLexer
+from tests.gen.TestExprCore.TestExprCoreParser import TestExprCoreParser
 
 
 class TestCodeCompletionCore(TestCase):

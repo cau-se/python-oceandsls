@@ -24,11 +24,11 @@ from typing import List, Set
 from antlr4 import CommonTokenStream, DiagnosticErrorListener, InputStream
 
 # antlr4-c3
-from codeCompletionCore.CodeCompletionCore import CandidatesCollection, CodeCompletionCore
+from odsllib.code_completion_core import CandidatesCollection, CodeCompletionCore
 
-# grammar imports (example-DSL module dependency)
-from examplelspserver.gen.python.TestExprCore.TestExprCoreLexer import TestExprCoreLexer
-from examplelspserver.gen.python.TestExprCore.TestExprCoreParser import TestExprCoreParser
+# grammar imports (test grammar generated into tests/gen)
+from tests.gen.TestExprCore.TestExprCoreLexer import TestExprCoreLexer
+from tests.gen.TestExprCore.TestExprCoreParser import TestExprCoreParser
 
 # tokenIndexes for collect_candidates test parameterization
 inputTokenIndex: Set[int] = {0, 1, 2, 4, 6, 8}
