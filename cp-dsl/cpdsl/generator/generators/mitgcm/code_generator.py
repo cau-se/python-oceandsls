@@ -31,7 +31,7 @@ class MitGcmCodeGenerator(StandardCodeGenerator):
 
     def __init__(self, symbolTable: DeclarationModel, outputPath: str) -> None:
         super().__init__(symbolTable, outputPath)
-        self.template_loader = j.PackageLoader(str(self.__module__), "jinja-templates/mitgcm")
+        self.template_loader = j.PackageLoader(str(self.__module__), "templates")
         self.template_environment = j.Environment(loader=self.template_loader)
 
     def isConfigurated(self, elem: Feature) -> bool:

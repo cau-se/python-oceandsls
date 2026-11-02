@@ -45,7 +45,25 @@ class Test(unittest.TestCase):
         model.groups[t1.name] = t1
 
         calculator = ExpressionCalculator(model=model, logger=logger)
-        calculator.calculate(parameter=p1)
+        result = calculator.calculate(parameter=p1)
+        self.assertEqual(result.value, 5.0)
+
+    def test_calculate_operations(self):
+        model = DeclarationModel()
+        calculator = ExpressionCalculator(model=model, logger=logger)
+        two = IntValue(None, None, base_types["int"], 2)
+        three = IntValue(None, None, base_types["int"], 3)
+        half = FloatValue(None, None, base_types["float"], 0.5)
+        # 2 + 3 * 0.5 = 3.5 (float), 3 - 2 = 1 (int), 3 % 2 = 1
+        product = MultiplicationExpression(None, None, left=three, right=half, op=EMultiplicationOperator.MULT)
+        self.assertEqual(calculator.calculate_expression(
+            ArithmeticExpression(None, None, left=two, right=product, op=EAdditionOperator.ADD)).value, 3.5)
+        difference = calculator.calculate_expression(
+            ArithmeticExpression(None, None, left=three, right=two, op=EAdditionOperator.SUB))
+        self.assertIsInstance(difference, IntValue)
+        self.assertEqual(difference.value, 1)
+        self.assertEqual(calculator.calculate_expression(
+            MultiplicationExpression(None, None, left=three, right=two, op=EMultiplicationOperator.MOD)).value, 1)
 
     # one side expression with a value
     def test_calc_arithmetic_expression_value(self):

@@ -24,12 +24,12 @@ from dcllspserver.gen.python.Declaration.DeclarationLexer import DeclarationLexe
 from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
 from cpdsl.generator.visitors.configuration_visitor import GeneratorConfigurationVisitor
 from cpdsl.generator.visitors.declaration_visitor import GeneratorDeclarationVisitor
-from cpdsl.generator.calculator.calculator import ConfigurationCalculator
-from cpdsl.generator.calculator.calculator_dec import DeclarationCalculator
+from cpdsl.generator.calculator.calculator import Calculator as ConfigurationCalculator
 from cpdsl.generator.generators.uvic.code_generator import UvicCodeGenerator
 from cpdsl.generator.generators.mitgcm.code_generator import MitGcmCodeGenerator
 from cpdsl.generator.generators.eval.code_generator import EvalCodeGenerator
-from cpdsl.model.declaration_model import DeclarationModel, Feature, ParameterGroup, Parameter, UnitSymbol
+from cpdsl.model.declaration_model import DeclarationModel, Feature, ParameterGroup, Parameter
+from cpdsl.model.symbols import UnitSymbol
 from cpdsl.model.arithmetic_model import AbstractExpression
 from cpdsl.common.logger import GeneratorLogger
 
@@ -44,7 +44,7 @@ def parse_configuration_file(configuration_path: str) -> ConfigurationParser:
     return ConfigurationParser(stream)
 
 def make_configuration_model(model: DeclarationModel, input_path: str):
-    configuration_tree = parse_configuration_file(input_configuration_path)
+    configuration_tree = parse_configuration_file(input_path)
     print(f"Parse configuration model {input_path}")
     GeneratorConfigurationVisitor(model, logger).visit(configuration_tree.configurationModel())
 
@@ -69,7 +69,8 @@ def check_unit_compatibility(target_unit:UnitSymbol, source_unit:UnitSymbol, ele
     pass
 
 def derive_expression_unit(expression:AbstractExpression) -> UnitSymbol:
-    
+    # TODO derive the unit of an expression (unit checks are not implemented yet)
+    return None
 
 def check_parameter_integrity(parameter: Parameter):
     target_unit = parameter.unit
@@ -106,7 +107,8 @@ def check_model_integrity(model: DeclarationModel):
     check_all_features_integrity(model)
     check_all_parameters_integrity(model)
 
-if __name__ == '__main__':
+def main():
+    global logger, input_configuration_path
     compile_mode: CompileFlags = CompileFlags.RELAX
 
     parser = argparse.ArgumentParser(
@@ -212,3 +214,7 @@ if __name__ == '__main__':
         except AttributeError as e:
             print("ERROR: could not generate eval files")
             print(e)
+
+
+if __name__ == '__main__':
+    main()

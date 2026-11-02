@@ -18,25 +18,58 @@ import os
 
 
 class GeneratorLogger:
+    """Reports problems found while processing CP-DSL models.
+
+    Besides logging, every report is kept in :attr:`messages` as ``(severity, context, message)`` with severity
+    ``"warning"`` or ``"error"``, so tools such as the language servers can present them, e.g. as diagnostics.
+    """
 
     def __init__(self, mode: CompileFlags) -> None:
         self.mode = mode
         basicConfig()
         self.logger = getLogger("cpc")
         self.logger.setLevel(INFO)
-        self.warning = 0
-        self.error = 0
+        self.warning_count = 0
+        self.error_count = 0
+        self.messages: list[tuple[str, object, str]] = []
 
     def relax(self, context, message: str):
         if (self.mode == CompileFlags.RELAX):
-            self.logger.warn(f"[{self.basename(context.start.source[1].fileName)}:{context.start.line}] {message}")
-            self.warning = self.warning + 1
+            self.logger.warning(f"[{self.location(context)}] {message}")
+            self.warning_count = self.warning_count + 1
+            self.messages.append(("warning", context, message))
         elif (self.mode == CompileFlags.STRICT):
-            self.logger.error(f"[{self.basename(context.start.source[1].fileName)}:{context.start.line}] {message}")
-            self.error = self.error + 1
+            self.logger.error(f"[{self.location(context)}] {message}")
+            self.error_count = self.error_count + 1
+            self.messages.append(("error", context, message))
 
     def strict(self, context, message: str):
-        self.logger.error(f"[{self.basename(context.start.source[1].fileName)}:{context.start.line}] {message}")
+        self.logger.error(f"[{self.location(context)}] {message}")
+        self.error_count = self.error_count + 1
+        self.messages.append(("error", context, message))
+
+    def error(self, *args):
+        """Report an error: ``error(message)`` or ``error(context, message)``."""
+        context, message = (None, args[0]) if len(args) == 1 else args[:2]
+        self.logger.error(f"[{self.location(context)}] {message}" if context is not None else message)
+        self.error_count = self.error_count + 1
+        self.messages.append(("error", context, message))
+
+    def warning(self, *args):
+        """Report a warning: ``warning(message)`` or ``warning(context, message)``."""
+        context, message = (None, args[0]) if len(args) == 1 else args[:2]
+        self.logger.warning(f"[{self.location(context)}] {message}" if context is not None else message)
+        self.warning_count = self.warning_count + 1
+        self.messages.append(("warning", context, message))
+
+    def location(self, context) -> str:
+        """Return 'file:line' of a parser rule context (in-memory streams have no file name)."""
+        start = getattr(context, "start", None)
+        if start is None:
+            return "?"
+        stream = start.source[1] if start.source else None
+        file_name = getattr(stream, "fileName", None)
+        return f"{self.basename(file_name) if file_name else '<input>'}:{start.line}"
 
     def basename(self, fileName: str):
         return os.path.basename(fileName)

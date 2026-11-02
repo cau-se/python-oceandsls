@@ -38,7 +38,7 @@ class ExpressionCalculator():
 
     def calculate_expression(self, expression:AbstractExpression) -> AbstractTypedValue:
         if isinstance(expression, ArithmeticExpression):
-            result = self.calc_arithmetic_expr  ession(expression)
+            result = self.calc_arithmetic_expression(expression)
         elif isinstance(expression, MultiplicationExpression):
             result = self.calc_multiplication_expression(expression)
         elif isinstance(expression, (Enumeral, IntValue, FloatValue, StringValue)):
@@ -49,6 +49,8 @@ class ExpressionCalculator():
         return result
 
     def calc_arithmetic_expression(self, expression: ArithmeticExpression) -> AbstractTypedValue:
+        if expression.right is None:  # expression without operator
+            return self.calculate_expression(expression.left)
         left = self.calculate_expression(expression.left)
         right = self.calculate_expression(expression.right)
         if expression.op == EAdditionOperator.ADD:
@@ -71,6 +73,8 @@ class ExpressionCalculator():
             exit(1)
 
     def calc_multiplication_expression(self, expression: MultiplicationExpression) -> AbstractTypedValue:
+        if expression.right is None:  # expression without operator
+            return self.calculate_expression(expression.left)
         left = self.calculate_expression(expression.left)
         right = self.calculate_expression(expression.right)
         if expression.op == EMultiplicationOperator.MULT:

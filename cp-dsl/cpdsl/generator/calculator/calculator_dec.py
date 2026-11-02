@@ -19,7 +19,8 @@ __author__ = "stu222808, reiner"
 import operator as op
 
 # Relative Imports
-from cpdsl.model.declaration_model import DeclarationModel, Parameter, ScopedSymbol
+from cpdsl.model.declaration_model import DeclarationModel, Parameter
+from cpdsl.model.symbols import ScopedSymbol
 from cpdsl.model.type_system import EnumeralType
 from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
 from cpdsl.common.logger import GeneratorLogger
