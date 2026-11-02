@@ -1,5 +1,3 @@
-"""cpdslLSPServer package."""
-
 #  Copyright (c) 2023.  OceanDSL (https://oceandsl.uni-kiel.de)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,515 +11,160 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+"""Language server for CP-DSL declaration models (``*.decl``).
 
-# util imports
+Declaration models declare the features, parameter groups, parameters and types of one ocean model
+(Jung et al., "Domain-specific languages for ocean modeling", Section 5). The server reports syntax errors and the
+problems found by the generator's declaration visitor (unknown types and features, redefinitions, ...), completes
+keywords, feature references (``requires``/``excludes``), types and value references, and provides an outline.
+"""
+
+from __future__ import annotations
+
 import logging
-import re
-import uuid
-from typing import List, Optional, Union
+from typing import Dict, List, Optional
 
-# antlr4
-from antlr4 import CommonTokenStream, FileStream, InputStream, Token
-from antlr4.IntervalSet import IntervalSet
-
-# antlr4-c3
-from .cst.code_completion_core import CodeCompletionCore, CandidatesCollection
-
-# pygls
+from antlr4 import FileStream
 from lsprotocol.types import (
-    CompletionItem,
-    CompletionItemKind,
-    CompletionList,
-    CompletionOptions,
-    CompletionParams,
-    Diagnostic,
-    DidChangeTextDocumentParams,
-    DidCloseTextDocumentParams,
-    DidOpenTextDocumentParams,
-    DidSaveTextDocumentParams,
-    DocumentSymbol,
-    DocumentSymbolParams,
-    Location,
-    MessageType,
-    Position,
-    Range,
-    Registration,
-    RegistrationParams,
-    SemanticTokens,
-    SemanticTokensLegend,
-    SemanticTokensParams,
-    SymbolInformation,
-    TEXT_DOCUMENT_COMPLETION,
-    TEXT_DOCUMENT_DID_CHANGE,
-    TEXT_DOCUMENT_DID_CLOSE,
-    TEXT_DOCUMENT_DID_OPEN,
-    TEXT_DOCUMENT_DID_SAVE,
-    TEXT_DOCUMENT_DOCUMENT_SYMBOL,
-    TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL,
-    Unregistration,
-    UnregistrationParams)
-from pygls.server import LanguageServer
-from pygls.workspace import Document
+    CompletionItem, Diagnostic, DidSaveTextDocumentParams, DocumentSymbol, DocumentSymbolParams, Position, Range,
+    SymbolKind, TEXT_DOCUMENT_DOCUMENT_SYMBOL,
+)
 
-# user relative imports
-from .utils.compute_token_index import compute_token_position, CaretPosition, TokenPosition
-from .utils.suggest_variables import suggest_symbols
-from .utils.dcl_errors_strategy import DCLErrorStrategy
-
-from .cst.symbol_table_visitor import DeclarationCPVisitor
-from .cst.diagnostic_listener import DiagnosticListener
+from cpdsl.model.declaration_model import DeclarationModel
+from cpdsl.lsp_support import (
+    all_groups, build_declaration_model, enumeral_items, feature_items, messages_to_diagnostics,
+    new_logger, parameter_items, type_items,
+)
+from odsllib.code_completion_core import CandidatesCollection
+from odsllib.lsp.compute_token_index import TokenPosition
+from odsllib.lsp.parsing import ParseResult
+from odsllib.lsp.server import AntlrLanguageServer
 
 from .gen.python.Declaration.DeclarationLexer import DeclarationLexer
 from .gen.python.Declaration.DeclarationParser import DeclarationParser
 
-COUNT_DOWN_START_IN_SECONDS = 10
-COUNT_DOWN_SLEEP_IN_SECONDS = 1
+logger = logging.getLogger(__name__)
 
 
-class dclLSPServer(LanguageServer):
-    CMD_REGISTER_COMPLETIONS = 'registerCompletions'
-    CMD_UNREGISTER_COMPLETIONS = 'unregisterCompletions'
-
+class dclLSPServer(AntlrLanguageServer):
     CONFIGURATION_SECTION = 'ODslDCLServer'
 
-    top_level_context = DeclarationParser.DeclarationModelContext
-    parseTree: top_level_context
-
-    # Input file path
-    input_path: str
+    lexer_class = DeclarationLexer
+    parser_class = DeclarationParser
+    start_rule = "declarationModel"
+    preferred_rules = {DeclarationParser.RULE_featureReference, DeclarationParser.RULE_typeReference,
+                       DeclarationParser.RULE_namedElementReference}
+    word_token_types = {DeclarationParser.ID}
+    trigger_characters = [",", "."]
+    number_tokens = {"ELONG", "EDOUBLE", "INT"}
 
     def __init__(self, *args):
         super().__init__(*args)
-        # Set error listener
-        self.error_listener: DiagnosticListener = DiagnosticListener()
-        # Set empty input stream
-        input_stream: InputStream = InputStream(str())
+        self.input_path: Optional[str] = None
+        # Model of the last version of each document without syntax errors; used for completion while typing
+        self.last_valid_models: Dict[str, DeclarationModel] = {}
+        self.feature(TEXT_DOCUMENT_DOCUMENT_SYMBOL)(lambda params: self.document_symbols(params))
 
-        # Set lexer
-        self.lexer: DeclarationLexer = DeclarationLexer(input_stream)
-        # Set error listener for diagnostics
-        self.lexer.removeErrorListeners()
-        self.lexer.addErrorListener(self.error_listener)
+    # Diagnostics -------------------------------------------------------------------------------------------------
 
-        # Set token stream pipe between lexer and parser
-        self.token_stream: CommonTokenStream = CommonTokenStream(self.lexer)
+    def semantic_diagnostics(self, result: ParseResult, uri: str) -> List[Diagnostic]:
+        if result.has_errors:
+            return []  # semantic checks on incomplete parse trees would only produce follow-up errors
+        model_logger = new_logger()
+        self.last_valid_models[uri] = build_declaration_model(result.tree, model_logger)
+        return messages_to_diagnostics(model_logger.messages, self.diagnostic_source)
 
-        # Set parser
-        self.parser: DeclarationParser = DeclarationParser(self.token_stream)
-        # Set error listener for diagnostics
-        self.parser.removeErrorListeners()
-        self.parser.addErrorListener(self.error_listener)
+    # Completion ---------------------------------------------------------------------------------------------------
 
-        self.parser._errHandler = DCLErrorStrategy()
+    def symbol_completions(
+            self, result: ParseResult, position: TokenPosition, candidates: CandidatesCollection, uri: str
+    ) -> List[CompletionItem]:
+        if result.has_errors and uri in self.last_valid_models:
+            # While typing the document is usually incomplete; the last valid version knows all declarations
+            model = self.last_valid_models[uri]
+        else:
+            model = build_declaration_model(result.tree, new_logger())
+        items: List[CompletionItem] = []
+        rules = candidates.rules
+        if DeclarationParser.RULE_featureReference in rules:
+            items.extend(feature_items(model.features.values(), qualified=True))
+        if DeclarationParser.RULE_typeReference in rules:
+            items.extend(type_items(model))
+        if DeclarationParser.RULE_namedElementReference in rules:
+            group = self._enclosing_group(position.context, model)
+            if group is not None:
+                items.extend(parameter_items(group.parameters.values()))
+            for name, g in all_groups(model):
+                items.extend(parameter_items(g.parameters.values(), prefix=f"{name}."))
+            items.extend(enumeral_items(model))
+        return items
+
+    @staticmethod
+    def _enclosing_group(ctx, model):
+        while ctx is not None and not isinstance(ctx, DeclarationParser.ParameterGroupDeclarationContext):
+            ctx = ctx.parentCtx
+        if ctx is None or getattr(ctx, "name", None) is None:
+            return None
+        return dict(all_groups(model)).get(ctx.name.text)
+
+    # Outline ------------------------------------------------------------------------------------------------------
+
+    def document_symbols(self, params: DocumentSymbolParams) -> List[DocumentSymbol]:
+        result = self.parse(self.workspace.get_text_document(params.text_document.uri).source)
+        return declaration_outline(result.tree)
+
+    def document_saved(self, uri: str, result: ParseResult) -> None:
+        """Declaration models are used by the configuration generator; nothing is generated on save."""
+
+
+def _symbol(name_token, ctx, kind: SymbolKind, detail: Optional[str] = None, children=None) -> Optional[DocumentSymbol]:
+    if name_token is None or ctx is None or ctx.start is None:
+        return None
+    stop = ctx.stop if ctx.stop is not None else ctx.start
+    full = Range(start=Position(line=ctx.start.line - 1, character=ctx.start.column),
+                 end=Position(line=stop.line - 1, character=stop.column + len(stop.text or " ")))
+    name = Range(start=Position(line=name_token.line - 1, character=name_token.column),
+                 end=Position(line=name_token.line - 1, character=name_token.column + len(name_token.text)))
+    return DocumentSymbol(name=name_token.text, kind=kind, range=full, selection_range=name, detail=detail,
+                          children=[c for c in (children or []) if c is not None])
+
+
+def _group_symbol(ctx) -> Optional[DocumentSymbol]:
+    parameters = [_symbol(p.name, p, SymbolKind.Field) for p in getattr(ctx, "parameterDeclarations", [])]
+    return _symbol(getattr(ctx, "name", None), ctx, SymbolKind.Struct, "group", parameters)
+
+
+def _feature_symbol(ctx) -> Optional[DocumentSymbol]:
+    children = [_group_symbol(g) for g in getattr(ctx, "parameterGroupDeclarations", [])]
+    for feature_group in getattr(ctx, "featureGroupDeclarations", []):
+        children.extend(_feature_symbol(f) for f in getattr(feature_group, "featureDeclarations", []))
+    return _symbol(getattr(ctx, "name", None), ctx, SymbolKind.Module, "feature", children)
+
+
+def declaration_outline(tree) -> List[DocumentSymbol]:
+    """Hierarchical document symbols: types, parameter groups with parameters and features."""
+    if tree is None:
+        return []
+    symbols = []
+    for declared in tree.types:
+        inner = declared.getChild(0)
+        symbols.append(_symbol(getattr(inner, "name", None), inner, SymbolKind.Enum
+                               if isinstance(inner, DeclarationParser.EnumerationTypeContext) else SymbolKind.Class,
+                               "type"))
+    symbols.extend(_group_symbol(g) for g in tree.parameterGroupDeclarations)
+    symbols.extend(_feature_symbol(f) for f in tree.featureDeclarations)
+    return [s for s in symbols if s is not None]
 
 
 dcl_server = dclLSPServer('pygls-odsl-dcl-prototype', 'v0.4')
 
-logger = logging.getLogger(__name__)
 
-
-def _validate(params):
-
-    # Get file content for lexer input stream
-    text_doc: Document = dcl_server.workspace.get_text_document(params.text_document.uri)
-    source: str = text_doc.source
-    # Validate format if source is determined
-    diagnostics: List[Diagnostic] = _validate_format(dcl_server, source) if source is not None else []
-    # Return diagnostics
-    dcl_server.publish_diagnostics(text_doc.uri, diagnostics)
-
-
-def _validate_format(server: dclLSPServer, source: str):
-    """Validates file format."""
-
-    # Get input stream of characters for lexer
-    input_stream: InputStream = InputStream(source)
-
-    # set the input stream and reset the lexer/parser/listener
-    server.error_listener.reset()
-    server.lexer.inputStream = input_stream
-    server.token_stream = CommonTokenStream(server.lexer)
-    server.parser.setInputStream(server.token_stream)
-
-    try:
-        # Launch parser by invoking top-level rule
-        top_level_context = DeclarationParser.DeclarationModelContext
-        parse_tree: Optional[top_level_context] = server.parser.declarationModel()
-
-        if not dcl_server.token_stream.fetchedEOF:
-            end: Position = Position(parse_tree.stop.line, parse_tree.stop.column)
-            eof_range: Range = Range(start=end, end=end)
-            eof_msg = Diagnostic(message="Parser stopped before end of file.", range=eof_range)
-            server.error_listener.diagnostics.append(eof_msg)
-
-    except OSError as err:
-        msg = err.filename.msg
-
-        server.error_listener.diagnostics.append(msg)
-
-    # return diagnostics
-    return server.error_listener.diagnostics
-
-
-def get_symbol_name_at_position(uri, position):
-    logger.info("uri: %s\n", uri, "position: %s\n", position)
-
-
-def lookup_symbol(uri, name):
-    logger.info("uri: %s\n", uri, "name: %s\n", name)
-
-
-@dcl_server.feature(TEXT_DOCUMENT_COMPLETION, CompletionOptions(trigger_characters=[',']))
-def completions(params: Optional[CompletionParams] = None) -> CompletionList:
-    """Returns completion items."""
-
-    # set input stream of characters for lexer
-    text_doc: Document = dcl_server.workspace.get_text_document(params.text_document.uri)
-    source: str = text_doc.source
-    input_stream: InputStream = InputStream(source)
-
-    # reset the lexer/parser
-    dcl_server.error_listener.reset()
-    dcl_server.lexer.inputStream = input_stream
-    dcl_server.tokenStream = CommonTokenStream(dcl_server.lexer)
-    dcl_server.parser.setInputStream(dcl_server.tokenStream)
-
-    # Launches parser by invoking top-level rule
-    top_level_context = DeclarationParser.DeclarationModelContext
-    parse_tree: Optional[top_level_context] = None
-
-    token_index: Optional[TokenPosition] = None
-
-    # Parse until fetched
-    while not dcl_server.token_stream.fetchedEOF:
-        parse_tree = dcl_server.parser.declarationModel()
-
-        # Get token index under caret position
-        # params.position.line + 1 as lsp line counts from 0 and antlr4 line counts from 1
-        if token_index is None:
-            token_index = compute_token_position(
-                parse_tree, dcl_server.token_stream, CaretPosition(
-                    params.position.line + 1, params.position.character
-                )
-            )
-
-    # Init emtpy return list
-    completion_list: CompletionList = CompletionList(is_incomplete=False, items=[])
-
-    # Return if no index could be determined
-    if token_index is None:
-        # TODO add warning
-        return completion_list
-
-    # Launch c3 core with parser
-    core: CodeCompletionCore = CodeCompletionCore(dcl_server.parser)
-
-    core.ignoredTokens = {Token.EPSILON}
-    core.preferredRules = {DeclarationParser.RULE_featureDeclaration, DeclarationParser.RULE_featureGroupDeclaration,
-                           DeclarationParser.RULE_parameterGroupDeclaration, DeclarationParser.RULE_parameterDeclaration,
-                           DeclarationParser.RULE_typeReference, DeclarationParser.RULE_enumeral,
-                           DeclarationParser.RULE_enumeral}
-
-    # get completion candidates
-    candidates: CandidatesCollection = core.collectCandidates(token_index.index)
-
-    def calcLitAndSymbNames(literalNames):
-        literalNames = []
-        symbolic_names = []
-        for i in literalNames:
-            if i in dcl_server.parser.literalNames:
-                literalNames.append(i)
-            else:
-                symbolic_names.append(i)
-        return (literalNames, symbolic_names)
-
-    def addToCompletionList(literalNames):
-        # get labels of completion candidates to return
-        symbolic_names, literal_names = calcLitAndSymbNames(literalNames)
-        for key, _ in candidates.tokens.items():
-            completion_list.items.append(
-                CompletionItem(
-                    label=IntervalSet.elementName(
-                        IntervalSet, literal_names,
-                        symbolic_names, key
-                    )
-                )
-            )
-
-    # Feature Declaration Rule
-    if any(rule in candidates.rules for rule in [DeclarationParser.RULE_featureDeclaration]):
-        completionItems = ["ID", ":", "{", "}", "sub", "feature", "def", "requires", "excludes", "sub", "alternative",
-                           "multiple", "group"]
-        addToCompletionList(completionItems)
-
-    # Group Rule
-    if any(rule in candidates.rules for rule in [DeclarationParser.RULE_featureGroupDeclaration, DeclarationParser.RULE_parameterGroupDeclaration]):
-        completionItems = ["ID", ":", "{", "}", "sub", "feature", "def", "requires", "excludes", "sub", "alternative",
-                           "multiple"]
-        addToCompletionList(completionItems)
-
-    # Parameter Declaration Rule
-    if any(rule in candidates.rules for rule in [DeclarationParser.RULE_parameterDeclaration]):
-        completionItems = ["ID", ":", "zetta", "exa", "peta", "tera", "giga", "mega",
-                           "kilo", "hecto", "deca", "deci", "centi",
-                           "mili", "micro", "nano", "pico", "femto",
-                           "atto", "zepto", "yocto", "meter", "gram",
-                           "ton", "second", "ampere", "kelvin", "mole",
-                           "candela", "pascal", "Joul"]
-        addToCompletionList(completionItems)
-
-    # types Declaration Rule
-    if any(rule in candidates.rules for rule in [DeclarationParser.RULE_typeReference]):
-        completionItems = ["ID", "range", "float", "zetta", "exa", "peta", "tera", "giga", "mega",
-                           "kilo", "hecto", "deca", "deci", "centi",
-                           "mili", "micro", "nano", "pico", "femto",
-                           "atto", "zepto", "yocto", "meter", "gram",
-                           "ton", "second", "ampere", "kelvin", "mole",
-                           "candela", "pascal", "Joul", "ELONG", "EDOUBLE", "EBoolean",
-                           "INT", "STRING", "WS"]
-        addToCompletionList(completionItems)
-
-    # enum Declaration Rule
-    if any(rule in candidates.rules for rule in [DeclarationParser.RULE_enumeral]):
-        completionItems = ["ID", "range", "float", "zetta", "exa", "peta", "tera", "giga", "mega",
-                           "kilo", "hecto", "deca", "deci", "centi",
-                           "mili", "micro", "nano", "pico", "femto",
-                           "atto", "zepto", "yocto", "meter", "gram",
-                           "ton", "second", "ampere", "kelvin", "mole",
-                           "candela", "pascal", "Joul", "ELONG", "EDOUBLE", "EBoolean",
-                           "INT", "STRING", "WS", "def"]
-        addToCompletionList(completionItems)
-
-    # Variables finding
-    if any(rule in candidates.rules for rule in [DeclarationParser.declarationModel]):
-
-        symbolTableVisitor: DeclarationCPVisitor = DeclarationCPVisitor('completions')
-
-        symbolTable = symbolTableVisitor.visit(parse_tree)
-
-        variables = suggest_symbols(symbolTable, token_index)
-
-        for variable in variables:
-            completion_list.items.append(CompletionItem(label=variable, kind=CompletionItemKind.Variable))
-
-    # return completion candidates labels
-    return completion_list
-
-
-def get_lsp_symbol_type(nameOfType: str):
-    # predefine some module and function keywords
-    module = ['model', 'types', 'group', 'required', 'requires', 'excludes', 'sub', 'alternative', 'enum']
-    function = ['feature', 'multiple', 'def']
-    # Define a regex pattern for literalNames of the parser
-    # regex_pattern = DeclarationParser.literalNames
-    # regex_pattern = '|'.join(regex_pattern)
-    # regexReplaceChars = "()[]*/+."
-    # ignoreToken = ["'", "<INVALID>|"]
-    # for elem in ignoreToken:
-    #     regex_pattern = regex_pattern.replace(elem, "")
-    # for elem in regexReplaceChars:
-    #     regex_pattern = regex_pattern.replace(elem, "\\" + elem)
-
-    # TOKENS = re.compile(regex_pattern)
-
-    if nameOfType in [x.replace("'", "") for x in DeclarationParser.literalNames]:
-        if nameOfType in module:
-            return CompletionItemKind.Module
-        if nameOfType in function:
-            return CompletionItemKind.Function
-        return CompletionItemKind.Keyword
-    if nameOfType in DeclarationParser.symbolicNames:
-        return CompletionItemKind.Constructor
-    if nameOfType.isdigit():
-        return CompletionItemKind.Value
-    return CompletionItemKind.Variable
-
-
-def get_position_and_item_val(inp: str):
-    from itertools import groupby
-
-    ret_val = []
-
-    for k, g in groupby(enumerate(inp), lambda x: not x[1].isspace() or x[1] in [",", ":"]):
-        if k:
-            pos, first_item = next(g)
-            item = first_item + ''.join([x for _, x in g])
-            ret_val.append([pos, pos + len(item) - 1, item])
-    return ret_val
-
-
-@dcl_server.feature(TEXT_DOCUMENT_DOCUMENT_SYMBOL)
-def document_symbol(
-        server: dclLSPServer, params: DocumentSymbolParams
-) -> Optional[Union[List[DocumentSymbol], List[SymbolInformation]]]:
-    # get the document
-    uri = params.text_document.uri
-    doc = server.workspace.get_text_document(uri)
-
-    data = []
-
-    # For capturing strings
-    string_entity = False
-    string_ident = ""
-    start_string = (0, 0)  # tuple for (lineno, linepos)
-
-    for lineno, line in enumerate(doc.lines):
-        for start, end, word in get_position_and_item_val(line):
-            if str(word).startswith(("'", '"')):
-                string_entity = True
-                string_ident = word[0]
-                if str(word).endswith(("'", '"')) and word[-1] == string_ident:
-                    pos_range = Range(
-                        start=Position(line=lineno, character=start),
-                        end=Position(line=lineno, character=end)
-                    )
-                    string_entity = False
-                    data.append(
-                        SymbolInformation(
-                            name="STRING",
-                            kind=CompletionItemKind.Text,
-                            location=Location(uri=uri, range=pos_range)
-                        )
-                    )
-                start_string = (lineno, start)
-            elif string_entity and str(word).endswith(("'", '"')) and word[-1] == string_ident:
-                pos_range = Range(
-                    start=Position(line=start_string[0], character=start_string[1]),
-                    end=Position(line=lineno, character=end)
-                )
-                string_entity = False
-                data.append(
-                    SymbolInformation(
-                        name="STRING",
-                        kind=CompletionItemKind.Text,
-                        location=Location(uri=uri, range=pos_range)
-                    )
-                )
-            elif not string_entity:
-                pos_range = Range(
-                    start=Position(line=lineno, character=start),
-                    end=Position(line=lineno, character=end)
-                )
-                # for now its only covering keywords, no variables
-                data.append(
-                    SymbolInformation(
-                        name=word,
-                        kind=get_lsp_symbol_type(word),
-                        location=Location(uri=uri, range=pos_range)
-                    )
-                )
-                print("added SymbolItem:")
-                print(str(word) + " " + str(get_lsp_symbol_type(word)))
-            else:
-                continue
-    return data if data else None
-
-
-@dcl_server.feature(TEXT_DOCUMENT_DID_CHANGE)
-def did_change(ls, params: DidChangeTextDocumentParams):
-    """Text document did change notification."""
-    _validate(ls, params)
-
-
-@dcl_server.feature(TEXT_DOCUMENT_DID_CLOSE)
-def did_close(server: dclLSPServer, params: DidCloseTextDocumentParams):
-    """Text document did close notification."""
-    server.show_message('Text Document Did Close')
-
-
-@dcl_server.feature(TEXT_DOCUMENT_DID_SAVE)
-def did_save(server: dclLSPServer, params: DidSaveTextDocumentParams):
-    """Text document did save notification."""
-
-    # Set input stream of characters for lexer
-    input_stream: InputStream
-
-    # Client or cli call
-    if params:
-        # Get input from lsp client
-        text_doc: Document = dcl_server.workspace.get_text_document(params.text_document.uri)
-        source: str = text_doc.source
-        input_stream = InputStream(source)
-    else:
-        # Get input from cli
-        input_stream = FileStream(server.input_path)
-
-    # reset the lexer/parser
-    dcl_server.error_listener.reset()
-    dcl_server.lexer.inputStream = input_stream
-    dcl_server.tokenStream = CommonTokenStream(dcl_server.lexer)
-    dcl_server.parser.setInputStream(dcl_server.tokenStream)
-
-    Top_levelContext = DeclarationParser.DeclarationModelContext
-    parseTree: Top_levelContext = dcl_server.parser.declarationModel()
-
-    # TODO Generator
-
-    server.show_message('Text Document Did Save')
-
-
-@dcl_server.feature(TEXT_DOCUMENT_DID_OPEN)
-async def did_open(ls, params: DidOpenTextDocumentParams):
-    """Text document did open notification."""
-    ls.show_message('Text Document Did Open')
-    _validate(ls, params)
-
-
-@dcl_server.feature(
-    TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL,
-    SemanticTokensLegend(token_types=["operator"], token_modifiers=[])
-)
-def semantic_tokens(ls: dclLSPServer, params: SemanticTokensParams):
-    """See https://microsoft.github.io/language-server-protocol/specification#textDocument_semanticTokens
-    for details on how semantic tokens are encoded."""
-
-    TOKENS = re.compile('".*"(?=:)')
-
-    uri = params.text_document.uri
-    doc = ls.workspace.get_text_document(uri)
-
-    last_line = 0
-    last_start = 0
-
-    data = []
-
-    for lineno, line in enumerate(doc.lines):
-        last_start = 0
-
-        for match in TOKENS.finditer(line):
-            start, end = match.span()
-            data += [(lineno - last_line), (start - last_start), (end - start), 0, 0]
-
-            last_line = lineno
-            last_start = start
-
-    return SemanticTokens(data=data)
-
-
-@dcl_server.command(dclLSPServer.CMD_REGISTER_COMPLETIONS)
-async def register_completions(ls: dclLSPServer, *args):
-    """Register completions method on the client."""
-    params = RegistrationParams(
-        registrations=[Registration(
-            id=str(uuid.uuid4()), method=TEXT_DOCUMENT_COMPLETION,
-            register_options={"triggerCharacters": "[':']"}
-        )]
-    )
-    response = await ls.register_capability_async(params)
-    if response is None:
-        ls.show_message('Successfully registered completions method')
-    else:
-        ls.show_message('Error happened during completions registration.', MessageType.Error)
-
-
-@dcl_server.command(dclLSPServer.CMD_UNREGISTER_COMPLETIONS)
-async def unregister_completions(ls: dclLSPServer, *args):
-    """Unregister completions method on the client."""
-    params = UnregistrationParams(
-        unregisterations=[Unregistration(id=str(uuid.uuid4()), method=TEXT_DOCUMENT_COMPLETION)]
-    )
-    response = await ls.unregister_capability_async(params)
-    if response is None:
-        ls.show_message('Successfully unregistered completions method')
-    else:
-        ls.show_message('Error happened during completions unregistration.', MessageType.Error)
+def did_save(server: dclLSPServer, params: Optional[DidSaveTextDocumentParams]):
+    """Handle a saved document (LSP) or check ``server.input_path`` (CLI, ``params`` is None)."""
+    if params is not None:
+        server.on_did_save(params)
+        return
+    source = str(FileStream(server.input_path, encoding="utf-8"))
+    for diagnostic in server.validate(server.input_path, source):
+        logger.error("%s:%d:%d: %s", server.input_path, diagnostic.range.start.line + 1,
+                     diagnostic.range.start.character + 1, diagnostic.message)

@@ -1,5 +1,3 @@
-"""cpdslLSPServer package."""
-
 #  Copyright (c) 2023.  OceanDSL (https://oceandsl.uni-kiel.de)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,475 +11,241 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+"""Language server for CP-DSL configurations (``*.oconf``).
 
-# util imports
+A configuration refers to the declaration model of an ocean model (``configuration <name> : <model>``), which is read
+from ``<model>.decl`` next to the configuration (an open, unsaved editor buffer of that file takes precedence). The
+server reports syntax errors, references to undeclared features, parameter groups and parameters (using the
+generator's configuration visitor), violated feature dependencies (``requires``/``excludes``), and required features
+that are not activated (Jung et al., "Domain-specific languages for ocean modeling", Sections 5.1-5.3). Content assist
+offers keywords and the declared features, groups and parameters with their descriptions.
+"""
+
+from __future__ import annotations
+
 import logging
-import re
-import uuid
-from typing import List, Optional, Union
+import os
+from typing import Dict, List, Optional, Tuple
 
-# antlr4
-from antlr4 import CommonTokenStream, FileStream, InputStream, Token
-from antlr4.IntervalSet import IntervalSet
+from antlr4 import FileStream
+from lsprotocol.types import CompletionItem, Diagnostic, DiagnosticSeverity, DidSaveTextDocumentParams
+from pygls.uris import from_fs_path, to_fs_path
 
-# antlr4-c3
-from .cst.code_completion_core import CodeCompletionCore, CandidatesCollection
-
-# pygls
-from lsprotocol.types import (
-    CompletionItem,
-    CompletionItemKind,
-    CompletionList,
-    CompletionOptions,
-    CompletionParams,
-    Diagnostic,
-    DidChangeTextDocumentParams,
-    DidCloseTextDocumentParams,
-    DidOpenTextDocumentParams,
-    DidSaveTextDocumentParams,
-    DocumentSymbol,
-    DocumentSymbolParams,
-    Location,
-    MessageType,
-    Position,
-    Range,
-    Registration,
-    RegistrationParams,
-    SemanticTokens,
-    SemanticTokensLegend,
-    SemanticTokensParams,
-    SymbolInformation,
-    TEXT_DOCUMENT_COMPLETION,
-    TEXT_DOCUMENT_DID_CHANGE,
-    TEXT_DOCUMENT_DID_CLOSE,
-    TEXT_DOCUMENT_DID_OPEN,
-    TEXT_DOCUMENT_DID_SAVE,
-    TEXT_DOCUMENT_DOCUMENT_SYMBOL,
-    TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL,
-    Unregistration,
-    UnregistrationParams)
-from pygls.server import LanguageServer
-from pygls.workspace import Document
-
-# user relative imports
-from .utils.compute_token_index import compute_token_position, CaretPosition, TokenPosition
-from .utils.suggest_variables import suggest_symbols
-from .utils.conf_errors_strategy import CONFErrorStrategy
-
-from .cst.symbol_table_visitor import ConfigurationCPVisitor
-from .cst.diagnostic_listener import DiagnosticListener
+from cpdsl.lsp_support import (
+    all_groups, build_declaration_model, context_range, enumeral_items, feature_items, group_items,
+    messages_to_diagnostics, new_logger, parameter_items, sub_features,
+)
+from cpdsl.model.declaration_model import DeclarationModel, Feature
+from odsllib.code_completion_core import CandidatesCollection
+from odsllib.lsp.compute_token_index import TokenPosition
+from odsllib.lsp.diagnostic_listener import token_range
+from odsllib.lsp.parsing import ParseResult, parse_source
+from odsllib.lsp.server import AntlrLanguageServer
+from dcllspserver.gen.python.Declaration.DeclarationLexer import DeclarationLexer
+from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
 
 from .gen.python.Configuration.ConfigurationLexer import ConfigurationLexer
 from .gen.python.Configuration.ConfigurationParser import ConfigurationParser
 
-COUNT_DOWN_START_IN_SECONDS = 10
-COUNT_DOWN_SLEEP_IN_SECONDS = 1
+logger = logging.getLogger(__name__)
+
+DECLARATION_SUFFIX = ".decl"
 
 
-class confLSPServer(LanguageServer):
-    CMD_REGISTER_COMPLETIONS = 'registerCompletions'
-    CMD_UNREGISTER_COMPLETIONS = 'unregisterCompletions'
-
+class confLSPServer(AntlrLanguageServer):
     CONFIGURATION_SECTION = 'ODslCONFServer'
 
-    top_level_context = ConfigurationParser.ConfigurationModelContext
-    parseTree: top_level_context
-
-    # Input file path
-    input_path: str
+    lexer_class = ConfigurationLexer
+    parser_class = ConfigurationParser
+    start_rule = "configurationModel"
+    preferred_rules = {ConfigurationParser.RULE_featureActivation, ConfigurationParser.RULE_qualifiedName,
+                       ConfigurationParser.RULE_namedElementReference}
+    word_token_types = {ConfigurationParser.ID}
+    trigger_characters = [",", "."]
+    number_tokens = {"ELONG", "EDOUBLE", "INT"}
 
     def __init__(self, *args):
         super().__init__(*args)
-        # Set error listener
-        self.error_listener: DiagnosticListener = DiagnosticListener()
-        # Set empty input stream
-        input_stream: InputStream = InputStream(str())
+        self.input_path: Optional[str] = None
+        #: Syntax and semantic problems of the declaration model loaded last
+        self.declaration_problems: List[Diagnostic] = []
 
-        # Set lexer
-        self.lexer: ConfigurationLexer = ConfigurationLexer(input_stream)
-        # Set error listener for diagnostics
-        self.lexer.removeErrorListeners()
-        self.lexer.addErrorListener(self.error_listener)
+    # Declaration model ----------------------------------------------------------------------------------------------
 
-        # Set token stream pipe between lexer and parser
-        self.tokenStream: CommonTokenStream = CommonTokenStream(self.lexer)
+    def declaration_path(self, uri: str, tree) -> Optional[str]:
+        if tree is None or tree.declarationModel is None:
+            return None
+        path = to_fs_path(uri) if uri.startswith("file:") else uri
+        return os.path.join(os.path.dirname(path), tree.declarationModel.text + DECLARATION_SUFFIX)
 
-        # Set parser
-        self.parser: ConfigurationParser = ConfigurationParser(self.tokenStream)
-        # Set error listener for diagnostics
-        self.parser.removeErrorListeners()
-        self.parser.addErrorListener(self.error_listener)
+    def load_declaration_model(self, uri: str, tree) -> Tuple[Optional[DeclarationModel], Optional[str]]:
+        """Return the declaration model referenced by a configuration and the path it was expected at."""
+        path = self.declaration_path(uri, tree)
+        if path is None:
+            return None, None
+        source = None
+        try:  # prefer an open (possibly unsaved) editor buffer
+            document = self.workspace.text_documents.get(from_fs_path(path))
+            source = document.source if document is not None else None
+        except RuntimeError:  # workspace not initialized (CLI)
+            pass
+        if source is None:
+            if not os.path.isfile(path):
+                return None, path
+            with open(path, encoding="utf-8") as f:
+                source = f.read()
+        result = parse_source(source, DeclarationLexer, DeclarationParser, "declarationModel")
+        model_logger = new_logger()
+        model = build_declaration_model(result.tree, model_logger)
+        self.declaration_problems = list(result.diagnostics) + messages_to_diagnostics(
+            model_logger.messages, self.diagnostic_source)
+        return model, path
 
-        self.parser._errHandler = CONFErrorStrategy()
+    # Diagnostics -------------------------------------------------------------------------------------------------
+
+    def semantic_diagnostics(self, result: ParseResult, uri: str) -> List[Diagnostic]:
+        tree = result.tree
+        if result.has_errors or tree is None:
+            return []
+        model, path = self.load_declaration_model(uri, tree)
+        if model is None:
+            if path is None:
+                return []
+            token = tree.declarationModel
+            return [Diagnostic(range=token_range(token, token.line, token.column), severity=DiagnosticSeverity.Error,
+                               source=self.diagnostic_source,
+                               message=f"declaration model '{token.text}' not found: expected {os.path.basename(path)} "
+                                       f"next to this configuration")]
+
+        from cpdsl.generator.visitors.configuration_visitor import GeneratorConfigurationVisitor
+        diagnostics: List[Diagnostic] = []
+        if self.declaration_problems:
+            token = tree.declarationModel
+            diagnostics.append(Diagnostic(
+                range=token_range(token, token.line, token.column), severity=DiagnosticSeverity.Warning,
+                source=self.diagnostic_source,
+                message=f"declaration model {os.path.basename(path)} has {len(self.declaration_problems)} problem(s), "
+                        f"e.g. line {self.declaration_problems[0].range.start.line + 1}: "
+                        f"{self.declaration_problems[0].message}"))
+        model_logger = new_logger()
+        try:
+            GeneratorConfigurationVisitor(model, model_logger).visit(tree)
+        except Exception:
+            logger.exception("Configuration visitor failed for %s", uri)
+        diagnostics.extend(messages_to_diagnostics(model_logger.messages, self.diagnostic_source))
+        diagnostics.extend(self.feature_dependency_diagnostics(tree, model))
+        return diagnostics
+
+    def feature_dependency_diagnostics(self, tree, model: DeclarationModel) -> List[Diagnostic]:
+        """Check requires/excludes of activated features and required features (paper, Section 5.2)."""
+        locations: Dict[str, object] = {}
+        self._collect_activation_locations(tree, locations)
+        diagnostics: List[Diagnostic] = []
+
+        def report(feature_name: str, message: str, severity=DiagnosticSeverity.Error):
+            ctx = locations.get(feature_name)
+            rng = context_range(ctx) if ctx is not None else token_range(tree.name, tree.name.line, tree.name.column)
+            diagnostics.append(Diagnostic(range=rng, message=message, severity=severity,
+                                          source=self.diagnostic_source))
+
+        def check(features: List[Feature], parent_activated: bool):
+            for feature in features:
+                if feature.is_activated:
+                    for required in feature.requires:
+                        if not required.is_activated:
+                            report(feature.name, f"feature {feature.name} requires {required.name}, which is not "
+                                                 f"activated")
+                    for excluded in feature.excludes:
+                        if excluded.is_activated:
+                            report(feature.name, f"feature {feature.name} excludes {excluded.name}, which is "
+                                                 f"activated")
+                elif feature.required and parent_activated:
+                    report(feature.name, f"required feature {feature.name} is not activated",
+                           DiagnosticSeverity.Warning)
+                check(sub_features(feature), feature.is_activated)
+
+        check(list(model.features.values()), True)
+        return diagnostics
+
+    def _collect_activation_locations(self, ctx, locations: Dict[str, object]) -> None:
+        for activation in getattr(ctx, "featureActivations", []):
+            if activation.declaration is not None:
+                locations.setdefault(activation.declaration.text, activation)
+        for configuration in getattr(ctx, "featureConfigurations", []):
+            if configuration.declaration is not None:
+                locations.setdefault(configuration.declaration.text, configuration)
+            self._collect_activation_locations(configuration, locations)
+
+    # Completion ---------------------------------------------------------------------------------------------------
+
+    def symbol_completions(
+            self, result: ParseResult, position: TokenPosition, candidates: CandidatesCollection, uri: str
+    ) -> List[CompletionItem]:
+        model, _ = self.load_declaration_model(uri, result.tree)
+        if model is None:
+            return []
+        scope, group = self._scope_at(position.context, model)
+        features = list(model.features.values()) if scope is model else sub_features(scope)
+        groups = list(model.groups.values()) if scope is model else list(scope.groups.values())
+
+        items: List[CompletionItem] = []
+        previous = self._previous_token_text(result, position.index)
+        if previous == "feature" or ConfigurationParser.RULE_featureActivation in candidates.rules:
+            items.extend(feature_items(features))
+        if previous == "group":
+            items.extend(group_items(groups))
+        if ConfigurationParser.RULE_qualifiedName in candidates.rules and group is not None:
+            items.extend(parameter_items(group.parameters.values()))
+        if ConfigurationParser.RULE_namedElementReference in candidates.rules:
+            if group is not None:
+                items.extend(parameter_items(group.parameters.values()))
+            for name, g in all_groups(model):
+                items.extend(parameter_items(g.parameters.values(), prefix=f"{name}."))
+            items.extend(enumeral_items(model))
+        return items
+
+    @staticmethod
+    def _previous_token_text(result: ParseResult, index: int) -> Optional[str]:
+        for token in reversed(result.tokens.tokens[:index]):
+            if token.channel == 0:
+                return token.text
+        return None
+
+    @staticmethod
+    def _scope_at(ctx, model: DeclarationModel):
+        """Return the feature (or model) and parameter group enclosing a parse tree node."""
+        path: List[str] = []
+        group_name: Optional[str] = None
+        node = ctx
+        while node is not None:
+            if isinstance(node, ConfigurationParser.FeatureConfigurationContext) and node.declaration is not None:
+                path.insert(0, node.declaration.text)
+            elif isinstance(node, ConfigurationParser.ParameterGroupContext) and group_name is None \
+                    and node.declaration is not None:
+                group_name = node.declaration.text
+            node = node.parentCtx
+        scope = model
+        for name in path:
+            feature = scope.resolve_feature(name)
+            if feature is None:
+                break
+            scope = feature
+        group = scope.resolve_parameter_group(group_name) if group_name else None
+        return scope, group
+
+    def document_saved(self, uri: str, result: ParseResult) -> None:
+        """Code generation is provided by the generator CLI (python -m cpdsl.generator)."""
 
 
 conf_server = confLSPServer('pygls-odsl-conf-prototype', 'v0.4')
 
-logger = logging.getLogger(__name__)
 
-
-def _validate(params):
-
-    # Get file content for lexer input stream
-    text_doc: Document = conf_server.workspace.get_text_document(params.text_document.uri)
-    source: str = text_doc.source
-    # Validate format if source is determined
-    diagnostics: List[Diagnostic] = _validate_format(conf_server, source) if source is not None else []
-    # Return diagnostics
-    conf_server.publish_diagnostics(text_doc.uri, diagnostics)
-
-
-def _validate_format(server: confLSPServer, source: str):
-    """Validates file format."""
-
-    # Get input stream of characters for lexer
-    input_stream: InputStream = InputStream(source)
-
-    # set the input stream and reset the lexer/parser/listener
-    server.error_listener.reset()
-    server.lexer.inputStream = input_stream
-    server.token_stream = CommonTokenStream(server.lexer)
-    server.parser.setInputStream(server.token_stream)
-
-    try:
-        # Launch parser by invoking top-level rule
-        top_level_context = ConfigurationParser.ConfigurationModelContext
-        parse_tree: Optional[top_level_context] = server.parser.configurationModel()
-
-        if not conf_server.token_stream.fetchedEOF:
-            end: Position = Position(parse_tree.stop.line, parse_tree.stop.column)
-            eof_range: Range = Range(start=end, end=end)
-            eof_msg = Diagnostic(message="Parser stopped before end of file.", range=eof_range)
-            server.error_listener.diagnostics.append(eof_msg)
-
-    except OSError as err:
-        msg = err.filename.msg
-
-        server.error_listener.diagnostics.append(msg)
-
-    # return diagnostics
-    return server.error_listener.diagnostics
-
-
-def get_symbol_name_at_position(uri, position):
-    logger.info("uri: %s\n", uri, "position: %s\n", position)
-
-
-def lookup_symbol(uri, name):
-    logger.info("uri: %s\n", uri, "name: %s\n", name)
-
-
-@conf_server.feature(TEXT_DOCUMENT_COMPLETION, CompletionOptions(trigger_characters=[',']))
-def completions(params: Optional[CompletionParams] = None) -> CompletionList:
-    """Returns completion items."""
-
-    # set input stream of characters for lexer
-    text_doc: Document = conf_server.workspace.get_text_document(params.text_document.uri)
-    source: str = text_doc.source
-    input_stream: InputStream = InputStream(source)
-
-    # reset the lexer/parser
-    conf_server.error_listener.reset()
-    conf_server.lexer.inputStream = input_stream
-    conf_server.tokenStream = CommonTokenStream(conf_server.lexer)
-    conf_server.parser.setInputStream(conf_server.tokenStream)
-
-    # Launches parser by invoking top-level rule
-    top_level_context = ConfigurationParser.ConfigurationModelContext
-    parse_tree: Optional[top_level_context] = None
-
-    token_index: Optional[TokenPosition] = None
-
-    # Parse until fetched
-    while not conf_server.token_stream.fetchedEOF:
-        parse_tree = conf_server.parser.configurationModel()
-
-        # Get token index under caret position
-        # params.position.line + 1 as lsp line counts from 0 and antlr4 line counts from 1
-        if token_index is None:
-            token_index = compute_token_position(
-                parse_tree, conf_server.token_stream, CaretPosition(
-                    params.position.line + 1, params.position.character
-                )
-            )
-
-    # Init emtpy return list
-    completion_list: CompletionList = CompletionList(is_incomplete=False, items=[])
-
-    # Return if no index could be determined
-    if token_index is None:
-        # TODO add warning
-        return completion_list
-
-    # Launch c3 core with parser
-    core: CodeCompletionCore = CodeCompletionCore(conf_server.parser)
-
-    core.ignoredTokens = {Token.EPSILON}
-    core.preferredRules = {ConfigurationParser, ConfigurationParser}
-
-    # get completion candidates
-    candidates: CandidatesCollection = core.collectCandidates(token_index.index)
-
-    calcVariables = False
-
-    def calcLitAndSymbNames(literalNames):
-        literalNames = []
-        symbolic_names = []
-        for i in literalNames:
-            if i in conf_server.parser.literalNames:
-                literalNames.append(i)
-            else:
-                symbolic_names.append(i)
-        return (literalNames, symbolic_names)
-
-    def addToCompletionList(literalNames):
-        # get labels of completion candidates to return
-        symbolic_names, literal_names = calcLitAndSymbNames(literalNames)
-        for key, _ in candidates.tokens.items():
-            completion_list.items.append(
-                CompletionItem(
-                    label=IntervalSet.elementName(
-                        IntervalSet, literal_names,
-                        symbolic_names, key
-                    )
-                )
-            )
-
-    # TODO: Add Rules
-    addToCompletionList(ConfigurationParser.literalNames)
-    addToCompletionList(ConfigurationParser.symbolicNames)
-
-    # Variables finding
-    if any(rule in candidates.rules for rule in [ConfigurationParser.configurationModel]):
-
-        symbolTableVisitor: ConfigurationCPVisitor = ConfigurationCPVisitor('completions')
-
-        symbolTable = symbolTableVisitor.visit(parse_tree)
-
-        variables = suggest_symbols(symbolTable, token_index)
-
-        for variable in variables:
-            completion_list.items.append(CompletionItem(label=variable, kind=CompletionItemKind.Variable))
-
-    # return completion candidates labels
-    return completion_list
-
-
-def get_lsp_symbol_type(nameOfType: str):
-    # predefine some module and function keywords
-    # TODO: Edit for ConfigurationDSL
-    module = ['include', 'configuration', 'group']
-    function = ['feature', 'multiple', 'def', 'activate']
-    # Define a regex pattern for literalNames of the parser
-    # regex_pattern = DeclarationParser.literalNames
-    # regex_pattern = '|'.join(regex_pattern)
-    # regexReplaceChars = "()[]*/+."
-    # ignoreToken = ["'", "<INVALID>|"]
-    # for elem in ignoreToken:
-    #     regex_pattern = regex_pattern.replace(elem, "")
-    # for elem in regexReplaceChars:
-    #     regex_pattern = regex_pattern.replace(elem, "\\" + elem)
-
-    # TOKENS = re.compile(regex_pattern)
-
-    if nameOfType in [x.replace("'", "") for x in ConfigurationParser.literalNames]:
-        if nameOfType in module:
-            return CompletionItemKind.Module
-        if nameOfType in function:
-            return CompletionItemKind.Function
-        return CompletionItemKind.Keyword
-    if nameOfType in ConfigurationParser.symbolicNames:
-        return CompletionItemKind.Constructor
-    if nameOfType.isdigit():
-        return CompletionItemKind.Value
-    return CompletionItemKind.Variable
-
-
-def get_position_and_item_val(inp: str):
-    from itertools import groupby
-
-    ret_val = []
-
-    for k, g in groupby(enumerate(inp), lambda x: not x[1].isspace() or x[1] in [",", ":"]):
-        if k:
-            pos, first_item = next(g)
-            item = first_item + ''.join([x for _, x in g])
-            ret_val.append([pos, pos + len(item) - 1, item])
-    return ret_val
-
-
-@conf_server.feature(TEXT_DOCUMENT_DOCUMENT_SYMBOL)
-def document_symbol(
-        server: confLSPServer, params: DocumentSymbolParams
-) -> Optional[Union[List[DocumentSymbol], List[SymbolInformation]]]:
-    # get the document
-    uri = params.text_document.uri
-    doc = server.workspace.get_text_document(uri)
-
-    data = []
-
-    # For capturing strings
-    string_entity = False
-    string_ident = ""
-    start_string = (0, 0)  # tuple for (lineno, linepos)
-
-    for lineno, line in enumerate(doc.lines):
-        for start, end, word in get_position_and_item_val(line):
-            if str(word).startswith(("'", '"')):
-                string_entity = True
-                string_ident = word[0]
-                if str(word).endswith(("'", '"')) and word[-1] == string_ident:
-                    pos_range = Range(
-                        start=Position(line=lineno, character=start),
-                        end=Position(line=lineno, character=end)
-                    )
-                    string_entity = False
-                    data.append(
-                        SymbolInformation(
-                            name="STRING",
-                            kind=CompletionItemKind.Text,
-                            location=Location(uri=uri, range=pos_range)
-                        )
-                    )
-                start_string = (lineno, start)
-            elif string_entity and str(word).endswith(("'", '"')) and word[-1] == string_ident:
-                pos_range = Range(
-                    start=Position(line=start_string[0], character=start_string[1]),
-                    end=Position(line=lineno, character=end)
-                )
-                string_entity = False
-                data.append(
-                    SymbolInformation(
-                        name="STRING",
-                        kind=CompletionItemKind.Text,
-                        location=Location(uri=uri, range=pos_range)
-                    )
-                )
-            elif not string_entity:
-                pos_range = Range(
-                    start=Position(line=lineno, character=start),
-                    end=Position(line=lineno, character=end)
-                )
-                # for now its only covering keywords, no variables
-                data.append(
-                    SymbolInformation(
-                        name=word,
-                        kind=get_lsp_symbol_type(word),
-                        location=Location(uri=uri, range=pos_range)
-                    )
-                )
-                print("added SymbolItem:")
-                print(str(word) + " " + str(get_lsp_symbol_type(word)))
-            else:
-                continue
-    return data if data else None
-
-
-@conf_server.feature(TEXT_DOCUMENT_DID_CHANGE)
-def did_change(ls, params: DidChangeTextDocumentParams):
-    """Text document did change notification."""
-    _validate(ls, params)
-
-
-@conf_server.feature(TEXT_DOCUMENT_DID_CLOSE)
-def did_close(server: confLSPServer, params: DidCloseTextDocumentParams):
-    """Text document did close notification."""
-    server.show_message('Text Document Did Close')
-
-
-@conf_server.feature(TEXT_DOCUMENT_DID_SAVE)
-def did_save(server: confLSPServer, params: DidSaveTextDocumentParams):
-    """Text document did save notification."""
-
-    # Set input stream of characters for lexer
-    input_stream: InputStream
-
-    # Client or cli call
-    if params:
-        # Get input from lsp client
-        text_doc: Document = conf_server.workspace.get_text_document(params.text_document.uri)
-        source: str = text_doc.source
-        input_stream = InputStream(source)
-    else:
-        # Get input from cli
-        input_stream = FileStream(conf_server.input_path)
-
-    # Reset the lexer/parser
-    conf_server.error_listener.reset()
-    conf_server.lexer.inputStream = input_stream
-    conf_server.tokenStream = CommonTokenStream(conf_server.lexer)
-    conf_server.parser.setInputStream(conf_server.tokenStream)
-
-    Top_levelContext = ConfigurationParser.ConfigurationModelContext
-    parseTree: Top_levelContext = conf_server.parser.configurationModel()
-
-    # TODO Generator
-
-    server.show_message('Text Document Did Save')
-
-
-@conf_server.feature(TEXT_DOCUMENT_DID_OPEN)
-async def did_open(ls, params: DidOpenTextDocumentParams):
-    """Text document did open notification."""
-    ls.show_message('Text Document Did Open')
-    _validate(ls, params)
-
-
-@conf_server.feature(
-    TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL,
-    SemanticTokensLegend(token_types=["operator"], token_modifiers=[])
-)
-def semantic_tokens(ls: confLSPServer, params: SemanticTokensParams):
-    """See https://microsoft.github.io/language-server-protocol/specification#textDocument_semanticTokens
-    for details on how semantic tokens are encoded."""
-
-    TOKENS = re.compile('".*"(?=:)')
-
-    uri = params.text_document.uri
-    doc = ls.workspace.get_text_document(uri)
-
-    last_line = 0
-    last_start = 0
-
-    data = []
-
-    for lineno, line in enumerate(doc.lines):
-        last_start = 0
-
-        for match in TOKENS.finditer(line):
-            start, end = match.span()
-            data += [(lineno - last_line), (start - last_start), (end - start), 0, 0]
-
-            last_line = lineno
-            last_start = start
-
-    return SemanticTokens(data=data)
-
-
-@conf_server.command(confLSPServer.CMD_REGISTER_COMPLETIONS)
-async def register_completions(ls: confLSPServer, *args):
-    """Register completions method on the client."""
-    params = RegistrationParams(
-        registrations=[Registration(
-            id=str(uuid.uuid4()), method=TEXT_DOCUMENT_COMPLETION,
-            register_options={"triggerCharacters": "[':']"}
-        )]
-    )
-    response = await ls.register_capability_async(params)
-    if response is None:
-        ls.show_message('Successfully registered completions method')
-    else:
-        ls.show_message('Error happened during completions registration.', MessageType.Error)
-
-
-@conf_server.command(confLSPServer.CMD_UNREGISTER_COMPLETIONS)
-async def unregister_completions(ls: confLSPServer, *args):
-    """Unregister completions method on the client."""
-    params = UnregistrationParams(
-        unregisterations=[Unregistration(id=str(uuid.uuid4()), method=TEXT_DOCUMENT_COMPLETION)]
-    )
-    response = await ls.unregister_capability_async(params)
-    if response is None:
-        ls.show_message('Successfully unregistered completions method')
-    else:
-        ls.show_message('Error happened during completions unregistration.', MessageType.Error)
+def did_save(server: confLSPServer, params: Optional[DidSaveTextDocumentParams]):
+    """Handle a saved document (LSP) or check ``server.input_path`` (CLI, ``params`` is None)."""
+    if params is not None:
+        server.on_did_save(params)
+        return
+    source = str(FileStream(server.input_path, encoding="utf-8"))
+    for diagnostic in server.validate(server.input_path, source):
+        logger.error("%s:%d:%d: %s", server.input_path, diagnostic.range.start.line + 1,
+                     diagnostic.range.start.character + 1, diagnostic.message)

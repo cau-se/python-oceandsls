@@ -1,5 +1,3 @@
-"""cp-dsl LSPServer package."""
-
 #  Copyright (c) 2023.  OceanDSL (https://oceandsl.uni-kiel.de)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,32 +19,20 @@ from os.path import isfile
 
 from .server import did_save, dcl_server
 
-logging.basicConfig(filename="dclDSL_pygls.log", level=logging.DEBUG, filemode="w")
-
 
 def add_arguments(parser):
-    parser.prog = "DECL-Language-Server",
-    parser.description = "A program for a language server based on the declaration ocean-dsl",
-    parser.epilog = "DeclarationDSL Language Server"
+    parser.prog = "dcllspserver"
+    parser.description = "Language server for CP-DSL declaration files (*.decl)"
+    parser.epilog = "Without --tcp/--ws the server communicates over stdin/stdout."
 
-    parser.add_argument(
-        "--tcp", dest="tcp", action="store_true", help="Use TCP server"
-    )
-    parser.add_argument(
-        "--ws", dest="ws", action="store_true", help="Use WebSocket server"
-    )
-    parser.add_argument(
-        "--host", dest="host", default="127.0.0.1", help="Bind to this address"
-    )
-    parser.add_argument(
-        "--port", dest="port", type=int, default=2087, help="Bind to this port"
-    )
-    parser.add_argument(
-        "--testing", dest="test", action="store_true", help="Run the tests"
-    )
-    parser.add_argument(
-        "-f", "--file", dest="file", type=readable_file, help="Input file for file generator"
-    )
+    parser.add_argument("--tcp", dest="tcp", action="store_true", help="Use TCP server")
+    parser.add_argument("--ws", dest="ws", action="store_true", help="Use WebSocket server")
+    parser.add_argument("--host", dest="host", default="127.0.0.1", help="Bind to this address")
+    parser.add_argument("--port", dest="port", type=int, default=2087, help="Bind to this port")
+    parser.add_argument("-f", "--file", dest="file", type=readable_file,
+                        help="Check a file from the command line and report its problems")
+    parser.add_argument("--log-file", dest="log_file", default=None, help="Write the log to this file")
+    parser.add_argument("--debug", action="store_true", help="Log debug output")
 
 
 def readable_file(file_path: str):
@@ -56,9 +42,7 @@ def readable_file(file_path: str):
     :param file_path: path to file
     :return: valid readable file path
     """
-
     abs_file_path = os.path.join(os.getcwd(), file_path)
-
     if isfile(abs_file_path) and os.access(abs_file_path, os.R_OK):
         return abs_file_path
     else:
@@ -70,21 +54,18 @@ def main():
     add_arguments(parser)
     args = parser.parse_args()
 
-    if args.test:
-        import test
+    # Log to stderr (stdout carries the JSON-RPC stream in stdio mode) or to a file with --log-file
+    logging.basicConfig(filename=args.log_file, level=logging.DEBUG if args.debug else logging.INFO)
 
     if args.file:
-        # Start cli code gen with given path
-        dcl_server.input_path = os.path.join(os.getcwd(), args.file)
+        dcl_server.input_path = args.file
         did_save(dcl_server, None)
+    elif args.tcp:
+        dcl_server.start_tcp(args.host, args.port)
+    elif args.ws:
+        dcl_server.start_ws(args.host, args.port)
     else:
-        if args.tcp:
-            dcl_server.start_tcp(args.host, args.port)
-        elif args.ws:
-            dcl_server.start_ws(args.host, args.port)
-        else:
-            parser.print_help()
-            dcl_server.start_io()
+        dcl_server.start_io()
 
 
 if __name__ == "__main__":
