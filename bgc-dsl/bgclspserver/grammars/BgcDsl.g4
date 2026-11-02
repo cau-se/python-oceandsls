@@ -135,7 +135,7 @@ updateState:
 // substances and substance are of type substanceDeclaration
 connection:
 	'connection' (
-		(name=ID ('(' substances+=ID (',' substances+=ID)* ')')? sourceCompartment=ID 'to' targetCompartment=ID) |
+		(name=ID ('(' substances+=ID (',' substances+=ID)* ')')? 'from' sourceCompartment=ID 'to' targetCompartment=ID) |
 		(sourceCompartment=ID 'to' targetCompartment=ID name=ID ('(' substances+=ID (',' substances+=ID)* ')')?)
 	)
 	(
