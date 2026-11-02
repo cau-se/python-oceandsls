@@ -4,8 +4,19 @@ stages:
   # GitLab Pages: uncomment the deploy stage and the pages job at the end of this file once Pages is available
   # - deploy
 
+# Jobs of regular pipelines (pushes, web, API, ...). They do not run in merge request pipelines (as before, to avoid
+# duplicate pipelines) nor in the scheduled artifact cleanup (ARTIFACT_CLEANUP == "true").
+.regular-pipeline:
+  rules:
+    - if: $ARTIFACT_CLEANUP == "true"
+      when: never
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+    - when: on_success
+
 # Unit and language server tests of all Python packages (requires-python >= 3.10)
 tests:
+  extends: .regular-pipeline
   tags:
     - oceandsl
   stage: test
@@ -21,6 +32,7 @@ tests:
 
 # Build sdists/wheels and validate them like PyPI does (twine check)
 dist:
+  extends: .regular-pipeline
   tags:
     - oceandsl
   stage: build
@@ -35,6 +47,7 @@ dist:
       - dist
 
 pylint:
+  extends: .regular-pipeline
   tags:
     - oceandsl
   stage: test
@@ -62,8 +75,8 @@ pylint:
   # - merge requests link them as "pylint report" (expose_as)
   # - the project badge shows the badge of the latest successful pipeline on main:
   #   https://git.se.informatik.uni-kiel.de/oceandsl/python-oceandsls/-/jobs/artifacts/main/raw/public/badges/pylint.svg?job=pylint
-  #   GitLab keeps the artifacts of the latest successful pipeline independently of expire_in
-  #   ("Keep artifacts from most recent successful jobs", enabled by default)
+  # The artifacts do not expire by themselves: the scheduled cleanup-artifacts job deletes them after 30 days but
+  # always keeps the newest 5 on the default branch, which expire_in cannot express.
   artifacts:
     expose_as: "pylint report"
     paths:
@@ -71,8 +84,27 @@ pylint:
       - public/badges/
     reports:
       codequality: codeclimate.json
-    expire_in: 30 days
+    expire_in: never
     when: always
+
+# Deletes pylint artifacts older than 30 days, except the newest 5 on the default branch (ci/cleanup_artifacts.py).
+# Runs only in a pipeline schedule on main with the variable ARTIFACT_CLEANUP = "true". Requires the masked and
+# protected CI/CD variable ARTIFACT_CLEANUP_TOKEN: a fine-grained personal access token for this project with the
+# permissions "Job: Read" and "Job Artifact: Delete" (its owner needs the Maintainer role in the project).
+# Set ARTIFACT_CLEANUP_DRY_RUN = "true" in the schedule to only list what would be deleted.
+cleanup-artifacts:
+  tags:
+    - oceandsl
+  stage: test
+  image: python:3.12-slim
+  variables:
+    ARTIFACT_CLEANUP_JOB: pylint
+    ARTIFACT_CLEANUP_KEEP: "5"
+    ARTIFACT_CLEANUP_MAX_AGE_DAYS: "30"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $ARTIFACT_CLEANUP == "true"
+  script:
+    - python3 ci/cleanup_artifacts.py
 
 # GitLab Pages is not enabled on this GitLab instance. To publish the lint report and the badge on Pages,
 # uncomment the deploy stage above and this job. It publishes the public/ folder of the pylint job:
@@ -92,6 +124,7 @@ pylint:
 #   artifacts:
 #     paths:
 #       - public
-#   only:
-#     refs:
-#       - main
+#   rules:
+#     - if: $ARTIFACT_CLEANUP == "true"
+#       when: never
+#     - if: $CI_COMMIT_BRANCH == "main"

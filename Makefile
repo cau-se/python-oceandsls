@@ -20,6 +20,7 @@ install-dev:
 # Run the test suites of all packages
 test:
 	@for p in $(PY_PACKAGES); do echo "== $$p"; (cd $$p && $(PYTHON) -m pytest -q) || exit 1; done
+	@echo "== ci"; cd ci && $(PYTHON) -m pytest -q
 
 # Build sdists and wheels of all packages into $(DIST)
 dist: clean-dist
