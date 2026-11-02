@@ -41,12 +41,18 @@ pylint:
   before_script:
     - mkdir -p public/badges public/lint
     - echo undefined > public/badges/$CI_JOB_NAME.score
-    - pip install pylint-gitlab
+    # Install the packages and their dependencies so pylint can resolve imports (antlr4, pygls, odsllib, ...);
+    # otherwise hundreds of import-error messages lower the score
+    - pip install -r requirements-dev.txt pylint-gitlab
   script:
-    - pylint --exit-zero --output-format=text $(find -type f -name "*.py" ! -path "**/.venv/**" ! -path "*/gen/*") | tee /tmp/pylint.txt
+    # A single pylint run writes all reports: text to the log (and the score), Code Climate for merge requests
+    # and HTML for GitLab Pages
+    - >
+      pylint --exit-zero
+      --output-format=text,pylint_gitlab.GitlabCodeClimateReporter:codeclimate.json,pylint_gitlab.GitlabPagesHtmlReporter:public/lint/index.html
+      $(find -type f -name "*.py" ! -path "**/.venv/**" ! -path "*/gen/*")
+      | tee /tmp/pylint.txt
     - sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' /tmp/pylint.txt > public/badges/$CI_JOB_NAME.score
-    - pylint --exit-zero --output-format=pylint_gitlab.GitlabCodeClimateReporter $(find -type f -name "*.py" ! -path "**/.venv/**" ! -path "*/gen/*") > codeclimate.json
-    - pylint --exit-zero --output-format=pylint_gitlab.GitlabPagesHtmlReporter $(find -type f -name "*.py" ! -path "**/.venv/**" ! -path "*/gen/*") > public/lint/index.html
   after_script:
     - anybadge --overwrite --label $CI_JOB_NAME --value=$(cat public/badges/$CI_JOB_NAME.score) --file=public/badges/$CI_JOB_NAME.svg 4=red 6=orange 8=yellow 10=green
     - |
@@ -59,8 +65,13 @@ pylint:
     when: always
 
 pages:
+  tags:
+    - exec-docker
   stage: deploy
   image: alpine:latest
+  # Publish the lint report and badge as soon as pylint is done, even if the tests fail
+  needs:
+    - pylint
   script:
     - echo
   artifacts:
