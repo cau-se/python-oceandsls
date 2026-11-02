@@ -16,7 +16,7 @@ __author__ = "reiner"
 
 import unittest
 
-from model.declaration_model import DeclarationModel
+from cpdsl.model.declaration_model import DeclarationModel
 
 from gen.visitors.test_utils import AbstractTestGeneratorConfigurationVisitor
 

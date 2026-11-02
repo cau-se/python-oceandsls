@@ -16,16 +16,16 @@ __author__ = "reiner"
 
 import unittest
 
-from model.declaration_model import DeclarationModel, ParameterGroup, Parameter
-from model.unit_model import UnitSpecification, UnitKind, UnitPrefix, SIUnit, CustomUnit, DivisionUnit
+from cpdsl.model.declaration_model import DeclarationModel, ParameterGroup, Parameter
+from cpdsl.model.unit_model import UnitSpecification, UnitKind, UnitPrefix, SIUnit, CustomUnit, DivisionUnit
 
 from antlr4 import ParserRuleContext, TerminalNode
 from antlr4.tree.Tree import TerminalNodeImpl
 
 from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
 
-from common.logger import GeneratorLogger
-from common.configuration import CompileFlags
+from cpdsl.common.logger import GeneratorLogger
+from cpdsl.common.configuration import CompileFlags
 
 from gen.visitors.test_utils import AbstractTestGeneratorDeclarationVisitor
 

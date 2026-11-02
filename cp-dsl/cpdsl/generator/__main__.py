@@ -15,23 +15,23 @@
 from antlr4 import InputStream, CommonTokenStream, FileStream
 import argparse
 import os
-from common.configuration import CompileFlags
+from cpdsl.common.configuration import CompileFlags
 
 # relative imports
 from conflspserver.gen.python.Configuration.ConfigurationLexer import ConfigurationLexer
 from conflspserver.gen.python.Configuration.ConfigurationParser import ConfigurationParser
 from dcllspserver.gen.python.Declaration.DeclarationLexer import DeclarationLexer
 from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
-from generator.visitors.configuration_visitor import GeneratorConfigurationVisitor
-from generator.visitors.declaration_visitor import GeneratorDeclarationVisitor
-from generator.calculator.calculator import ConfigurationCalculator
-from generator.calculator.calculator_dec import DeclarationCalculator
-from generator.generators.uvic.code_generator import UvicCodeGenerator
-from generator.generators.mitgcm.code_generator import MitGcmCodeGenerator
-from generator.generators.eval.code_generator import EvalCodeGenerator
-from model.declaration_model import DeclarationModel, Feature, ParameterGroup, Parameter, UnitSymbol
-from model.arithmetic_model import AbstractExpression
-from common.logger import GeneratorLogger
+from cpdsl.generator.visitors.configuration_visitor import GeneratorConfigurationVisitor
+from cpdsl.generator.visitors.declaration_visitor import GeneratorDeclarationVisitor
+from cpdsl.generator.calculator.calculator import ConfigurationCalculator
+from cpdsl.generator.calculator.calculator_dec import DeclarationCalculator
+from cpdsl.generator.generators.uvic.code_generator import UvicCodeGenerator
+from cpdsl.generator.generators.mitgcm.code_generator import MitGcmCodeGenerator
+from cpdsl.generator.generators.eval.code_generator import EvalCodeGenerator
+from cpdsl.model.declaration_model import DeclarationModel, Feature, ParameterGroup, Parameter, UnitSymbol
+from cpdsl.model.arithmetic_model import AbstractExpression
+from cpdsl.common.logger import GeneratorLogger
 
 logger: GeneratorLogger
 

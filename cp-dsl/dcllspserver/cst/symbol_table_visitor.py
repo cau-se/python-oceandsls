@@ -24,10 +24,10 @@ from antlr4.tree.Tree import ParseTree
 from antlr4.Token import CommonToken
 
 # user relative imports
-from model.symbol_table import DeclarationModel, P, T, DuplicateSymbolError
-from model.declaration_model import GroupSymbol, FeatureSymbol, ParameterSymbol, \
+from cpdsl.model.symbol_table import DeclarationModel, P, T, DuplicateSymbolError
+from cpdsl.model.declaration_model import GroupSymbol, FeatureSymbol, ParameterSymbol, \
     EnumSymbol, ArraySymbol, RangeSymbol
-from model.unit_model import FundamentalUnit, UnitPrefix, UnitKind, ComposedUnit, UnitSpecification
+from cpdsl.model.unit_model import FundamentalUnit, UnitPrefix, UnitKind, ComposedUnit, UnitSpecification
 
 from ..gen.python.Declaration.DeclarationParser import DeclarationParser
 from ..gen.python.Declaration.DeclarationVisitor import DeclarationVisitor

@@ -16,13 +16,13 @@ __author__ = "reiner"
 
 import unittest
 
-from model.declaration_model import ParameterGroup
-from model.type_system import RangeType, BaseType
+from cpdsl.model.declaration_model import ParameterGroup
+from cpdsl.model.type_system import RangeType, BaseType
 
 from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
 
-from model.declaration_model import DeclarationModel
-from model.type_system import EnumeralType
+from cpdsl.model.declaration_model import DeclarationModel
+from cpdsl.model.type_system import EnumeralType
 
 from gen.visitors.test_utils import AbstractTestGeneratorDeclarationVisitor
 

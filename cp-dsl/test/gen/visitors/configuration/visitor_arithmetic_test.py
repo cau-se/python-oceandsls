@@ -16,16 +16,16 @@ __author__ = "reiner"
 
 import unittest
 
-from model.type_system import Enumeral, BaseType
-from model.declaration_model import DeclarationModel, ParameterGroup, Parameter
+from cpdsl.model.type_system import Enumeral, BaseType
+from cpdsl.model.declaration_model import DeclarationModel, ParameterGroup, Parameter
 
-from model.arithmetic_model import IntValue, StringValue, FloatValue, ArithmeticExpression, MultiplicationExpression, \
+from cpdsl.model.arithmetic_model import IntValue, StringValue, FloatValue, ArithmeticExpression, MultiplicationExpression, \
     EMultiplicationOperator, EAdditionOperator, ArrayExpression
 
 from conflspserver.gen.python.Configuration.ConfigurationParser import ConfigurationParser
 
-from common.logger import GeneratorLogger
-from common.configuration import CompileFlags
+from cpdsl.common.logger import GeneratorLogger
+from cpdsl.common.configuration import CompileFlags
 
 from gen.visitors.test_utils import AbstractTestGeneratorConfigurationVisitor
 

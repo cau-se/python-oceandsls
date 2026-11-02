@@ -16,13 +16,13 @@ __author__ = "reiner"
 
 import unittest
 
-from model.declaration_model import DeclarationModel, ParameterGroup
-from model.type_system import EnumeralType, Enumeral, RangeType, ArrayType, Dimension, InlineEnumeralType, Enumeral
+from cpdsl.model.declaration_model import DeclarationModel, ParameterGroup
+from cpdsl.model.type_system import EnumeralType, Enumeral, RangeType, ArrayType, Dimension, InlineEnumeralType, Enumeral
 
 from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
 
-from common.logger import GeneratorLogger
-from common.configuration import CompileFlags
+from cpdsl.common.logger import GeneratorLogger
+from cpdsl.common.configuration import CompileFlags
 
 from gen.visitors.test_utils import AbstractTestGeneratorDeclarationVisitor
 

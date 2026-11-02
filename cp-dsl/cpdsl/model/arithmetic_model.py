@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from antlr4.ParserRuleContext import ParserRuleContext
 from enum import Enum
 from typing import List
-from model.unit_model import UnitSpecification
+from cpdsl.model.unit_model import UnitSpecification
 
 @dataclass
 class AbstractExpression:

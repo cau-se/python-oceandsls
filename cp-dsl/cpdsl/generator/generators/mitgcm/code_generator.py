@@ -18,7 +18,7 @@ import os
 __author__ = 'Reiner Jung'
 
 # Relative imports
-from model.declaration_model import DeclarationModel, ParameterGroup, Parameter, Feature
+from cpdsl.model.declaration_model import DeclarationModel, ParameterGroup, Parameter, Feature
 from ..code_generator import StandardCodeGenerator
 
 

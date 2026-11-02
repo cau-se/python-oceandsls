@@ -18,9 +18,9 @@ import os
 __author__ = 'stu222808'
 
 # Relative imports
-from model.declaration_model import DeclarationModel
-from model.type_system import EnumeralType
-from model.declaration_model import ParameterGroup, Parameter, Feature
+from cpdsl.model.declaration_model import DeclarationModel
+from cpdsl.model.type_system import EnumeralType
+from cpdsl.model.declaration_model import ParameterGroup, Parameter, Feature
 from ..code_generator import StandardCodeGenerator
 
 

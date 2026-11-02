@@ -12,13 +12,13 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from model.declaration_model import DeclarationModel, ParameterGroup, Parameter, Feature, FeatureGroup
-from model.arithmetic_model import AbstractExpression, ArithmeticExpression, MultiplicationExpression, IntValue, FloatValue, StringValue
-from model.unit_model import UnitSpecification
+from cpdsl.model.declaration_model import DeclarationModel, ParameterGroup, Parameter, Feature, FeatureGroup
+from cpdsl.model.arithmetic_model import AbstractExpression, ArithmeticExpression, MultiplicationExpression, IntValue, FloatValue, StringValue
+from cpdsl.model.unit_model import UnitSpecification
 
 from cfunits import Unit
 
-from common.logger import GeneratorLogger
+from cpdsl.common.logger import GeneratorLogger
 
 class UnitCalculator:
 

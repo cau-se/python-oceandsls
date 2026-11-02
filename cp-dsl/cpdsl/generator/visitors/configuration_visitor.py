@@ -23,14 +23,14 @@ from antlr4.Token import CommonToken
 from antlr4 import ParserRuleContext, TerminalNode
 
 # user relative imports
-from model.symbols import Scope, T, P
-from model.declaration_model import DeclarationModel, ParameterGroup, Feature, Parameter, SelectorExpression
-from model.unit_model import UnitPrefix
-from model.arithmetic_model import ArithmeticExpression, MultiplicationExpression, EMultiplicationOperator, EAdditionOperator, \
+from cpdsl.model.symbols import Scope, T, P
+from cpdsl.model.declaration_model import DeclarationModel, ParameterGroup, Feature, Parameter, SelectorExpression
+from cpdsl.model.unit_model import UnitPrefix
+from cpdsl.model.arithmetic_model import ArithmeticExpression, MultiplicationExpression, EMultiplicationOperator, EAdditionOperator, \
     ArrayExpression, IntValue, FloatValue, StringValue
-from model.type_system import EnumeralType, base_types
-from common.logger import GeneratorLogger
-from common.unit_processing import parse_unit
+from cpdsl.model.type_system import EnumeralType, base_types
+from cpdsl.common.logger import GeneratorLogger
+from cpdsl.common.unit_processing import parse_unit
 
 from conflspserver.gen.python.Configuration.ConfigurationLexer import ConfigurationLexer
 from conflspserver.gen.python.Configuration.ConfigurationParser import ConfigurationParser

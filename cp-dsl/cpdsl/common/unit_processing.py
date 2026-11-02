@@ -1,4 +1,4 @@
-from model.unit_model import UnitSpecification, Unit, UnitKind, UnitPrefix, SIUnit, ExponentUnit, DivisionUnit, CustomUnit
+from cpdsl.model.unit_model import UnitSpecification, Unit, UnitKind, UnitPrefix, SIUnit, ExponentUnit, DivisionUnit, CustomUnit
 from typing import List
 
 prefix = { 'q': UnitPrefix.Quecto,

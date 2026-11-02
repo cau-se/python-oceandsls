@@ -15,14 +15,14 @@
 __author__ = "reiner"
 
 import unittest
-from model.declaration_model import DeclarationModel
+from cpdsl.model.declaration_model import DeclarationModel
 from antlr4 import InputStream, CommonTokenStream
 from antlr4.Token import CommonToken
 from antlr4 import TerminalNode
 from antlr4.tree.Tree import TerminalNodeImpl
 
-from generator.visitors.declaration_visitor import GeneratorDeclarationVisitor
-from generator.visitors.configuration_visitor import GeneratorConfigurationVisitor
+from cpdsl.generator.visitors.declaration_visitor import GeneratorDeclarationVisitor
+from cpdsl.generator.visitors.configuration_visitor import GeneratorConfigurationVisitor
 
 from dcllspserver.gen.python.Declaration.DeclarationLexer import DeclarationLexer
 from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
@@ -30,8 +30,8 @@ from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationPar
 from conflspserver.gen.python.Configuration.ConfigurationLexer import ConfigurationLexer
 from conflspserver.gen.python.Configuration.ConfigurationParser import ConfigurationParser
 
-from common.logger import GeneratorLogger
-from common.configuration import CompileFlags
+from cpdsl.common.logger import GeneratorLogger
+from cpdsl.common.configuration import CompileFlags
 
 class TestStream(InputStream):
 

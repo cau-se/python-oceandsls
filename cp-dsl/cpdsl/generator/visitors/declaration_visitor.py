@@ -23,12 +23,12 @@ from antlr4.Token import CommonToken
 from antlr4 import ParserRuleContext, TerminalNode
 
 # user relative imports
-from model.symbols import Scope, T, P
-from model.declaration_model import DeclarationModel, Parameter, ParameterGroup, Feature, FeatureGroup, EKind
-from model.type_system import EnumeralType, InlineEnumeralType, Enumeral, RangeType, ArrayType, Dimension, BaseType, base_types
-from model.unit_model import Unit, UnitPrefix, UnitKind, UnitSpecification, SIUnit, CustomUnit, DivisionUnit, ExponentUnit
-from common.logger import GeneratorLogger
-from model.arithmetic_model import ArithmeticExpression, MultiplicationExpression, IntValue, FloatValue, StringValue, \
+from cpdsl.model.symbols import Scope, T, P
+from cpdsl.model.declaration_model import DeclarationModel, Parameter, ParameterGroup, Feature, FeatureGroup, EKind
+from cpdsl.model.type_system import EnumeralType, InlineEnumeralType, Enumeral, RangeType, ArrayType, Dimension, BaseType, base_types
+from cpdsl.model.unit_model import Unit, UnitPrefix, UnitKind, UnitSpecification, SIUnit, CustomUnit, DivisionUnit, ExponentUnit
+from cpdsl.common.logger import GeneratorLogger
+from cpdsl.model.arithmetic_model import ArithmeticExpression, MultiplicationExpression, IntValue, FloatValue, StringValue, \
     EMultiplicationOperator, EAdditionOperator, ArrayExpression
 
 from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser

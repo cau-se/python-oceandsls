@@ -18,8 +18,8 @@ import abc
 __author__ = "stu222808,sgu,reiner"
 
 from typing import Coroutine, List, Optional, ParamSpec, Set, TypeVar
-from model.type_system import Type
-from model.unit_model import Unit
+from cpdsl.model.type_system import Type
+from cpdsl.model.unit_model import Unit
 
 
 # Antlr4

@@ -12,11 +12,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from common.logger import GeneratorLogger
-from model.declaration_model import DeclarationModel, Parameter, SelectorExpression
-from model.arithmetic_model import AbstractExpression, ArithmeticExpression, MultiplicationExpression, \
+from cpdsl.common.logger import GeneratorLogger
+from cpdsl.model.declaration_model import DeclarationModel, Parameter, SelectorExpression
+from cpdsl.model.arithmetic_model import AbstractExpression, ArithmeticExpression, MultiplicationExpression, \
     AbstractTypedValue, StringValue, IntValue, FloatValue, EAdditionOperator, EMultiplicationOperator
-from model.type_system import Enumeral
+from cpdsl.model.type_system import Enumeral
 
 class ExpressionCalculator():
     logger: GeneratorLogger

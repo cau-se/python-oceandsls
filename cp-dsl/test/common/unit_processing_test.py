@@ -16,8 +16,8 @@ __author__ = "reiner"
 
 import unittest
 
-from common.unit_processing import parse_unit, tokenize, resolve, process_tokens
-from model.unit_model import UnitKind, UnitPrefix, UnitSpecification, SIUnit, DivisionUnit, ExponentUnit, CustomUnit
+from cpdsl.common.unit_processing import parse_unit, tokenize, resolve, process_tokens
+from cpdsl.model.unit_model import UnitKind, UnitPrefix, UnitSpecification, SIUnit, DivisionUnit, ExponentUnit, CustomUnit
 
 prefix = { 'q': UnitPrefix.Quecto,
             'r': UnitPrefix.Ronto,

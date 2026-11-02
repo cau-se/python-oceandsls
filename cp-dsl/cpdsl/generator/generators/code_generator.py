@@ -18,7 +18,7 @@ import os
 __author__ = 'stu222808'
 
 # Relative imports
-from model.declaration_model import DeclarationModel
+from cpdsl.model.declaration_model import DeclarationModel
 
 
 class StandardCodeGenerator():

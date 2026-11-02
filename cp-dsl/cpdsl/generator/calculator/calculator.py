@@ -19,9 +19,9 @@ __author__ = "stu222808"
 import operator as op
 
 # Relative Imports
-from model.declaration_model import DeclarationModel, Parameter, ParameterGroup, Feature
-from common.logger import GeneratorLogger
-from generator.calculator.expression_calculator import ExpressionCalculator
+from cpdsl.model.declaration_model import DeclarationModel, Parameter, ParameterGroup, Feature
+from cpdsl.common.logger import GeneratorLogger
+from cpdsl.generator.calculator.expression_calculator import ExpressionCalculator
 
 class Calculator():
     '''A calculator for configured values of parameters'''

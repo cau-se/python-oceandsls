@@ -16,8 +16,8 @@ __author__ = "reiner"
 
 import unittest
 
-from model.declaration_model import DeclarationModel, ParameterGroup, Parameter, SelectorExpression
-from model.arithmetic_model import IntValue, ArrayExpression
+from cpdsl.model.declaration_model import DeclarationModel, ParameterGroup, Parameter, SelectorExpression
+from cpdsl.model.arithmetic_model import IntValue, ArrayExpression
 
 from gen.visitors.test_utils import AbstractTestGeneratorConfigurationVisitor
 

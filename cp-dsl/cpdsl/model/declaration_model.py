@@ -20,10 +20,10 @@ from typing import Optional, Coroutine, TypeVar, List, Dict
 # Antlr4
 from antlr4.tree.Tree import ParseTree
 
-from model.symbols import Scope, NamedElement
-from model.type_system import NamedType
-from model.unit_model import UnitSpecification
-from model.arithmetic_model import AbstractExpression
+from cpdsl.model.symbols import Scope, NamedElement
+from cpdsl.model.type_system import NamedType
+from cpdsl.model.unit_model import UnitSpecification
+from cpdsl.model.arithmetic_model import AbstractExpression
 
 #
 # Model elements of the DSL
