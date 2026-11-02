@@ -24,6 +24,8 @@ from typing import Dict, List, Tuple
 # Jinja2
 from jinja2 import Environment, FileSystemLoader
 
+from ..filewriter.jinjatemplates import TEMPLATE_ROOT
+
 # User relative imports
 from ..filewriter.file_writer import write_file
 from ..gen.python.TestSuite.TestSuiteParser import TestSuiteParser
@@ -38,7 +40,7 @@ class CMakeFileGeneratorVisitor(TestSuiteVisitor):
     cwd: str
 
     def __init__(
-            self, template_path: str = "tdd-dsl/tddlspserver/filewriter/jinjatemplates/cmake", files: Dict[str, Tuple[float, str, str]] = {},
+            self, template_path: str = os.path.join(TEMPLATE_ROOT, "cmake"), files: Dict[str, Tuple[float, str, str]] = {},
             symbol_table: SymbolTable = None, work_path: str = "tdd-dsl/output"
     ):
         """

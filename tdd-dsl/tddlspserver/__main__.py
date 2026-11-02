@@ -15,7 +15,8 @@
 #  limitations under the License.
 
 from argparse import ArgumentTypeError, ArgumentParser
-from logging import basicConfig, DEBUG
+from logging import basicConfig, getLogger, DEBUG, INFO
+from shutil import which
 from os import access, getcwd, R_OK
 from os.path import isfile, join, isdir, dirname, abspath
 from subprocess import check_output, STDOUT, CalledProcessError, run
@@ -23,8 +24,6 @@ from sys import executable
 
 # Package imports
 from .server import did_save, recommend_software_under_test, tdd_server
-
-basicConfig(level=DEBUG)
 
 
 def add_arguments(parser):
@@ -45,7 +44,10 @@ def add_arguments(parser):
         "--port", dest="port", type=int, default=2087, help="Bind to this port"
     )
     parser.add_argument(
-        "-fx", "--fxtran", dest="fxtran", type=fxtran_executable, default="fxtran", help="Path to fxtran"
+        # No default: argparse would validate a string default with type=..., and the server could not start at all
+        # without fxtran. fxtran is only required to analyse the SUT (content assist and generation use it if present).
+        "-fx", "--fxtran", dest="fxtran", type=fxtran_executable, default=None,
+        help="Path to fxtran (default: fxtran on PATH)"
     )
 
     parser.add_argument(
@@ -62,6 +64,10 @@ def add_arguments(parser):
 
     parser.add_argument(
         "-d", "--descending", action="store_true", help="Sort the list in descending order"
+    )
+
+    parser.add_argument(
+        "--debug", action="store_true", help="Log debug output (stderr) and write metric tables to files"
     )
 
 
@@ -153,12 +159,20 @@ def main():
     add_arguments(parser)
     args = parser.parse_args()
 
+    # Logging goes to stderr: stdout carries the JSON-RPC stream when the server runs over stdio
+    basicConfig(level=DEBUG if args.debug else INFO)
+    tdd_server.SHOW_DEBUG_OUTPUT = args.debug
+
     # Sort the list based on the descending flag
     tdd_server.descending_sort = args.descending
 
     if args.fxtran:
         # Add fxtran path
         tdd_server.fxtran_path = args.fxtran
+    elif which("fxtran") is None:
+        getLogger(__name__).warning(
+            "fxtran not found: symbols of the system under test are not available. Provide it via -fx PATH."
+        )
 
     if args.metric:
         # Add sort metric

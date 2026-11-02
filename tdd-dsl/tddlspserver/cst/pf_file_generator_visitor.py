@@ -24,6 +24,8 @@ from typing import Dict, List, Tuple
 # Jinja2
 from jinja2 import Environment, FileSystemLoader
 
+from ..filewriter.jinjatemplates import TEMPLATE_ROOT
+
 # User relative imports
 from ..symboltable.symbol_table import SymbolTable
 from ..filewriter.file_writer import write_file
@@ -52,7 +54,7 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
     array_name: str
 
     def __init__(
-            self, template_path: str = "tdd-dsl/tddlspserver/filewriter/jinjatemplates/pf", files: Dict[str, Tuple[float, str, str]] = {},
+            self, template_path: str = os.path.join(TEMPLATE_ROOT, "pf"), files: Dict[str, Tuple[float, str, str]] = {},
             symbol_table: SymbolTable = None, work_path: str = "tdd-dsl/output", test_folder: str = "tests", file_suffix: str = "pf", rel_file_path=None
     ):
         """

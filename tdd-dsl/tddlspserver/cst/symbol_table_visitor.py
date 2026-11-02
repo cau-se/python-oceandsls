@@ -274,7 +274,8 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
                 self._symbol_table.add_new_symbol_of_type(VariableSymbol, scope_sym, variable_name, None, variable_type)
         try:
             # Remove temporary xml files
-            shutil.rmtree(xml_path)
+            if os.path.isdir(xml_path):  # not created if fxtran is not available
+                shutil.rmtree(xml_path)
         except OSError as e:
             logger.error("Error deleting temporary xml directory : %s - %s." % (e.filename, e.strerror))
 

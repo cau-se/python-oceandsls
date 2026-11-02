@@ -11,3 +11,8 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+
+import os
+
+#: Directory of the bundled Jinja2 templates (pf, f90, cmake). Generators accept a template_path to use custom ones.
+TEMPLATE_ROOT = os.path.dirname(os.path.abspath(__file__))

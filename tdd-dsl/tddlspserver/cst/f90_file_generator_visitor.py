@@ -24,6 +24,8 @@ from typing import Dict, List, Optional, Tuple
 # Jinja2
 from jinja2 import Environment, FileSystemLoader
 
+from ..filewriter.jinjatemplates import TEMPLATE_ROOT
+
 # User relative imports
 from ..symboltable.symbol_table import FunctionSymbol, FundamentalType, SymbolTable, ModuleSymbol, RoutineSymbol, Type, VariableSymbol
 from ..filewriter.file_writer import write_file
@@ -47,7 +49,7 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
     found_par: bool
 
     def __init__(
-            self, template_path: str = "tdd-dsl/tddlspserver/filewriter/jinjatemplates/f90", files: Dict[str, Tuple[float, str, str]] = {},
+            self, template_path: str = os.path.join(TEMPLATE_ROOT, "f90"), files: Dict[str, Tuple[float, str, str]] = {},
             symbol_table: SymbolTable = None, work_path: str = "tdd-dsl/output", file_suffix: str = "f90", rel_file_path=None
     ):
         """
