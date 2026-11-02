@@ -1,12 +1,13 @@
 stages:
   - test
   - build
-  - deploy
+  # GitLab Pages: uncomment the deploy stage and the pages job at the end of this file once Pages is available
+  # - deploy
 
 # Unit and language server tests of all Python packages (requires-python >= 3.10)
 tests:
   tags:
-    - exec-docker
+    - oceandsl
   stage: test
   image: python:${PYTHON_VERSION}-slim
   parallel:
@@ -21,7 +22,7 @@ tests:
 # Build sdists/wheels and validate them like PyPI does (twine check)
 dist:
   tags:
-    - exec-docker
+    - oceandsl
   stage: build
   image: python:3.12-slim
   before_script:
@@ -35,7 +36,7 @@ dist:
 
 pylint:
   tags:
-    - exec-docker
+    - oceandsl
   stage: test
   image: python:3.10-slim
   before_script:
@@ -46,7 +47,7 @@ pylint:
     - pip install -r requirements-dev.txt pylint-gitlab
   script:
     # A single pylint run writes all reports: text to the log (and the score), Code Climate for merge requests
-    # and HTML for GitLab Pages
+    # and an HTML report (job artifact)
     - >
       pylint --exit-zero
       --output-format=text,pylint_gitlab.GitlabCodeClimateReporter:codeclimate.json,pylint_gitlab.GitlabPagesHtmlReporter:public/lint/index.html
@@ -57,26 +58,40 @@ pylint:
     - anybadge --overwrite --label $CI_JOB_NAME --value=$(cat public/badges/$CI_JOB_NAME.score) --file=public/badges/$CI_JOB_NAME.svg 4=red 6=orange 8=yellow 10=green
     - |
       echo "Your score is: $(cat public/badges/$CI_JOB_NAME.score)"
+  # GitLab Pages is not available on this instance. The report and the badge are job artifacts:
+  # - merge requests link them as "pylint report" (expose_as)
+  # - the project badge shows the badge of the latest successful pipeline on main:
+  #   https://git.se.informatik.uni-kiel.de/oceandsl/python-oceandsls/-/jobs/artifacts/main/raw/public/badges/pylint.svg?job=pylint
+  #   GitLab keeps the artifacts of the latest successful pipeline independently of expire_in
+  #   ("Keep artifacts from most recent successful jobs", enabled by default)
   artifacts:
+    expose_as: "pylint report"
     paths:
-      - public
+      - public/lint/index.html
+      - public/badges/
     reports:
       codequality: codeclimate.json
+    expire_in: 30 days
     when: always
 
-pages:
-  tags:
-    - exec-docker
-  stage: deploy
-  image: alpine:latest
-  # Publish the lint report and badge as soon as pylint is done, even if the tests fail
-  needs:
-    - pylint
-  script:
-    - echo
-  artifacts:
-    paths:
-      - public
-  only:
-    refs:
-      - master
+# GitLab Pages is not enabled on this GitLab instance. To publish the lint report and the badge on Pages,
+# uncomment the deploy stage above and this job. It publishes the public/ folder of the pylint job:
+#   <pages-url>/lint/            HTML report
+#   <pages-url>/badges/pylint.svg score badge
+#
+# pages:
+#   tags:
+#     - oceandsl
+#   stage: deploy
+#   image: alpine:latest
+#   # Publish the lint report and badge as soon as pylint is done, even if the tests fail
+#   needs:
+#     - pylint
+#   script:
+#     - echo
+#   artifacts:
+#     paths:
+#       - public
+#   only:
+#     refs:
+#       - main
