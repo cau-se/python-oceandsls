@@ -95,7 +95,7 @@ export function activate(context: ExtensionContext): void {
             throw new Error("`python.pythonPath` is not set");
         }
 
-        client = startLangServer(pythonPath, ["-m", "server"], cwd);
+        client = startLangServer(pythonPath, ["-m", "tddlspserver"], cwd);
     }
 
     context.subscriptions.push(client.start());

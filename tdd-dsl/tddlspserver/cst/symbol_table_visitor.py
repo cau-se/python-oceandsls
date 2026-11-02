@@ -29,7 +29,7 @@ from antlr4.tree.Tree import ParseTree
 from ..fxca.util.fxtran_utils import filter_xml, get_files, write_decorate_src_xml
 from ..gen.python.TestSuite.TestSuiteParser import TestSuiteParser
 from ..gen.python.TestSuite.TestSuiteVisitor import TestSuiteVisitor
-from ..symboltable.symbol_table import FunctionSymbol, ModuleSymbol, ParameterSymbol, RoutineSymbol, ScopedSymbol, SymbolTable, SymbolTableOptions, \
+from ..symboltable.symbol_table import DuplicateSymbolError, FunctionSymbol, ModuleSymbol, ParameterSymbol, RoutineSymbol, ScopedSymbol, SymbolTable, SymbolTableOptions, \
     TestCaseSymbol, VariableSymbol, P, T, get_fundamental_type
 
 # Debug Log
@@ -64,7 +64,12 @@ class SymbolTableVisitor(TestSuiteVisitor, Generic[T]):
     # Visit a parse tree produced by TestSuiteParser#testCase.
     def visitTestCase(self, ctx: TestSuiteParser.TestCaseContext):
         # Extract symbols from path, scope and variables
-        return self.withScope(ctx, TestCaseSymbol, lambda: self.visitChildren(ctx), ctx.ID().getText())
+        try:
+            return self.withScope(ctx, TestCaseSymbol, lambda: self.visitChildren(ctx), ctx.ID().getText())
+        except DuplicateSymbolError as e:
+            # Reported as diagnostic by the language server; keep the symbols of the other test cases usable
+            logger.warning("Skipping test case: %s", e)
+            return None
 
     # Visit a parse tree produced by TestSuiteParser#testVar.
     def visitTestVar(self, ctx: TestSuiteParser.TestVarContext):

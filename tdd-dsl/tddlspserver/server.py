@@ -1,5 +1,3 @@
-"""tddlspserver package."""
-
 #  Copyright (c) 2023.  OceanDSL (https://oceandsl.uni-kiel.de)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,51 +11,51 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+"""Language server of the TDD-DSL.
 
-# Util imports
-from logging import getLogger, DEBUG
-from re import compile
-from uuid import uuid4
-from os import getcwd, linesep, path
+Features (cf. Gundlach et al., "Facilitating Test-Driven Development via Domain-Specific Languages in Computational
+Science Software Engineering"):
+
+* syntax diagnostics and high-level checks of the test specification (unique test case and variable names,
+  existence of the source path),
+* content assist: DSL keywords, variables/functions/routines of the test case and the system under test (SUT, parsed
+  with fxtran), modules, and source paths,
+* generation of pFUnit, Fortran and CMake files when a test specification is saved (also available via the CLI),
+* recommendation of SUTs to test based on complexity metrics (``recommendSUT`` command).
+"""
+
+from __future__ import annotations
+
+import os
+from logging import getLogger
 from typing import Dict, List, Optional, Tuple
 
-# Antlr4
-from antlr4 import CommonTokenStream, FileStream, InputStream, Token
-from antlr4.IntervalSet import IntervalSet
-
-# Antlr4-c3
-from codeCompletionCore.CodeCompletionCore import CandidatesCollection, CodeCompletionCore
-
-# Pygls
+from antlr4 import FileStream, InputStream
 from lsprotocol.types import (
-    CompletionItem, CompletionList, CompletionOptions, CompletionParams, Diagnostic, DidChangeTextDocumentParams,
-    DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams, MessageType, Position, Range,
-    Registration, RegistrationParams, SemanticTokens, SemanticTokensLegend, SemanticTokensParams,
-    TEXT_DOCUMENT_COMPLETION, TEXT_DOCUMENT_DID_CHANGE, TEXT_DOCUMENT_DID_CLOSE, TEXT_DOCUMENT_DID_OPEN,
-    TEXT_DOCUMENT_DID_SAVE, TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL, Unregistration, UnregistrationParams
+    CompletionItem, CompletionItemKind, Diagnostic, DiagnosticSeverity, DidSaveTextDocumentParams, MessageType,
 )
-from pygls.server import LanguageServer
 from pygls.workspace import Document
 
-# User relative imports
+from odsllib.code_completion_core import CandidatesCollection
+from odsllib.lsp.compute_token_index import TokenPosition
+from odsllib.lsp.diagnostic_listener import token_range
+from odsllib.lsp.parsing import ParseResult
+from odsllib.lsp.server import AntlrLanguageServer
+
 from .cst.calculate_complexity_visitor import ComplexityMetricVisitor
 from .cst.cmake_file_generator_visitor import CMakeFileGeneratorVisitor
 from .cst.f90_file_generator_visitor import F90FileGeneratorVisitor
-from .cst.diagnostic_listener import DiagnosticListener
 from .cst.pf_file_generator_visitor import PFFileGeneratorVisitor
-from .cst.system_file_visitor import SystemFileVisitor
 from .cst.symbol_table_visitor import SymbolTableVisitor
 from .gen.python.TestSuite.TestSuiteLexer import TestSuiteLexer
 from .gen.python.TestSuite.TestSuiteParser import TestSuiteParser
-from .symboltable.symbol_table import MetricSymbol, ModuleSymbol, PathSymbol, RoutineSymbol, VariableSymbol
-from .utils.compute_token_index import CaretPosition, TokenPosition, compute_token_position
+from .symboltable.symbol_table import MetricSymbol, ModuleSymbol, RoutineSymbol, VariableSymbol
 from .utils.suggest_variables import suggest_symbols
-from .utils.tdd_errors_strategy import TDDErrorStrategy
+
+LOG = getLogger(__name__)
 
 
-class TDDLSPServer(LanguageServer):
-    CMD_REGISTER_COMPLETIONS = "registerCompletions"
-    CMD_UNREGISTER_COMPLETIONS = "unregisterCompletions"
+class TDDLSPServer(AntlrLanguageServer):
     CMD_RECOMMEND_SUT_BLOCKING = "recommendSUT"
 
     CONFIGURATION_SECTION = "ODsl-TDD-DSL-Server"
@@ -65,7 +63,8 @@ class TDDLSPServer(LanguageServer):
     # Number of SuT to return for metric calculation
     N_SHOW_METRICS = 3
 
-    SHOW_DEBUG_OUTPUT: bool = True
+    # Write metric tables to a file instead of showing the top entries (enabled by the CLI option --debug)
+    SHOW_DEBUG_OUTPUT: bool = False
     DEBUG_OUTPUT_SEPERATOR: str = "\t"
     DEBUG_HEADER: str = DEBUG_OUTPUT_SEPERATOR.join([
         "Scope", "Source", "Cyclomatic Complexity", "Depth", "LOC", "Parameters", "Conditionals", "Loops",
@@ -77,338 +76,230 @@ class TDDLSPServer(LanguageServer):
         "Normalized Test Score", "Aggregated Test Score", "Test Factor"
     ])
 
-    LOG = getLogger(__name__)
+    LOG = LOG
+
+    lexer_class = TestSuiteLexer
+    parser_class = TestSuiteParser
+    start_rule = "testSuite"
+    preferred_rules = {TestSuiteParser.RULE_reference, TestSuiteParser.RULE_srcPath, TestSuiteParser.RULE_testModule}
+    # Identifiers and the quoted source path are completed as a whole
+    word_token_types = {TestSuiteParser.ID, TestSuiteParser.STRING}
+    trigger_characters = [",", "/"]
 
     def __init__(self, *args):
         super().__init__(*args)
-        self.error_listener = DiagnosticListener()  # Set error listener
-        self.lexer = self._init_lexer()
-        self.token_stream = CommonTokenStream(self.lexer)
-        self.parser = self._init_parser()
-        self.files: Dict[str, Tuple[float, str, str]] = {}  # Empty attribute init for generated files
+        self.files: Dict[str, Tuple[float, str, str]] = {}  # Generated files
         self.fxtran_path = "fxtran"  # Default Fxtran system file path can be overwritten
-        self.sort_metric = None  # Recommendation metric option
+        self.sort_metric: Optional[str] = None  # Recommendation metric option
         self.descending_sort = False
-        self.input_path = None
-        self.parse_tree = None
+        self.input_path: Optional[str] = None
+        self.parse_tree: Optional[TestSuiteParser.TestSuiteContext] = None
+        # Root of relative source paths and generated files
+        self.work_path: str = os.getcwd()
+        self.command(self.CMD_RECOMMEND_SUT_BLOCKING)(lambda *args: recommend_software_under_test(self, *args))
 
-    def _init_lexer(self) -> TestSuiteLexer:
-        """Initialize the lexer with error listeners."""
-        lexer = TestSuiteLexer(InputStream(''))  # Set lexer from empty input stream
-        lexer.removeErrorListeners()
-        lexer.addErrorListener(self.error_listener)
-        return lexer
+    # -----------------------------------------------------------------------------------------------------------------
+    # Diagnostics
+    # -----------------------------------------------------------------------------------------------------------------
 
-    def _init_parser(self) -> TestSuiteParser:
-        """Initialize the parser with error listeners and custom error strategy."""
-        parser = TestSuiteParser(self.token_stream)
-        parser.removeErrorListeners()
-        parser.addErrorListener(self.error_listener)
-        parser._errHandler = TDDErrorStrategy()  # Set error strategy to custom input mismatch report
-        return parser
+    def validate(self, uri: str, source: str) -> List[Diagnostic]:
+        diagnostics = super().validate(uri, source)
+        self.parse_tree = self.parse_results[uri].tree
+        return diagnostics
 
-    def reset_parser_state(self, input_stream: InputStream) -> None:
-        """Reset the parser state with a new input stream."""
-        self.error_listener.reset()  # Reset the error listener state
-        self.lexer.inputStream = input_stream  # Assign new input stream to the lexer
-        self.token_stream = CommonTokenStream(self.lexer)  # Reset the token stream with the updated lexer
-        self.parser.setInputStream(self.token_stream)  # Update the parser with the new token stream
+    def semantic_diagnostics(self, result: ParseResult, uri: str) -> List[Diagnostic]:
+        diagnostics: List[Diagnostic] = []
+        if result.tree is None:
+            return diagnostics
+
+        def error(token, message, severity=DiagnosticSeverity.Error):
+            diagnostics.append(Diagnostic(range=token_range(token, token.line, token.column), message=message,
+                                          severity=severity, source=self.diagnostic_source))
+
+        test_names = set()
+        for case in result.tree.cases:
+            if case.name is None:
+                continue
+            # Test case names identify the tests in the generated setup files and must be unique
+            if case.name.text in test_names:
+                error(case.name, f"duplicate test case '{case.name.text}'")
+            test_names.add(case.name.text)
+
+            if case.vars_ is not None:
+                var_names = set()
+                for var in case.vars_.vars_:
+                    decl = var.decl
+                    if decl is None or decl.name is None:
+                        continue
+                    name = decl.name.getText()
+                    if name in var_names:
+                        error(decl.name.start, f"duplicate variable '{name}' in test case '{case.name.text}'")
+                    var_names.add(name)
+
+            if case.srcpath is not None and case.srcpath.path is not None:
+                src_path = case.srcpath.path.text.strip("'")
+                if src_path and not os.path.isdir(os.path.join(self.work_path, src_path)):
+                    error(case.srcpath.path, f"source path '{src_path}' does not exist; new modules will be created "
+                                             f"there", DiagnosticSeverity.Information)
+        return diagnostics
+
+    # -----------------------------------------------------------------------------------------------------------------
+    # Completion
+    # -----------------------------------------------------------------------------------------------------------------
+
+    def symbol_completions(
+            self, result: ParseResult, position: TokenPosition, candidates: CandidatesCollection, uri: str
+    ) -> List[CompletionItem]:
+        if result.tree is None:
+            return []
+        items: List[CompletionItem] = []
+        rules = candidates.rules
+        if TestSuiteParser.RULE_srcPath in rules:
+            items.extend(self.path_completions(position.text))
+        if TestSuiteParser.RULE_reference in rules or TestSuiteParser.RULE_testModule in rules:
+            symbol_table = SymbolTableVisitor("completions", self.work_path, self.fxtran_path).visit(result.tree)
+            if TestSuiteParser.RULE_reference in rules:
+                for symbol_type, kind in ((VariableSymbol, CompletionItemKind.Variable),
+                                          (RoutineSymbol, CompletionItemKind.Function)):
+                    # FunctionSymbol is derived from RoutineSymbol
+                    names = suggest_symbols(symbol_table=symbol_table, position=position, symbol_type=symbol_type,
+                                            descending_sort=self.descending_sort)
+                    items.extend(CompletionItem(label=name, kind=kind) for name in names)
+            if TestSuiteParser.RULE_testModule in rules:
+                names = suggest_symbols(symbol_table=symbol_table, position=position, symbol_type=ModuleSymbol,
+                                        descending_sort=self.descending_sort)
+                items.extend(CompletionItem(label=name, kind=CompletionItemKind.Module) for name in names)
+        return items
+
+    def path_completions(self, typed: str) -> List[CompletionItem]:
+        """Complete the directory part of a quoted source path relative to :attr:`work_path`."""
+        typed = typed[1:] if typed.startswith("'") else typed
+        base, _, partial = typed.rpartition("/")
+        directory = os.path.join(self.work_path, base)
+        items: List[CompletionItem] = []
+        try:
+            entries = sorted(os.scandir(directory), key=lambda e: e.name)
+        except OSError:
+            return items
+        for entry in entries:
+            if entry.is_dir() and not entry.name.startswith(".") and entry.name.startswith(partial):
+                path = f"{base}/{entry.name}" if base else entry.name
+                items.append(CompletionItem(label=entry.name, kind=CompletionItemKind.Folder, detail=path,
+                                            filter_text=f"'{path}", insert_text=entry.name))
+        return items
+
+    # -----------------------------------------------------------------------------------------------------------------
+    # Generation
+    # -----------------------------------------------------------------------------------------------------------------
+
+    def document_saved(self, uri: str, result: ParseResult) -> None:
+        document: Document = self.workspace.get_text_document(uri)
+        generate(self, result.tree, os.path.abspath(document.path))
 
 
 tdd_server = TDDLSPServer("pygls-odsl-tdd-prototype", "v0.8")
 
 
-def _validate(text_doc: Document, server: TDDLSPServer = tdd_server) -> None:
-    """Validates LSP input."""
-    diagnostics = _validate_format(server, text_doc.source) if text_doc.source else []  # Validate format of file content for lexer input stream
-    server.publish_diagnostics(text_doc.uri, diagnostics)
+def generate(server: TDDLSPServer, parse_tree: Optional[TestSuiteParser.TestSuiteContext], file_path: str) -> None:
+    """Generate pFUnit, Fortran and CMake files for a parsed test suite."""
+    if parse_tree is None:
+        return
+    work_path = server.work_path
+    # Get symboltable for f90 generator
+    symbol_table = SymbolTableVisitor("variables", work_path, server.fxtran_path).visit(parse_tree)
+
+    rel_file_path: str = os.path.relpath(file_path, work_path)  # Get relative input path for file generation
+    # Generate pf files
+    server.files = PFFileGeneratorVisitor(
+        work_path=work_path, files=server.files, symbol_table=symbol_table, rel_file_path=rel_file_path
+    ).visit(parse_tree)
+    # Generate F90 files
+    server.files = F90FileGeneratorVisitor(
+        work_path=work_path, files=server.files, symbol_table=symbol_table, rel_file_path=rel_file_path
+    ).visit(parse_tree)
+    # Generate CMake files
+    server.files = CMakeFileGeneratorVisitor(
+        work_path=work_path, files=server.files, symbol_table=symbol_table
+    ).visit(parse_tree)
 
 
-def _validate_format(server: TDDLSPServer, source: str) -> List[Diagnostic]:
-    """Validates file format."""
-    server.reset_parser_state(InputStream(source))  # Get input stream of characters for lexer
-    try:
-        parse_tree = server.parser.testSuite()  # Parse the input source by invoking top-level rule
-        # Check if the parser stopped before reaching EOF
-        if not server.token_stream.fetchedEOF:
-            end_pos = Position(parse_tree.stop.line, parse_tree.stop.column)
-            eof_range = Range(start=end_pos, end=end_pos)
-            server.error_listener.diagnostics.append(
-                Diagnostic(message="Parser stopped before end of file.", range=eof_range)
-            )
-        server.parse_tree = parse_tree
-    except OSError as err:
-        server.error_listener.diagnostics.append(err.filename.msg)
-    return server.error_listener.diagnostics
+def did_save(server: TDDLSPServer, params: Optional[DidSaveTextDocumentParams]):
+    """Generate files for a saved document (LSP) or for ``server.input_path`` (CLI, ``params`` is None)."""
+    if params is not None:
+        server.on_did_save(params)
+        return
+
+    result = parse_stream(FileStream(server.input_path, encoding="utf-8"), server)
+    for diagnostic in result.diagnostics:
+        LOG.error("%s:%d:%d: %s", server.input_path, diagnostic.range.start.line + 1,
+                  diagnostic.range.start.character + 1, diagnostic.message)
+    server.parse_tree = result.tree
+    generate(server, result.tree, os.path.abspath(server.input_path))
 
 
-@tdd_server.feature(TEXT_DOCUMENT_COMPLETION, CompletionOptions(trigger_characters=[","]))
-def completions(params: Optional[CompletionParams] = None) -> CompletionList:
-    """Returns completion items."""
-    text_doc = get_text_document(params)
-    tdd_server.reset_parser_state(InputStream(text_doc.source))  # Reset parser state with the current document source
-
-    # Parse until fetched
-    token_index = None
-    while not tdd_server.token_stream.fetchedEOF:
-        parse_tree = tdd_server.parser.testSuite()  # Parse the source to generate a parse tree by invoking top-level rule
-        # Get token index under caret position
-        # params.position.line + 1 as lsp line counts from 0 and antlr4 line counts from 1
-        if token_index is None:
-            # Compute the position of the caret in the token stream
-            token_index = compute_token_position(
-                parse_tree, tdd_server.token_stream, CaretPosition(params.position.line + 1, params.position.character)
-            )
-
-    completion_list = CompletionList(is_incomplete=False, items=[])
-    if token_index is None:
-        # Return if no index could be determined
-        # TODO add warning
-        return completion_list
-
-    core = CodeCompletionCore(tdd_server.parser)  # Launch c3 core with parser
-    core.ignoredTokens = {Token.EPSILON}  # Ignore epsilon tokens
-    core.preferredRules = {TestSuiteParser.RULE_reference, TestSuiteParser.RULE_srcPath, TestSuiteParser.RULE_testModule}
-
-    # Collect candidates for code completion at the token index
-    candidates = core.collectCandidates(token_index.index)
-    # Resolve candidates for preferred rules
-    if candidates.rules:
-        symbol_types = []
-
-        # Determine symbol types based on the rule candidates
-        if TestSuiteParser.RULE_reference in candidates.rules:
-            symbol_table_visitor: SymbolTableVisitor = SymbolTableVisitor("completions", getcwd(), tdd_server.fxtran_path)
-            symbol_types.extend([VariableSymbol, RoutineSymbol])  # FunctionSymbol is derived from RoutineSymbol
-        elif TestSuiteParser.RULE_testModule in candidates.rules:
-            symbol_table_visitor: SymbolTableVisitor = SymbolTableVisitor("completions", getcwd(), tdd_server.fxtran_path)
-            symbol_types.append(ModuleSymbol)
-        elif TestSuiteParser.RULE_srcPath in candidates.rules:
-            symbol_table_visitor: SystemFileVisitor = SystemFileVisitor("paths", getcwd())
-            symbol_types.append(PathSymbol)
-
-        symbol_table = symbol_table_visitor.visit(parse_tree)
-
-        # Suggest symbols based on the identified symbol types
-        for symbol_type in symbol_types:
-            symbols = suggest_symbols(symbol_table=symbol_table, position=token_index, symbol_type=symbol_type, descending_sort=tdd_server.descending_sort)
-            completion_list.items.extend([CompletionItem(label=s) for s in symbols])
-
-    # Add terminal tokens to the completion candidates
-    stripped_literal_names = stripTerminals(elements=tdd_server.parser.literalNames)  # Strip default ' from terminals
-    for key, valueList in candidates.tokens.items():
-        label = IntervalSet.elementName(IntervalSet, stripped_literal_names, tdd_server.parser.symbolicNames, key)
-        if label == "NEWLINE":
-            label = linesep  # Replace newline with os.newline token
-        if label == "<UNKNOWN>" or label in tdd_server.parser.symbolicNames:
-            label = None  # Remove symbolic names or unknown tokens from completions
-        if label:
-            completion_list.items.append(CompletionItem(label=label))
-
-    # VSCode empty list workaround: Add an empty completion item if no suggestions are available
-    if not completion_list.items:
-        completion_list.items.append(CompletionItem(label=""))
-
-    # Optionally print debug output for the completion items
-    if tdd_server.SHOW_DEBUG_OUTPUT:
-        for entry in completion_list.items:
-            print(entry)
-
-    return completion_list
+def parse_stream(stream: InputStream, server: TDDLSPServer = tdd_server) -> ParseResult:
+    """Parse a stream and return the parse result."""
+    return server.parse(str(stream))
 
 
-def stripTerminals(elements: List[str], terminal: str = "'") -> List[str]:
-    """Strip string terminals from list elements."""
-    return [e.strip(terminal) for e in elements]
-
-
-@tdd_server.feature(TEXT_DOCUMENT_DID_CHANGE)
-def did_change(server: TDDLSPServer, params: DidChangeTextDocumentParams):
-    """Validate input and return text document did change notification."""
-    text_doc = get_text_document(params)
-    _validate(text_doc, server)
-
-
-@tdd_server.feature(TEXT_DOCUMENT_DID_CLOSE)
-def did_close(server: TDDLSPServer, params: DidCloseTextDocumentParams):
-    """Text document did close notification."""
-    server.show_message("Text Document Did Close")
-
-
-@tdd_server.feature(TEXT_DOCUMENT_DID_SAVE)
-def did_save(server: TDDLSPServer, params: DidSaveTextDocumentParams):
-    """Execute file generator and return text document did save notification."""
-    # LSP client or cli call
-    text_doc: Document = get_text_document(params) if params else None
-    file_path: str = path.abspath(text_doc.path) if params else server.input_path
-    input_stream: InputStream = InputStream(text_doc.source) if params else FileStream(server.input_path)
-
-    server.parseTree = parse_stream(input_stream, server)  # Launch parser
-    if server.parseTree:
-        symbol_table_visitor: SymbolTableVisitor = SymbolTableVisitor("variables", getcwd(), tdd_server.fxtran_path)
-        # Get symboltable for f90 generator
-        symbol_table = symbol_table_visitor.visit(server.parseTree)
-
-        rel_file_path: str = path.relpath(file_path, getcwd())  # Get relative input path for file generation
-        # Generate pf files
-        pf_file_generator_visitor: PFFileGeneratorVisitor = PFFileGeneratorVisitor(
-            work_path=getcwd(), files=server.files, symbol_table=symbol_table, rel_file_path=rel_file_path
-        )
-        server.files = pf_file_generator_visitor.visit(server.parseTree)  # Write pf files and save generated files
-        # Generate F90 files
-        f90_file_generator_visitor: F90FileGeneratorVisitor = F90FileGeneratorVisitor(
-            work_path=getcwd(), files=server.files, symbol_table=symbol_table, rel_file_path=rel_file_path
-        )
-        server.files = f90_file_generator_visitor.visit(server.parseTree)  # Update fortran file and save generated files
-        # Generate CMake files
-        cmake_file_generator_visitor: CMakeFileGeneratorVisitor = CMakeFileGeneratorVisitor(
-            work_path=getcwd(), files=server.files, symbol_table=symbol_table
-        )
-        server.files = cmake_file_generator_visitor.visit(server.parseTree)  # Update CMake files and save generated files
-        server.show_message("Text Document Did Save")
-
-
-def parse_stream(stream: InputStream, server: TDDLSPServer = tdd_server) -> Optional:
-    """Parse a file stream and return the parse tree."""
-    try:
-        server.reset_parser_state(stream)
-        return server.parser.testSuite()
-    except OSError as err:
-        print(f"An error occurred while parsing: {err}")
-        return None
-
-
-@tdd_server.feature(TEXT_DOCUMENT_DID_OPEN)
-async def did_open(server: TDDLSPServer, params: DidOpenTextDocumentParams):
-    """Validate input and return text document did open notification."""
-    text_doc = get_text_document(params)
-    server.show_message(f"Text Document Did Open: {text_doc.uri}", msg_type=MessageType.Info)
-    _validate(text_doc)
-
-
-def get_text_document(params) -> Document:
-    """Return managed document."""
-    return tdd_server.workspace.get_text_document(params.text_document.uri)
-
-
-@tdd_server.feature(
-    TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL, SemanticTokensLegend(token_types=["operator"], token_modifiers=[])
-)
-def semantic_tokens(server: TDDLSPServer, params: SemanticTokensParams) -> SemanticTokens:
-    """See https://microsoft.github.io/language-server-protocol/specification#textDocument_semanticTokens
-    for details on how semantic tokens are encoded.
-    """
-    TOKENS = compile("\".*\"(?=:)")  # Regex to match quoted strings followed by a colon
-
-    uri = params.text_document.uri
-    doc = server.workspace.get_text_document(uri)
-
-    last_line = 0
-    last_start = 0
-    data = []
-
-    # Iterate over each line in the document to find matching tokens
-    for lineno, line in enumerate(doc.lines):
-        last_start = 0
-
-        # Find tokens using the regex pattern
-        for match in TOKENS.finditer(line):
-            start, end = match.span()
-            data += [(lineno - last_line), (start - last_start), (end - start), 0, 0]
-
-            last_line = lineno
-            last_start = start
-
-    return SemanticTokens(data=data)
-
-
-@tdd_server.command(TDDLSPServer.CMD_RECOMMEND_SUT_BLOCKING)
 def recommend_software_under_test(server: TDDLSPServer, *args):
-    """Calculates the complexity of Software Under Test (SuT) in the input path and returns SuTs test recommendations."""
+    """Calculates the complexity of Software Under Test (SuT) in the input path and returns SuTs test recommendations.
+
+    Called with arguments from the LSP client (uses the last parsed test specification) and without arguments from the
+    CLI (analyses ``server.input_path``).
+    """
+    sort_metric = server.sort_metric or "Test Index"
 
     # Initialize a visitor to calculate complexity metrics
     complexity_visitor = ComplexityMetricVisitor(
         name="recommend",
-        source_root_directory=getcwd(),
+        source_root_directory=server.work_path,
         fxtran_command_path=server.fxtran_path,
-        sorting_metric=server.sort_metric,
+        sorting_metric=sort_metric,
         debug_mode=server.SHOW_DEBUG_OUTPUT,
         debug_separator=server.DEBUG_OUTPUT_SEPERATOR
     )
 
     # Generate a symbol table based on cli or client call
     if args:
+        if server.parse_tree is None:
+            server.show_message("Open a TDD-DSL file before requesting recommendations.", MessageType.Warning)
+            return None
         symbol_table = complexity_visitor.visit(server.parse_tree)
     else:
         symbol_table = complexity_visitor.calculate_metrics_for(server.input_path)
 
     # Suggest metrics based on the generated symbol table
-    recommended_metrics = suggest_symbols(symbol_table, position=None, symbol_type=MetricSymbol, descending_sort=server.descending_sort)
+    recommended_metrics = suggest_symbols(symbol_table, position=None, symbol_type=MetricSymbol,
+                                          descending_sort=server.descending_sort)
 
     # Write output to file if passed to llm analysis or debug enabled
-    if tdd_server.SHOW_DEBUG_OUTPUT or not args:
-        recommended_metrics.insert(0, tdd_server.DEBUG_HEADER)
-        cleaned_metric_name = filter_escape_chars(tdd_server.sort_metric)
-        file_path = path.join(getcwd(), cleaned_metric_name)
+    if server.SHOW_DEBUG_OUTPUT or not args:
+        recommended_metrics.insert(0, server.DEBUG_HEADER)
+        file_path = os.path.join(server.work_path, filter_escape_chars(sort_metric))
         debug_file_write(file_path, "\n".join(recommended_metrics))
         return file_path
 
+    server.show_message(f"Recommendations for Software Under Test (SuT) based on {sort_metric}...")
     # Show the top N metrics as determined by the configuration
-    for metric in recommended_metrics[:tdd_server.N_SHOW_METRICS]:
-        tdd_server.show_message(metric)
+    for metric in recommended_metrics[:server.N_SHOW_METRICS]:
+        server.show_message(metric)
+    return recommended_metrics[:server.N_SHOW_METRICS]
 
-    server.show_message(f"Recommendations for Software Under Test (SuT) based on {server.sort_metric}...")
 
-
-def filter_escape_chars(input_string):
+def filter_escape_chars(input_string: str) -> str:
     """Removes characters to be escaped for Bash."""
-    # characters to be escaped for Bash
     escape_chars = r'\"\'$`!&*?;|<>()[\]{} '
-
-    translation_table = str.maketrans('', '', escape_chars)
-    return input_string.translate(translation_table)
+    return input_string.translate(str.maketrans('', '', escape_chars))
 
 
-def debug_file_write(file_path: str = None, content: str = None):
+def debug_file_write(file_path: str, content: str):
     """Writes debugging information to a file."""
-    if tdd_server.LOG.isEnabledFor(DEBUG):
-        tdd_server.LOG.debug("Log metric to file %s\n" % file_path)
-
-    # Write the content to the specified file path
+    LOG.debug("Log metric to file %s", file_path)
     with open(file_path, mode="w", encoding="utf-8") as f:
         f.write(content)
 
 
-@tdd_server.command(TDDLSPServer.CMD_REGISTER_COMPLETIONS)
-async def register_completions(server: TDDLSPServer, *args):
-    """Register completions method on the client."""
-    params = RegistrationParams(
-        registrations=[Registration(
-            id=str(uuid4()), method=TEXT_DOCUMENT_COMPLETION,
-            register_options={"triggerCharacters": ","}
-        )]
-    )
-
-    response = await server.register_capability_async(params)
-
-    # Notify the user based on the response status
-    if response is None:
-        server.show_message("Successfully registered completions method")
-    else:
-        server.show_message("Error happened during completions registration.", MessageType.Error)
-
-
-@tdd_server.command(TDDLSPServer.CMD_UNREGISTER_COMPLETIONS)
-async def unregister_completions(server: TDDLSPServer, *args):
-    """Unregister completions method on the client."""
-    params = UnregistrationParams(
-        unregisterations=[Unregistration(id=str(uuid4()), method=TEXT_DOCUMENT_COMPLETION)]
-    )
-
-    response = await server.unregister_capability_async(params)
-
-    # Notify the user based on the response status
-    if response is None:
-        server.show_message("Successfully unregistered completions method")
-    else:
-        server.show_message("Error happened during completions unregistration.", MessageType.Error)
+def stripTerminals(elements: List[str], terminal: str = "'") -> List[str]:
+    """Strip string terminals from list elements."""
+    return [e.strip(terminal) for e in elements]
