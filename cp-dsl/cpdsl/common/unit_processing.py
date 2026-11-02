@@ -1,6 +1,9 @@
 from cpdsl.model.unit_model import UnitSpecification, Unit, UnitKind, UnitPrefix, SIUnit, ExponentUnit, DivisionUnit, CustomUnit
 from typing import List
 
+import logging
+_log = logging.getLogger(__name__)  # diagnostics go to logging, never to stdout
+
 prefix = { 'q': UnitPrefix.Quecto,
             'r': UnitPrefix.Ronto,
             'y': UnitPrefix.Yocto,
@@ -211,7 +214,7 @@ def tokenize(unit: str):
         elif c in [ '(', ')', '/']:
             token = c
         else:
-            print(f"Unit symbol {c} in {unit} not supported")
+            _log.error(f"Unit symbol {c} in {unit} not supported")
             token = c
         tokens.append(token)
         i+=1

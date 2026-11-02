@@ -22,7 +22,9 @@ from .utils import classproperty
 # Type system
 #
 
-base_type_names = ["byte", "ubyte", "short", "ushort", "int", "unit", "long", "ulong", "single", "float", "double", "boolean", "string"]
+# "file" is a primitive type of CP-DSL (paper, Section 5.2); "unit" is kept for compatibility, "uint" was meant
+base_type_names = ["byte", "ubyte", "short", "ushort", "int", "uint", "unit", "long", "ulong", "single", "float", "double",
+                   "boolean", "string", "file"]
 
 
 @dataclass

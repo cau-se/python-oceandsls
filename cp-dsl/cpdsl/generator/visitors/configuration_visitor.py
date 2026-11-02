@@ -38,6 +38,9 @@ from conflspserver.gen.python.Configuration.ConfigurationVisitor import Configur
 
 import os
 
+import logging
+_log = logging.getLogger(__name__)  # diagnostics go to logging, never to stdout
+
 
 class GeneratorConfigurationVisitor(ConfigurationVisitor, Generic[T]):
     _model: DeclarationModel
@@ -91,7 +94,7 @@ class GeneratorConfigurationVisitor(ConfigurationVisitor, Generic[T]):
 
             return self._model
         else:
-            print(f"ERROR: wrong declaration model {model_name}")
+            self._logger.strict(ctx, f"Configuration refers to declaration model {model_name}, but {self._model.name} was loaded")
 
     def visitArithmeticExpression(self, ctx: ConfigurationParser.ArithmeticExpressionContext):
         if ctx.left is not None:
@@ -108,10 +111,10 @@ class GeneratorConfigurationVisitor(ConfigurationVisitor, Generic[T]):
             if isinstance(expression, ConfigurationParser.MultiplicationExpressionContext):
                 return self.visitMultiplicationExpression(expression)
             else:
-                print(f"ERROR unsupported type in ArithmeticExpression {type(expression)}")
+                _log.error(f"ERROR unsupported type in ArithmeticExpression {type(expression)}")
                 return None
         else:
-            print("ERROR")
+            _log.error("ERROR")
             return None
 
     def visitEAdditionOperator(self, ctx: ConfigurationParser.EAdditionOperatorContext):
@@ -121,7 +124,7 @@ class GeneratorConfigurationVisitor(ConfigurationVisitor, Generic[T]):
         if value == EAdditionOperator.SUB.value:
             return EAdditionOperator.SUB
 
-        print("Illegal addition operator")
+        _log.error("Illegal addition operator")
         return None
 
     def visitMultiplicationExpression(self, ctx: ConfigurationParser.MultiplicationExpressionContext):
@@ -139,10 +142,10 @@ class GeneratorConfigurationVisitor(ConfigurationVisitor, Generic[T]):
             if isinstance(expression, ConfigurationParser.ValueExpressionContext):
                 return self.visitValueExpression(expression)
             else:
-                print(f"ERROR unsupported type in ValueExpressionContext {type(expression)}")
+                _log.error(f"ERROR unsupported type in ValueExpressionContext {type(expression)}")
                 return None
         else:
-            print("ERROR")
+            _log.error("ERROR")
             return None
 
     def visitEMultiplicationOperator(self, ctx: ConfigurationParser.EMultiplicationOperatorContext):
@@ -166,7 +169,7 @@ class GeneratorConfigurationVisitor(ConfigurationVisitor, Generic[T]):
         elif ctx.arrayExpression() is not None:
             return self.visitArrayExpression(ctx.arrayExpression())
         else:
-            print(f"ERROR something {ctx} {type(ctx)}")
+            _log.error(f"ERROR something {ctx} {type(ctx)}")
             return None
 
     def visitParenthesisExpression(self, ctx: ConfigurationParser.ParenthesisExpressionContext):
@@ -186,7 +189,7 @@ class GeneratorConfigurationVisitor(ConfigurationVisitor, Generic[T]):
             literal = ctx.children[0]
             return self.visit(literal)
         else:
-            print("ERROR")
+            _log.error("ERROR")
             return None
 
     def visitLongValue(self, ctx: ConfigurationParser.LongValueContext):
@@ -254,15 +257,14 @@ class GeneratorConfigurationVisitor(ConfigurationVisitor, Generic[T]):
         if ctx.unit is not None:
             unit:ConfigurationParser.UnitSpecificationContext = ctx.unit
 
-            var_unit = parse_unit(unit.unit.text)
-
-        self._type_scope = parameter.type
+            var_unit = parse_unit(unit.getText())
 
         if parameter is None:
-            print(f"ERROR: Parameter {var_name} does not exist in {self._scope.name}")
+            self._logger.strict(ctx, f"Parameter {var_name} does not exist in {self._scope.name}")
             self._type_scope = None
             return None
         else:
+            self._type_scope = parameter.type
             if len(ctx.selectors) > 0:
                 selectors = []
                 for s in ctx.selectors:
@@ -283,14 +285,17 @@ class GeneratorConfigurationVisitor(ConfigurationVisitor, Generic[T]):
         group_name = ctx.declaration.text
         group:ParameterGroup = self._scope.resolve_parameter_group(group_name)
         if group == None:
-            print(f"ERROR: Missing group {group_name}")
+            self._logger.strict(ctx, f"Missing group {group_name}")
             return None
 
         parent_scope = self._scope
         self._scope = group
-
-        for parameter_ctx in ctx.parameters:
-            self.visitParameterAssignment(parameter_ctx)
+        try:
+            for parameter_ctx in ctx.parameters:
+                self.visitParameterAssignment(parameter_ctx)
+        finally:
+            # Restore the scope; otherwise following groups were resolved inside this group
+            self._scope = parent_scope
 
         return group
 
@@ -306,13 +311,13 @@ class GeneratorConfigurationVisitor(ConfigurationVisitor, Generic[T]):
         return (int(ctx.lowerBound.text), int(ctx.upperBound.text))
 
     def visitUnitSpecification(self, ctx: ConfigurationParser.UnitSpecificationContext):
-        return self.stringToPrefix(ctx.unit.text)
+        return self.stringToPrefix(ctx.getText())
 
     def visitFeatureConfiguration(self, ctx: ConfigurationParser.FeatureConfigurationContext):
         feature_name = ctx.declaration.text
         feature:Feature = self._scope.resolve_feature(feature_name)
         if feature == None:
-            print(f"ERROR: Missing {feature_name}")
+            self._logger.strict(ctx, f"Missing feature {feature_name}")
             return None
         else:
             feature.is_activated = True
@@ -333,7 +338,7 @@ class GeneratorConfigurationVisitor(ConfigurationVisitor, Generic[T]):
         feature_name = ctx.declaration.text
         feature:Feature = self._scope.resolve_feature(feature_name)
         if feature == None:
-            print(f"ERROR: Missing {feature_name} for activate {ctx.deactivated}")
+            self._logger.strict(ctx, f"Missing feature {feature_name} to {'deactivate' if ctx.deactivated else 'activate'}")
             return None
         else:
             feature.is_activated = not ctx.deactivated
@@ -374,7 +379,7 @@ class GeneratorConfigurationVisitor(ConfigurationVisitor, Generic[T]):
         """
         scope = self._model.get_all_nested_symbols_sync(name)
         if len(scope) < 1:
-            print("Symbol with name " + str(name) + " could not be found")
+            _log.error("Symbol with name " + str(name) + " could not be found")
             return
         elif len(scope) > 1:
             for elem in scope:
@@ -394,4 +399,4 @@ class GeneratorConfigurationVisitor(ConfigurationVisitor, Generic[T]):
             if self._scope:
                 self._scope = current_scope
             else:
-                print("scope not set")
+                _log.error("scope not set")

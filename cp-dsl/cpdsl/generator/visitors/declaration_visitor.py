@@ -34,6 +34,9 @@ from cpdsl.model.arithmetic_model import ArithmeticExpression, MultiplicationExp
 from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
 from dcllspserver.gen.python.Declaration.DeclarationVisitor import DeclarationVisitor
 
+import logging
+_log = logging.getLogger(__name__)  # diagnostics go to logging, never to stdout
+
 # NOTE: Method names starting with visit are required to look like this, as parts of the grammar
 # are named in that way
 
@@ -53,6 +56,8 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
         self._type_scope = None
         self.inline_int = 0
         self._logger = logger
+        # (list to add to, feature reference context, scope of the declaring feature)
+        self._pending_references = []
 
     @property
     def symbol_table(self) -> DeclarationModel:
@@ -70,9 +75,22 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
 
         for feature in ctx.featureDeclarations:
             feature_declaration = self.visitFeatureAssignStat(feature)
-            self._model.features[feature_declaration.name] = feature_declaration
+            if feature_declaration is not None:
+                self._model.features[feature_declaration.name] = feature_declaration
 
+        self.resolve_feature_references()
         return self._scope
+
+    def resolve_feature_references(self):
+        """Resolve requires/excludes references collected while visiting feature declarations."""
+        current_scope = self._scope
+        for target_list, reference_ctx, scope in self._pending_references:
+            self._scope = scope
+            feature = self.visitFeatureReference(reference_ctx)
+            if isinstance(feature, Feature):
+                target_list.append(feature)
+        self._scope = current_scope
+        self._pending_references = []
 
     def visitDeclaredType(self, ctx: DeclarationParser.DeclaredTypeContext):
         if ctx.rangeType() is not None:
@@ -188,7 +206,7 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
             self._type_scope = None
             return parameter
         else:
-            self._logger.error(f"Parameter redefined {var_name}")
+            self._logger.strict(ctx, f"Parameter redefined {var_name}")
             self._type_scope = None
             return parameter
 
@@ -231,7 +249,10 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
         return Dimension(lower_bound, upper_bound)
 
     def visitTypeReference(self, ctx: DeclarationParser.TypeReferenceContext):
-        return self.resolve_type(self._scope, ctx.type_.text)
+        type = self.resolve_type(self._scope, ctx.type_.text)
+        if type is None:
+            self._logger.strict(ctx, f"Unknown type {ctx.type_.text}")
+        return type
 
     def visitFeatureAssignStat(self, ctx: DeclarationParser.FeatureAssignStatContext):
         name = ctx.name.text
@@ -242,13 +263,20 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
             feature = Feature(name, description, self._scope)
             feature.required = ctx.required is not None
 
+            # Feature references are resolved after all features are declared, so features can refer to features
+            # declared later in the model (see resolve_feature_references)
             for required in ctx.requires:
-                feature.requires.append(self.visitFeatureReference(required))
+                self._pending_references.append((feature.requires, required, self._scope))
             for excluded in ctx.excludes:
-                feature.excludes.append(self.visitFeatureReference(excluded))
+                self._pending_references.append((feature.excludes, excluded, self._scope))
 
             parent_scope = self._scope
             self._scope = feature
+
+            # Parameter groups local to the feature (they were not collected before)
+            for group in ctx.parameterGroupDeclarations:
+                group_declaration = self.visitParamGroupAssignStat(group)
+                feature.groups[group_declaration.name] = group_declaration
 
             for group in ctx.featureGroupDeclarations:
                 feature.feature_sets.append(self.visitFeatureGroupAssignStat(group))
@@ -313,10 +341,10 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
             if isinstance(expression, DeclarationParser.MultiplicationExpressionContext):
                 return self.visitMultiplicationExpression(expression)
             else:
-                print(f"ERROR unsupported type in ArithmeticExpression {type(expression)}")
+                _log.error(f"ERROR unsupported type in ArithmeticExpression {type(expression)}")
                 return None
         else:
-            print("ERROR")
+            _log.error("ERROR")
             return None
 
     def visitEAdditionOperator(self, ctx: DeclarationParser.EAdditionOperatorContext):
@@ -326,7 +354,7 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
         if value == EAdditionOperator.SUB.value:
             return EAdditionOperator.SUB
 
-        print("Illegal addition operator")
+        _log.error("Illegal addition operator")
         return None
 
     def visitMultiplicationExpression(self, ctx: DeclarationParser.MultiplicationExpressionContext):
@@ -344,10 +372,10 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
             if isinstance(expression, DeclarationParser.ValueExpressionContext):
                 return self.visitValueExpression(expression)
             else:
-                print(f"ERROR unsupported type in ValueExpressionContext {type(expression)}")
+                _log.error(f"ERROR unsupported type in ValueExpressionContext {type(expression)}")
                 return None
         else:
-            print("ERROR")
+            _log.error("ERROR")
             return None
 
     def visitEMultiplicationOperator(self, ctx: DeclarationParser.EMultiplicationOperatorContext):
@@ -371,7 +399,7 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
         elif ctx.arrayExpression() is not None:
             return self.visitArrayExpression(ctx.arrayExpression())
         else:
-            print(f"ERROR something {ctx} {type(ctx)}")
+            _log.error(f"ERROR something {ctx} {type(ctx)}")
             return None
 
     def visitParenthesisExpression(self, ctx: DeclarationParser.ParenthesisExpressionContext):
@@ -391,7 +419,7 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
             literal = ctx.children[0]
             return self.visit(literal)
         else:
-            print("ERROR")
+            _log.error("ERROR")
             return None
 
     def visitLongValue(self, ctx: DeclarationParser.LongValueContext):
@@ -469,7 +497,7 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
     ##################################
 
     def print_tree(self, ctx: ParserRuleContext, indent: str):
-        print(f"V {indent} NODE {ctx} {type(ctx)}")
+        _log.debug(f"V {indent} NODE {ctx} {type(ctx)}")
         if isinstance(ctx, TerminalNode):
             return
         for c in ctx.children:
@@ -546,7 +574,7 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
         if ctx.centi is not None:
             return UnitPrefix.Centi
         if ctx.mili is not None:
-            return UnitPrefix.Mili
+            return UnitPrefix.Milli
         if ctx.micro is not None:
             return UnitPrefix.Micro
         if ctx.nano is not None:
@@ -578,7 +606,7 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
             denominator = self.visit(ctx.denominator)
             return DivisionUnit(numerator=numerator, denominator=denominator)
         if ctx.exponent is not None:
-            return ExponentUnit(unit=numerator, exponent=ctx.exponent.value.text)
+            return ExponentUnit(unit=numerator, exponent=int(ctx.exponent.text))
 
         self._logger.strict(ctx, "Illegal unit")
 
@@ -592,7 +620,7 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
         if type is not None:
             return type
         if node is None:
-            print(f"No parent, cannot resolve type {type_name}")
+            _log.error(f"No parent, cannot resolve type {type_name}")
             return None
         elif isinstance(node, DeclarationModel):
             return node.resolve_type(type_name)
