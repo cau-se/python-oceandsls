@@ -1,32 +1,41 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
-
-[tool.setuptools.packages.find]
-exclude = ["input", "client", "node_modules"]
 
 [project]
 name = "TDD-Language"
-version = "0.80.0"
+version = "0.81.0"
 authors = [
     { name = "sgu", email = "sgu@informatik.uni-kiel.de" },
 ]
-description = "A program for a language server based on the test driven development ocean-dsl."
+description = "TDD-DSL: language server and generator for test-driven development of Fortran code with pFUnit."
 readme = "README.md"
 requires-python = ">=3.10"
+license = "Apache-2.0"
+license-files = ["LICENSE.txt"]
 dependencies = [
-    "odsllib >= 0.38",
+    "odsllib>=0.40.0,<1",
+    # The generated parser (tddlspserver/gen) is built with ANTLR 4.13.1
+    "antlr4-python3-runtime>=4.13.1,<4.14",
+    "pygls>=1.1,<2",
+    "lsprotocol>=2023.0.0",
+    "Jinja2>=3.0",
 ]
 classifiers = [
-    'Development Status :: 3 - Alpha',
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Fortran",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: Apache Software License",
+    "Intended Audience :: Science/Research",
     "Operating System :: OS Independent",
     "Topic :: Software Development :: Testing",
 ]
 
-license = { text = "Apache License (2.0)" }
+[project.optional-dependencies]
+test = ["pytest>=7", "parameterized"]
 
 [project.urls]
 "oceandsl · GitLab" = "https://git.se.informatik.uni-kiel.de/oceandsl"
@@ -34,3 +43,17 @@ license = { text = "Apache License (2.0)" }
 
 [project.scripts]
 tdd_dsl = "tddlspserver.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["tddlspserver*"]
+# Java sources are only used for grammar debugging (grun)
+exclude = ["tddlspserver.gen.java*"]
+namespaces = false
+
+[tool.setuptools.package-data]
+tddlspserver = ["filewriter/jinjatemplates/*/*.txt"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+filterwarnings = ["ignore::pytest.PytestCollectionWarning"]

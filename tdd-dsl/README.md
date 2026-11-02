@@ -1,4 +1,63 @@
-# exampleDSL for reference
+# TDD-DSL
+
+TDD-DSL facilitates test-driven development (TDD) of Fortran 90+ research software with the unit testing
+framework [pFUnit 4](https://github.com/Goddard-Fortran-Ecosystem/pFUnit). Test suites are written in a
+YAML-like DSL; the tooling generates the pFUnit files, CMake setup and templates for the system under test
+(SUT). See S. Gundlach, R. Jung and W. Hasselbring: *Facilitating Test-Driven Development via
+Domain-Specific Languages in Computational Science Software Engineering*.
+
+```
+suite test_suite:
+test test_fT_ME:
+    overwrite: pf, cmake
+    srcpath: 'src'
+    modules:
+        cfo_example
+    var:
+        dp: integer, PARAMETER = KIND(0D0)
+        xIntercept: real(dp) = 283D0 / 19D0
+    assert Equal:
+        in:
+            fT_ME(xIntercept), K
+        out:
+            0D0, K
+        tolerance: 1D-12
+```
+
+## Installation
+
+```
+pip install TDD-Language
+```
+
+This installs the `tdd_dsl` command and the shared library `odsllib`. To include symbols of the SUT in
+content assist and generation, install the Fortran parser [fxtran](https://github.com/pmarguinaud/fxtran)
+and put it on the `PATH` (or pass `-fx PATH`). Without fxtran, the server still works but only knows the
+symbols defined in the test specification.
+
+## Usage
+
+- Language server over stdio (default), TCP or WebSocket: `tdd_dsl`, `tdd_dsl --tcp --port 2087`, `tdd_dsl --ws`
+- Generate pFUnit/CMake/Fortran files without an editor: `tdd_dsl -f suite.tdd`
+- Recommend SUTs to test based on complexity metrics: `tdd_dsl -s path/to/src -m "Test Index"`
+
+The language server provides syntax and consistency diagnostics, content assist (keywords, test variables,
+SUT variables/functions/routines, modules, source paths), semantic highlighting and generates the test
+files whenever a `.tdd` file is saved. Paths in `srcpath` are relative to the server's working directory.
+
+## Development
+
+```
+pip install -e ../antlrLib -e ".[test]"
+pytest
+```
+
+The parser in `tddlspserver/gen` is generated from `tddlspserver/grammars/TestSuite.g4` with ANTLR 4.13.1
+(`make TestSuite` in the repository root).
+
+---
+
+# Development environment
 
 ## Install ANTlR4 for development
 - https://www.antlr.org/download.html

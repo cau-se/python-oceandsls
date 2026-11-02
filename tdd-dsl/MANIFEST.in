@@ -1,0 +1,6 @@
+include LICENSE.txt README.md
+recursive-include tddlspserver/grammars *.g4
+recursive-include tests *.py *.tdd
+prune tests/.pytest_cache
+prune tddlspserver/gen/java
+global-exclude __pycache__ *.py[cod]
