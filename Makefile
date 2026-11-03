@@ -56,50 +56,6 @@ clean-dist:
 	rm -rf $(DIST)
 
 #########################################################
-#                    example DSL
-#########################################################
-
-EXPPKGTARGETS = exampleDsl TestExprCore
-
-# Release version used by release targets
-EXPPACKAGE = example-dsl/examplelspserver
-EXPVER = $(strip $(shell cat version))
-EXPPYEXPVERDIR = $(EXPPACKAGE)-$(EXPVER)
-EXPPYBUILDDIR = $(EXPPACKAGE)/../build/$(EXPPYEXPVERDIR)
-EXPOBJDIR = $(EXPPACKAGE)/gen
-EXPSRCDIR = $(EXPPACKAGE)/grammars
-EXPGRAMMAR = $(EXPPACKAGE).g4
-
-all_EXP: clean $(EXPOBJDIR)/python/$(EXPPACKAGE) $(EXPOBJDIR)/java/$(EXPPACKAGE)
-	javac $(EXPOBJDIR)/java/$(EXPPACKAGE)/*.java
-
-all_pkg_EXP: $(EXPPKGTARGETS)
-
-$(EXPPKGTARGETS): %: $(EXPSRCDIR)/%.g4
-	rm -rf $(EXPOBJDIR)/python/$@ $(EXPOBJDIR)/java/$@
-	cd $(<D); $(antlr4) $(<F) -o ../../../$(EXPOBJDIR)/python/$@ -visitor -package $@ -Dlanguage=Python3
-	touch $(EXPOBJDIR)/__init__.py $(EXPOBJDIR)/python/__init__.py $(EXPOBJDIR)/python/$@/__init__.py  # packages for setuptools
-	cd $(<D); $(antlr4) $(<F) -o ../../../$(EXPOBJDIR)/java/$@ -visitor -package $@ 
-	javac $(EXPOBJDIR)/java/$@/*.java
-
-$(EXPOBJDIR)/python/$(EXPPACKAGE): $(EXPSRCDIR)/$(EXPGRAMMAR)
-	cd $(<D); $(antlr4) $(<F) -o ../../../$(EXPOBJDIR)/python/$(EXPPACKAGE) -visitor -package $(EXPPACKAGE) -Dlanguage=Python3
-
-$(EXPOBJDIR)/java/$(EXPPACKAGE): $(EXPSRCDIR)/$(EXPGRAMMAR)
-	cd $(<D); $(antlr4) $(<F) -o ../../../$(EXPOBJDIR)/java/$(EXPPACKAGE) -visitor -package $(EXPPACKAGE)
-
-$(EXPGRAMMAR).tar.gz: $(EXPOBJDIR)/python/$(EXPPACKAGE)
-	mkdir -p $(EXPPYBUILDDIR)
-	cp $(EXPOBJDIR)/python/$(EXPPACKAGE)/* $(EXPPYBUILDDIR)
-	cp README.md $(EXPPYBUILDDIR)/README.md
-	cp LICENSE $(EXPPYBUILDDIR)
-	cd $(EXPPYBUILDDIR); tar -czf $@ $(EXPPYEXPVERDIR); cd ..
-
-release_EXP: $(EXPGRAMMAR).tar.gz
-	mkdir -p release
-	mv $(EXPPYBUILDDIR)/$(EXPGRAMMAR).tar.gz release/$(EXPGRAMMAR)-$(EXPVER).tar.gz
-
-#########################################################
 #                    BGC DSL
 #########################################################
 

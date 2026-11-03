@@ -183,7 +183,6 @@ tdd-dsl/tddlspserver/other/
 tdd-dsl/input/
 tdd-dsl/dist/
 # Example-DSL tmp files
-example-dsl/examplelspserver/other/
 #BGC-DSL tmp files
 bgc-dsl/bgcLSPServer/other/
 antlrLib/dist/

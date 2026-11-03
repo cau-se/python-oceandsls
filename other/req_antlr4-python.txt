@@ -1,7 +1,0 @@
-# virtualenv --no-site-packages --distribute venv_antlr4-python && source venv_antlr4-python/bin/activate && python -m pip install --upgrade pip && pip install -U -r req_antlr4-python.txt
-setuptools
-pyecore
-pyecoregen
-antlr4-python3-runtime
-# deprecated as grammar via jedi
-#python-lsp-server[all]

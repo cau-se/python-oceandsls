@@ -1,7 +1,0 @@
-fun test() {
-    try {
-        doSomething()
-    } 
-}
-
-c = foo + b()

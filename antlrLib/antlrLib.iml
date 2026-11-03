@@ -8,6 +8,5 @@
     </content>
     <orderEntry type="jdk" jdkName="Python 3.10 (python-oceandsls)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="example-dsl" scope="TEST" />
   </component>
 </module>

@@ -25,7 +25,7 @@
             "module": "tdd-dsl.tddlspserver",
             "console": "integratedTerminal",
             "env": {
-                "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/antlrLib:${workspaceFolder}/tdd-dsl:${workspaceFolder}/example-dsl:${workspaceFolder}/tdd-dsl/tests:${workspaceFolder}/tdd-dsl/tddlspserver:${workspaceFolder}/antlrLib/codeCompletionCore:${workspaceFolder}/antlrLib/tests:${workspaceFolder}/example-dsl/tests:${workspaceFolder}/example-dsl/examplelspserver"
+                "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/antlrLib:${workspaceFolder}/tdd-dsl:${workspaceFolder}/tdd-dsl/tests:${workspaceFolder}/tdd-dsl/tddlspserver:${workspaceFolder}/antlrLib/codeCompletionCore:${workspaceFolder}/antlrLib/tests"
             }
         }
     ]

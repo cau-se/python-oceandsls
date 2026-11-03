@@ -5,7 +5,6 @@
       <module fileurl="file://$PROJECT_DIR$/antlrLib/antlrLib.iml" filepath="$PROJECT_DIR$/antlrLib/antlrLib.iml" />
       <module fileurl="file://$PROJECT_DIR$/bgc-dsl/bgc-dsl.iml" filepath="$PROJECT_DIR$/bgc-dsl/bgc-dsl.iml" />
       <module fileurl="file://$PROJECT_DIR$/cp-dsl/cp-dsl.iml" filepath="$PROJECT_DIR$/cp-dsl/cp-dsl.iml" />
-      <module fileurl="file://$PROJECT_DIR$/example-dsl/example-dsl.iml" filepath="$PROJECT_DIR$/example-dsl/example-dsl.iml" />
       <module fileurl="file://$PROJECT_DIR$/python-oceandsls.iml" filepath="$PROJECT_DIR$/python-oceandsls.iml" />
       <module fileurl="file://$PROJECT_DIR$/tdd-dsl/tdd-dsl.iml" filepath="$PROJECT_DIR$/tdd-dsl/tdd-dsl.iml" />
     </modules>
