@@ -105,7 +105,7 @@ class MitGcmCodeGenerator(StandardCodeGenerator):
                     return
                 if elem.name == "EEPARMS":
                     eeparmsTemplate = self.template_environment.get_template("eedata.template")
-                    self.writeFile(
+                    self.write_file(
                         eeparmsTemplate.render(
                             group=elem,
                             isinstance=isinstance,
@@ -124,7 +124,7 @@ class MitGcmCodeGenerator(StandardCodeGenerator):
                     return
                 fileName = dataList[1]
                 alreadyDone[elem.name] = [True, fileName]
-                self.writeFile(
+                self.write_file(
                     featureTemplate.render(
                         feature=elem,
                         isinstance=isinstance,
@@ -154,13 +154,13 @@ class MitGcmCodeGenerator(StandardCodeGenerator):
         # give group for eedata, feature for data.mnc, data.gmredi, data.rbcs, data.layers, data.ptracers, data.shap, data.obcs, data.gchem, data.off all same
         # template for every feature give to data.pkg + check for feature diagnostic
         dataPkgTemplate = self.template_environment.get_template("data.pkg.template")
-        self.writeFile(dataPkgTemplate.render(actData=activatedList, enumerate=enumerate), "data.pkg")
+        self.write_file(dataPkgTemplate.render(actData=activatedList, enumerate=enumerate), "data.pkg")
 
         # layer_size template only if group layer_size exists (LAYERS_SIZE.h)
         if layer_size:
             # TODO: still buggy
             layerSizeTemplate = self.template_environment.get_template("layer_size.template")
-            self.writeFile(layerSizeTemplate.render(groups=groupList, variableSymbol=Parameter, groupSymbol=ParameterGroup,
+            self.write_file(layerSizeTemplate.render(groups=groupList, variableSymbol=Parameter, groupSymbol=ParameterGroup,
                            none=None, str=str, enumerate=enumerate, firstNotNoneElem=self.firstNotNoneElem), "LAYERS_SIZE.h")
 
         # packages.conf check for feature diagnostics
@@ -169,14 +169,14 @@ class MitGcmCodeGenerator(StandardCodeGenerator):
             activatedList.remove("EEPARMS")
         except ValueError:
             pass
-        self.writeFile(packagesTemplate.render(features=activatedList), "packages.conf")
+        self.write_file(packagesTemplate.render(features=activatedList), "packages.conf")
 
         dataTemplate = self.template_environment.get_template("data.template")
-        self.writeFile(dataTemplate.render(groups=groupList, isinstance=isinstance, variableSymbol=Parameter, float=float, int=int,
+        self.write_file(dataTemplate.render(groups=groupList, isinstance=isinstance, variableSymbol=Parameter, float=float, int=int,
                        bool=bool, groupSymbol=ParameterGroup, none=None, str=str, enumerate=enumerate, firstNotNoneElem=self.firstNotNoneElem), "data")
 
         sizeTemplate = self.template_environment.get_template("size.template")
-        self.writeFile(sizeTemplate.render(groups=groupList, variableSymbol=Parameter, groupSymbol=ParameterGroup,
+        self.write_file(sizeTemplate.render(groups=groupList, variableSymbol=Parameter, groupSymbol=ParameterGroup,
                        none=None, str=str, enumerate=enumerate, firstNotNoneElem=self.firstNotNoneElem), "SIZE.h")
 
         for elem in self._symbol_table.getAllNestedSymbolsSync("tRef"):

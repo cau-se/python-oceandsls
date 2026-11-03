@@ -15,7 +15,7 @@
 from cpdsl.common.logger import GeneratorLogger
 from cpdsl.model.declaration_model import DeclarationModel, Parameter, SelectorExpression
 from cpdsl.model.arithmetic_model import AbstractExpression, ArithmeticExpression, MultiplicationExpression, \
-    AbstractTypedValue, StringValue, IntValue, FloatValue, EAdditionOperator, EMultiplicationOperator
+    AbstractTypedValue, StringValue, BooleanValue, IntValue, FloatValue, EAdditionOperator, EMultiplicationOperator
 from cpdsl.model.type_system import Enumeral
 
 class ExpressionCalculator():
@@ -41,7 +41,7 @@ class ExpressionCalculator():
             result = self.calc_arithmetic_expression(expression)
         elif isinstance(expression, MultiplicationExpression):
             result = self.calc_multiplication_expression(expression)
-        elif isinstance(expression, (Enumeral, IntValue, FloatValue, StringValue)):
+        elif isinstance(expression, (Enumeral, IntValue, FloatValue, StringValue, BooleanValue)):
             result = expression
         else:
             self.logger.error(f"Internal error. Cannot handle {expression} of type {type(expression)}")

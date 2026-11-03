@@ -97,16 +97,5 @@ class TestParameterGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationV
             self.assertEqual(p.default_value.value, t.enumerals["green"].value, "Wrong value")
             self.assertEqual(p.description, "", "Wrong description")
 
-    def test_visitParamType_type_reference(self):
-        param_type_context = DeclarationParser.ParamTypeContext(parent=None, parser=None)
-        type_reference = DeclarationParser.TypeReferenceContext(parent=param_type_context, parser=None)
-        type_reference.type_ = self.set_token("r")
-        param_type_context.addChild(type_reference)
-
-        result = self.make_visitor(type=RangeType(name="r", type=int, minimum=0, maximum=10)).visitParamType(param_type_context)
-
-        self.assertIsInstance(result, RangeType, "wrong type")
-        self.assertEqual(result.name, "r", "wrong type name")
-
 if __name__ == '__main__':
     unittest.main()

@@ -69,5 +69,10 @@ class StringValue(AbstractTypedValue):
     value: str
 
 @dataclass
+class BooleanValue(AbstractTypedValue):
+
+    value: bool
+
+@dataclass
 class ArrayExpression(AbstractExpression):
     elements: List[AbstractExpression]

@@ -28,7 +28,7 @@ from cpdsl.model.declaration_model import DeclarationModel, Parameter, Parameter
 from cpdsl.model.type_system import EnumeralType, InlineEnumeralType, Enumeral, RangeType, ArrayType, Dimension, BaseType, base_types
 from cpdsl.model.unit_model import Unit, UnitPrefix, UnitKind, UnitSpecification, SIUnit, CustomUnit, DivisionUnit, ExponentUnit
 from cpdsl.common.logger import GeneratorLogger
-from cpdsl.model.arithmetic_model import ArithmeticExpression, MultiplicationExpression, IntValue, FloatValue, StringValue, \
+from cpdsl.model.arithmetic_model import ArithmeticExpression, MultiplicationExpression, IntValue, FloatValue, StringValue, BooleanValue, \
     EMultiplicationOperator, EAdditionOperator, ArrayExpression
 
 from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
@@ -153,7 +153,7 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
             if enum_item.value == -1:
                 enum_item.value = self.find_next_enum_number(enum_type.enumerals)
             if self.check_enumeral_name(enum_item, enum_type.enumerals):
-                self._logger.strict(ctx, f"Enumeral {enum_item[0]} already exists in enumeration {enum_name}")
+                self._logger.strict(ctx, f"Enumeral {enum_item.name} already exists in the inline enumeration")
             else:
                 enum_type.enumerals[enum_item.name] = enum_item
 
@@ -430,6 +430,9 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
 
     def visitStringValue(self, ctx: DeclarationParser.StringValueContext):
         return StringValue(ctx=ctx, unit=None, type=base_types["string"], value=ctx.value.text[1:-1])
+
+    def visitBooleanValue(self, ctx: DeclarationParser.BooleanValueContext):
+        return BooleanValue(ctx=ctx, unit=None, type=base_types["boolean"], value=ctx.value.text == "true")
 
     def visitNamedElementReference(self, ctx: DeclarationParser.NamedElementReferenceContext):
         depth = len(ctx.elements)

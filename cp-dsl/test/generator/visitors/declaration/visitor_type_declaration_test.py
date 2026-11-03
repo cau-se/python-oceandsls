@@ -276,6 +276,14 @@ class TestGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisitor):
             self.assertEqual(enumeral_type.enumerals.get("BLUE").name, "BLUE", "Not blue")
             self.assertEqual(enumeral_type.enumerals.get("BLUE").value, 2, "Not 2 for blue")
 
+    def test_visitInlineEnumerationType_duplicate_enumeral(self):
+        known_messages = len(self.logger.messages)
+        model = self.parse_code("model eval group g : \"\" { def param1 ( RED, RED ) : meter }")
+
+        messages = [message for _, _, message in self.logger.messages[known_messages:]]
+        self.assertIn("Enumeral RED already exists in the inline enumeration", messages)
+        self.assertEqual(len(model.groups["g"].parameters["param1"].type.enumerals), 1, "Duplicate enumeral added")
+
 
 if __name__ == '__main__':
     unittest.main()

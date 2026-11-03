@@ -196,11 +196,6 @@ class TestScope(unittest.TestCase):
     def test_n_bugs(self):
         self.scope.add_operator("++")
         self.scope.add_operand("variable")
-        self.assertGreaterEqual(self.scope.n_bugs, 0)  #
-
-    def test_n_bugs(self):
-        self.scope.add_operator("++")
-        self.scope.add_operand("variable")
         self.assertGreaterEqual(self.scope.n_bugs, 0)  # Number of bugs should be non-negative
 
     @unittest.skip("draft test: requires weighted metrics computed by calculate_metrics()")

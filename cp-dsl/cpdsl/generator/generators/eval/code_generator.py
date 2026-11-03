@@ -12,27 +12,14 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import jinja2 as j
-import os
-
 __author__ = 'Reiner Jung'
 
 # Relative imports
-from cpdsl.model.declaration_model import DeclarationModel
 from ..code_generator import StandardCodeGenerator
 
 
 class EvalCodeGenerator(StandardCodeGenerator):
-    """a generator to test data model constructions
-
-    Args:
-        StandardCodeGenerator (_type_): _description_
-    """
-
-    def __init__(self, symbol_table: DeclarationModel, output_path: str) -> None:
-        super().__init__(symbol_table, output_path)
-        self.template_loader = j.PackageLoader(str(self.__module__), "templates")
-        self.template_environment = j.Environment(loader=self.template_loader)
+    """A generator to test the construction of the data model: it writes no files (and needs no templates)."""
 
     def generate(self) -> None:
-        pass
+        """Nothing to generate: the model was already built and computed."""

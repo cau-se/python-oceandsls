@@ -15,6 +15,7 @@
 from antlr4 import InputStream, CommonTokenStream, FileStream
 import argparse
 import os
+import sys
 from cpdsl.common.configuration import CompileFlags
 
 # relative imports
@@ -28,7 +29,7 @@ from cpdsl.generator.calculator.calculator import Calculator as ConfigurationCal
 from cpdsl.generator.generators.uvic.code_generator import UvicCodeGenerator
 from cpdsl.generator.generators.mitgcm.code_generator import MitGcmCodeGenerator
 from cpdsl.generator.generators.eval.code_generator import EvalCodeGenerator
-from cpdsl.model.declaration_model import DeclarationModel, Feature, ParameterGroup, Parameter
+from cpdsl.model.declaration_model import DeclarationModel, Feature, ParameterGroup, Parameter, SelectorExpression
 from cpdsl.model.symbols import UnitSymbol
 from cpdsl.model.arithmetic_model import AbstractExpression
 from cpdsl.common.logger import GeneratorLogger
@@ -69,8 +70,8 @@ def check_unit_compatibility(target_unit:UnitSymbol, source_unit:UnitSymbol, ele
     pass
 
 def derive_expression_unit(expression:AbstractExpression) -> UnitSymbol:
-    # TODO derive the unit of an expression (unit checks are not implemented yet)
-    return None
+    # TODO derive the unit of composed expressions; for now only the unit given with a value is known
+    return getattr(expression, "unit", None)
 
 def check_parameter_integrity(parameter: Parameter):
     target_unit = parameter.unit
@@ -78,7 +79,9 @@ def check_parameter_integrity(parameter: Parameter):
     check_unit_compatibility(target_unit, source_default_unit, parameter)
 
     for entry in parameter.entries:
-        source_entry_unit = derive_expression_unit(entry.expression)
+        # entries are values (expressions) or, for arrays, values with selectors
+        expression = entry.expression if isinstance(entry, SelectorExpression) else entry
+        source_entry_unit = derive_expression_unit(expression)
         check_unit_compatibility(target_unit, source_entry_unit, parameter)
 
 def check_parameter_group_integrity(group: ParameterGroup):
@@ -90,7 +93,7 @@ def check_feature_integrity(feature: Feature):
         for r in feature.requires:
             if not r.is_activated:
                 logger.logger.error(f"Feature missing. Feature {feature.name} requires {r.name}, but {r.name} is not activated.")
-        for group in feature.groups:
+        for group in feature.groups.values():
             check_parameter_group_integrity(group)
 
 def check_all_features_integrity(model: DeclarationModel):
@@ -100,8 +103,6 @@ def check_all_features_integrity(model: DeclarationModel):
 def check_all_parameters_integrity(model: DeclarationModel):
     for group in model.groups.values():
         check_parameter_group_integrity(group)
-    for feature in model.features.values():
-        check_feature_integrity(feature)
 
 def check_model_integrity(model: DeclarationModel):
     check_all_features_integrity(model)
@@ -146,23 +147,17 @@ def main():
     if not args.input_path:
         print("ERROR: Please specify a configuration file as argument!")
         parser.print_help()
-        exit(1)
+        sys.exit(1)
 
     input_configuration_path = args.input_path if os.path.isabs(args.input_path) else os.path.join(os.getcwd(), args.input_path)
-    if not os.path.exists(input_configuration_path) and os.path.isfile(input_configuration_path):
+    if not os.path.isfile(input_configuration_path):
         print(f"ERROR: Given file {input_configuration_path} not found.")
-        exit(1)
+        sys.exit(1)
 
     input_directory_path = os.path.dirname(input_configuration_path)
 
-    estimated_working_directory = ""
-    for i in input_configuration_path.split(os.sep):
-        if i and not i.endswith(".oconf"):
-            estimated_working_directory += os.sep
-            estimated_working_directory += i
-    output_path = args.output_path if args.output_path else os.path.join(estimated_working_directory, "gen")
-    if not os.path.isdir(output_path):
-        os.mkdir(output_path)
+    output_path = args.output_path if args.output_path else os.path.join(input_directory_path, "gen")
+    os.makedirs(output_path, exist_ok=True)
 
     # 1 read CONF file
     print(f"parse {input_configuration_path}")
@@ -179,41 +174,30 @@ def main():
 
     if model is None:
         print("Declaration model error")
-        exit(1)
+        sys.exit(1)
 
     # 5 process configuration model
     model = make_configuration_model(model, input_configuration_path)
 
-    # 6 check model integrity
-    model = check_model_integrity(model)
+    # 6 check model integrity (reports problems through the logger)
+    check_model_integrity(model)
 
-    # 7 Compute configuration
+    # 7 compute the configured values (stored in the parameters of the model)
     print("Compute configuration")
-    table = ConfigurationCalculator(model, logger).calculate()
+    ConfigurationCalculator(model, logger).calculate()
     print("Completed")
-    exit(2)
-    # 5 provide model to generator
-    if used_declaration_model == 'uvic':
-        try:
-            generator = UvicCodeGenerator(table, output_path)
-            generator.generate()
-        except AttributeError as e:
-            print("ERROR: Could not generate uvic files")
-            print(e)
-    elif used_declaration_model == 'mitgcm':
-        try:
-            generator = MitGcmCodeGenerator(table, output_path)
-            generator.generate()
-        except AttributeError as e:
-            print("ERROR: could not generate mitgcm files")
-            print(e)
-    elif used_declaration_model == 'eval':
-        try:
-            generator = EvalCodeGenerator(table, output_path)
-            generator.generate()
-        except AttributeError as e:
-            print("ERROR: could not generate eval files")
-            print(e)
+
+    # 8 provide the model to the generator of the declaration model
+    generators = {"uvic": UvicCodeGenerator, "mitgcm": MitGcmCodeGenerator, "eval": EvalCodeGenerator}
+    generator_class = generators.get(used_declaration_model)
+    if generator_class is None:
+        print(f"No code generator for declaration model {used_declaration_model} (available: {', '.join(generators)})")
+        return
+    try:
+        generator_class(model, output_path).generate()
+    except (AttributeError, OSError, ValueError) as e:
+        print(f"ERROR: could not generate {used_declaration_model} files: {e}")
+        sys.exit(1)
 
 
 if __name__ == '__main__':

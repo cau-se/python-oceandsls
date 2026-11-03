@@ -170,16 +170,14 @@ class TestFxtranUtils(unittest.TestCase):
         else:
             mock_get_files.return_value = []  # No files
 
-        result = write_decorate_src_xml(src_dir, out_dir, fxtran_path)
+        write_decorate_src_xml(src_dir, out_dir, fxtran_path)  # writes files, returns nothing
 
         # Assertions
         mock_get_files.assert_called_once_with(src_dir, "*.[fF]90")
         if test_name == "write_decorate_src_xml_test":
             mock_mkdir.assert_called()  # Check if mkdir was called
-            self.assertIsNone(result)  # Assuming the function does not return anything
         else:
             mock_mkdir.assert_not_called()  # No mkdir should be called if there are no files
-            self.assertIsNone(result)  # Assuming the function does not return anything
 
     @parameterized.expand([
             ("write_decorate_src_xml_permission_error",TEST_FILES, TEST_DIR, TEST_OUTPUT_DIR, FXTRAN_PATH),

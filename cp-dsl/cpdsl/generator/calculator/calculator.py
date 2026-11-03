@@ -37,12 +37,14 @@ class Calculator():
             self.calculate_feature(feature)
 
     def calculate_parameter(self, parameter:Parameter):
-        if parameter.value == None:
-            # 1. calculate the default value
-            ExpressionCalculator(self.model, self.logger).calculate(parameter)
+        if parameter.value is None:
+            calculator = ExpressionCalculator(self.model, self.logger)
+            # 1. calculate the default value (parameters may have none)
+            if parameter.default_value is not None:
+                parameter.value = calculator.calculate(parameter)
             # 2. calculate all entries over the default value
             for entry in parameter.entries:
-                ExpressionCalculator(self.model, self.logger).calculate_and_overlay(parameter, entry)
+                calculator.calculate_and_overlay(parameter, entry)
 
     def calculate_group(self, group:ParameterGroup):
         for parameter in group.parameters.values():

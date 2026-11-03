@@ -27,8 +27,8 @@ from cpdsl.model.symbols import Scope, T, P
 from cpdsl.model.declaration_model import DeclarationModel, ParameterGroup, Feature, Parameter, SelectorExpression
 from cpdsl.model.unit_model import UnitPrefix
 from cpdsl.model.arithmetic_model import ArithmeticExpression, MultiplicationExpression, EMultiplicationOperator, EAdditionOperator, \
-    ArrayExpression, IntValue, FloatValue, StringValue
-from cpdsl.model.type_system import EnumeralType, base_types
+    ArrayExpression, IntValue, FloatValue, StringValue, BooleanValue
+from cpdsl.model.type_system import ArrayType, EnumeralType, InlineEnumeralType, base_types
 from cpdsl.common.logger import GeneratorLogger
 from cpdsl.common.unit_processing import parse_unit
 
@@ -61,14 +61,8 @@ class GeneratorConfigurationVisitor(ConfigurationVisitor, Generic[T]):
         self.configuration_list = []
 
     def print_symbol(self, elements:list, level:int):
-        result = ""
-        for i in range(0,level+1):
-            name = elements[i].text
-            if result == "":
-                result = f"{name}"
-            else:
-                result = f"{result}.{name}"
-        return result
+        """Qualified name of the elements up to index ``level`` (at most all elements)."""
+        return ".".join(element.text for element in elements[:level + 1])
 
     @property
     def symbol_table(self) -> DeclarationModel:
@@ -85,6 +79,8 @@ class GeneratorConfigurationVisitor(ConfigurationVisitor, Generic[T]):
         model_name = ctx.declarationModel.text
         if self._model.name == model_name:
             self._model.configuration_name = ctx.name.text
+            for include in ctx.includes:
+                self._logger.strict(include, f"Include of {include.importedNamespace.getText()} is not supported yet")
             for activation in ctx.featureActivations:
                 self.visitFeatureActivation(activation)
             for feature in ctx.featureConfigurations:
@@ -201,6 +197,9 @@ class GeneratorConfigurationVisitor(ConfigurationVisitor, Generic[T]):
     def visitStringValue(self, ctx: ConfigurationParser.StringValueContext):
         return StringValue(ctx=ctx, unit=None, type=base_types["string"], value=ctx.value.text[1:-1])
 
+    def visitBooleanValue(self, ctx: ConfigurationParser.BooleanValueContext):
+        return BooleanValue(ctx=ctx, unit=None, type=base_types["boolean"], value=ctx.value.text == "true")
+
     def visitNamedElementReference(self, ctx: ConfigurationParser.NamedElementReferenceContext):
         depth = len(ctx.elements)
         scope = self._scope
@@ -235,8 +234,10 @@ class GeneratorConfigurationVisitor(ConfigurationVisitor, Generic[T]):
                 self._logger.strict(ctx, f"Symbol {self.print_symbol(ctx.elements, 1)} does not refer to an enumeration type nor parameter and parameter group")
                 return None
 
-        # check whether it is an enumeration inferred by parameter type
+        # check whether it is an enumeration inferred by parameter type (or by the element type of an array)
         data_type = self._type_scope
+        if isinstance(data_type, ArrayType):
+            data_type = data_type.type
         if isinstance(data_type, EnumeralType) or isinstance(data_type, InlineEnumeralType):
             enumeral = data_type.enumerals.get(ctx.elements[0].text, None)
             if enumeral is None:
@@ -271,11 +272,17 @@ class GeneratorConfigurationVisitor(ConfigurationVisitor, Generic[T]):
                     selectors.append(self.visitSelector(s))
 
                 value = self.visitArithmeticExpression(ctx.value)
+                if value is None:
+                    self._logger.strict(ctx, f"Invalid value for parameter {var_name}")
+                    return None
                 value.unit = var_unit
                 selector_expression = SelectorExpression(selectors, value)
                 parameter.entries.append(selector_expression)
             else:
                 value = self.visitArithmeticExpression(ctx.value)
+                if value is None:
+                    self._logger.strict(ctx, f"Invalid value for parameter {var_name}")
+                    return None
                 value.unit = var_unit
                 parameter.entries.append(value)
 
