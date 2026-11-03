@@ -91,7 +91,9 @@ pylint:
 # Runs only in a pipeline schedule on main with the variable ARTIFACT_CLEANUP = "true". Requires the masked and
 # protected CI/CD variable ARTIFACT_CLEANUP_TOKEN: a fine-grained personal access token for this project with the
 # permissions "Job: Read" and "Job Artifact: Delete" (its owner needs the Maintainer role in the project).
-# Set ARTIFACT_CLEANUP_DRY_RUN = "true" in the schedule to only list what would be deleted.
+# Optional: ARTIFACT_CLEANUP_ERASE_LOGS = "true" in the schedule also erases pylint jobs that only have their log left
+# and are older than six months (the log is removed, cannot be undone); the token then also needs "Job: Delete".
+# Set ARTIFACT_CLEANUP_DRY_RUN = "true" in the schedule to only list what would be deleted and erased.
 cleanup-artifacts:
   tags:
     - oceandsl
@@ -101,6 +103,8 @@ cleanup-artifacts:
     ARTIFACT_CLEANUP_JOB: pylint
     ARTIFACT_CLEANUP_KEEP: "5"
     ARTIFACT_CLEANUP_MAX_AGE_DAYS: "30"
+    ARTIFACT_CLEANUP_ERASE_LOGS: "false"
+    ARTIFACT_CLEANUP_LOG_MAX_AGE_DAYS: "183"
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule" && $ARTIFACT_CLEANUP == "true"
   script:

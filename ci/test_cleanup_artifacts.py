@@ -21,14 +21,15 @@ from urllib.parse import parse_qs, urlparse
 
 import pytest
 
-from cleanup_artifacts import main, select_for_deletion
+from cleanup_artifacts import main, select_for_deletion, select_logs_for_erasure
 
 NOW = datetime(2026, 11, 2, 12, tzinfo=timezone.utc)
 ARCHIVE = [{"file_type": "archive"}, {"file_type": "trace"}]
+LOG = [{"file_type": "trace"}]
 
 
-def job(job_id, days_old, ref="main", name="pylint", artifacts=ARCHIVE):
-    return {"id": job_id, "name": name, "ref": ref, "artifacts": artifacts,
+def job(job_id, days_old, ref="main", name="pylint", artifacts=ARCHIVE, status="success"):
+    return {"id": job_id, "name": name, "ref": ref, "artifacts": artifacts, "status": status,
             "created_at": (NOW - timedelta(days=days_old)).isoformat().replace("+00:00", "Z")}
 
 
@@ -63,9 +64,20 @@ def test_other_jobs_and_jobs_without_artifacts_are_ignored():
     assert ids(delete) == [4] and keep == []
 
 
+def test_only_old_finished_jobs_with_nothing_but_a_log_are_erased():
+    jobs = [job(1, 200, artifacts=LOG), job(2, 200, ref="feature", artifacts=LOG, status="failed"),
+            job(3, 100, artifacts=LOG),  # younger than six months
+            job(4, 200),  # still has artifacts: handled by the artifact deletion
+            job(5, 200, artifacts=[]),  # already erased
+            job(6, 200, artifacts=LOG, name="tests"), job(7, 200, artifacts=LOG, status="running")]
+    erase = select_logs_for_erasure(jobs, "pylint", 183, NOW)
+    assert [j["id"] for j in erase] == [1, 2]
+
+
 class FakeGitLab(BaseHTTPRequestHandler):
     jobs = []
     deleted = []
+    erased = []
     tokens = set()
 
     def log_message(self, *args):
@@ -85,11 +97,20 @@ class FakeGitLab(BaseHTTPRequestHandler):
         self.send_response(204)
         self.end_headers()
 
+    def do_POST(self):
+        assert self.path.endswith("/erase")
+        FakeGitLab.erased.append(int(self.path.split("/jobs/")[1].split("/")[0]))
+        self.send_response(201)
+        self.end_headers()
+        self.wfile.write(b"{}")
+
 
 @pytest.fixture
 def gitlab():
-    FakeGitLab.jobs = [job(i, days_old=10 * i) for i in range(1, 8)] + [job(20, 60, ref="feature")]
-    FakeGitLab.deleted, FakeGitLab.tokens = [], set()
+    FakeGitLab.jobs = ([job(i, days_old=10 * i) for i in range(1, 8)] + [job(20, 60, ref="feature")]
+                       + [job(30, 200, artifacts=LOG), job(31, 300, ref="feature", artifacts=LOG),
+                          job(32, 100, artifacts=LOG)])
+    FakeGitLab.deleted, FakeGitLab.erased, FakeGitLab.tokens = [], [], set()
     server = HTTPServer(("127.0.0.1", 0), FakeGitLab)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     yield {"CI_API_V4_URL": f"http://127.0.0.1:{server.server_port}/api/v4", "CI_PROJECT_ID": "42",
@@ -102,12 +123,21 @@ def test_main_deletes_old_artifacts_through_the_api(gitlab):
     # jobs 1-5 are the newest on main; 6, 7 (60, 70 days) and the 60 day old feature job are deleted
     assert sorted(FakeGitLab.deleted) == [6, 7, 20]
     assert FakeGitLab.tokens == {"secret"}
+    assert FakeGitLab.erased == []  # erasing logs is off by default
 
 
-def test_dry_run_deletes_nothing(gitlab, capsys):
-    assert main({**gitlab, "ARTIFACT_CLEANUP_DRY_RUN": "true"}, NOW) == 0
-    assert FakeGitLab.deleted == []
-    assert "would delete" in capsys.readouterr().out
+def test_main_erases_old_logs_when_enabled(gitlab, capsys):
+    assert main({**gitlab, "ARTIFACT_CLEANUP_ERASE_LOGS": "true"}, NOW) == 0
+    assert sorted(FakeGitLab.deleted) == [6, 7, 20]
+    assert sorted(FakeGitLab.erased) == [30, 31]  # job 32 is younger than six months
+    assert "2 job(s) with only a log left older than 183 days to erase" in capsys.readouterr().out
+
+
+def test_dry_run_deletes_and_erases_nothing(gitlab, capsys):
+    assert main({**gitlab, "ARTIFACT_CLEANUP_DRY_RUN": "true", "ARTIFACT_CLEANUP_ERASE_LOGS": "true"}, NOW) == 0
+    assert FakeGitLab.deleted == [] and FakeGitLab.erased == []
+    out = capsys.readouterr().out
+    assert out.count("would delete") == 3 and out.count("would erase") == 2
 
 
 def test_missing_token_is_reported(gitlab, capsys):
