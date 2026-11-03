@@ -11,7 +11,7 @@ PYTHON ?= python3
 PY_PACKAGES = antlrLib tdd-dsl bgc-dsl cp-dsl
 DIST = dist
 
-.PHONY: install-dev test coverage dist check-dist publish-test publish clean-dist
+.PHONY: install-dev test coverage lint dist check-dist publish-test publish clean-dist
 
 # Editable installs of all packages with test dependencies plus build tools
 install-dev:
@@ -31,6 +31,10 @@ coverage:
 	@echo "== ci"; cd ci && $(PYTHON) -m pytest -q
 	$(PYTHON) -m coverage report --rcfile=.coveragerc
 	$(PYTHON) -m coverage xml --rcfile=.coveragerc -o coverage.xml
+
+# Static analysis of all packages with the settings of .pylintrc (the pylint job in GitLab CI runs the same)
+lint:
+	$(PYTHON) -m pylint --recursive=y $(PY_PACKAGES) ci
 
 # Build sdists and wheels of all packages into $(DIST)
 dist: clean-dist

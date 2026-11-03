@@ -24,7 +24,7 @@ from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationPar
 from cpdsl.model.declaration_model import DeclarationModel
 from cpdsl.model.type_system import EnumeralType
 
-from gen.visitors.test_utils import AbstractTestGeneratorDeclarationVisitor
+from generator.visitors.test_utils import AbstractTestGeneratorDeclarationVisitor
 
 class TestParameterGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisitor):
 

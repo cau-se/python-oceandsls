@@ -19,7 +19,7 @@ import unittest
 from cpdsl.model.declaration_model import DeclarationModel, ParameterGroup, Parameter, SelectorExpression
 from cpdsl.model.arithmetic_model import IntValue, ArrayExpression
 
-from gen.visitors.test_utils import AbstractTestGeneratorConfigurationVisitor
+from generator.visitors.test_utils import AbstractTestGeneratorConfigurationVisitor
 
 class TestParameterGeneratorConfigurationVisitor(AbstractTestGeneratorConfigurationVisitor):
 

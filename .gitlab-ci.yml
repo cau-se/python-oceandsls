@@ -67,15 +67,18 @@ pylint:
     # otherwise hundreds of import-error messages lower the score
     - pip install -r requirements-dev.txt pylint-gitlab
   script:
-    # A single pylint run writes all reports: text to the log (and the score), Code Climate for merge requests
-    # and an HTML report (job artifact)
+    # A single pylint run of the packages (settings in .pylintrc, as make lint) writes all reports: the text report
+    # (with the score) and an HTML report as job artifacts, Code Climate for merge requests. The log only shows a
+    # summary, so it stays small.
     - >
-      pylint --exit-zero
-      --output-format=text,pylint_gitlab.GitlabCodeClimateReporter:codeclimate.json,pylint_gitlab.GitlabPagesHtmlReporter:public/lint/index.html
-      $(find -type f -name "*.py" ! -path "**/.venv/**" ! -path "*/gen/*")
-      | tee /tmp/pylint.txt
-    - sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' /tmp/pylint.txt > public/badges/$CI_JOB_NAME.score
+      pylint --exit-zero --recursive=y
+      --output-format=text:public/lint/pylint.txt,pylint_gitlab.GitlabCodeClimateReporter:codeclimate.json,pylint_gitlab.GitlabPagesHtmlReporter:public/lint/index.html
+      antlrLib tdd-dsl bgc-dsl cp-dsl ci
   after_script:
+    - sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' public/lint/pylint.txt > public/badges/$CI_JOB_NAME.score || true
+    - echo "Messages per category (C convention, R refactor, W warning, E error, F fatal):"
+    - grep -oE '^[^ ]+:[0-9]+:[0-9]+: [CRWEF]' public/lint/pylint.txt | awk '{print $NF}' | sort | uniq -c || true
+    - echo "Errors:"; grep -E '^[^ ]+:[0-9]+:[0-9]+: [EF][0-9]{4}:' public/lint/pylint.txt || echo "none"
     - anybadge --overwrite --label $CI_JOB_NAME --value=$(cat public/badges/$CI_JOB_NAME.score) --file=public/badges/$CI_JOB_NAME.svg 4=red 6=orange 8=yellow 10=green
     - |
       echo "Your score is: $(cat public/badges/$CI_JOB_NAME.score)"
@@ -88,7 +91,7 @@ pylint:
   artifacts:
     expose_as: "pylint report"
     paths:
-      - public/lint/index.html
+      - public/lint/
       - public/badges/
     reports:
       codequality: codeclimate.json

@@ -18,7 +18,7 @@ import unittest
 
 from cpdsl.model.declaration_model import DeclarationModel
 
-from gen.visitors.test_utils import AbstractTestGeneratorConfigurationVisitor
+from generator.visitors.test_utils import AbstractTestGeneratorConfigurationVisitor
 
 class TestBaseGeneratorConfigurationVisitor(AbstractTestGeneratorConfigurationVisitor):
 
