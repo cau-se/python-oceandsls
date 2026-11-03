@@ -11,7 +11,7 @@ PYTHON ?= python3
 PY_PACKAGES = antlrLib tdd-dsl bgc-dsl cp-dsl
 DIST = dist
 
-.PHONY: install-dev test dist check-dist publish-test publish clean-dist
+.PHONY: install-dev test coverage dist check-dist publish-test publish clean-dist
 
 # Editable installs of all packages with test dependencies plus build tools
 install-dev:
@@ -21,6 +21,16 @@ install-dev:
 test:
 	@for p in $(PY_PACKAGES); do echo "== $$p"; (cd $$p && $(PYTHON) -m pytest -q) || exit 1; done
 	@echo "== ci"; cd ci && $(PYTHON) -m pytest -q
+
+# Run the test suites of all packages with (branch) coverage of their sources (.coveragerc): prints the summary and
+# writes coverage.xml (Cobertura format, shown in GitLab merge requests)
+coverage:
+	@rm -f .coverage coverage.xml
+	@for p in $(PY_PACKAGES); do echo "== $$p"; (cd $$p && COVERAGE_FILE=$(CURDIR)/.coverage $(PYTHON) -m pytest -q \
+		--cov --cov-config=$(CURDIR)/.coveragerc --cov-append --cov-report=) || exit 1; done
+	@echo "== ci"; cd ci && $(PYTHON) -m pytest -q
+	$(PYTHON) -m coverage report --rcfile=.coveragerc
+	$(PYTHON) -m coverage xml --rcfile=.coveragerc -o coverage.xml
 
 # Build sdists and wheels of all packages into $(DIST)
 dist: clean-dist

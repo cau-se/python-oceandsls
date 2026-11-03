@@ -3,5 +3,6 @@
 -e ./tdd-dsl[test]
 -e ./bgc-dsl[test]
 -e ./cp-dsl[test]
+pytest-cov
 build
 twine

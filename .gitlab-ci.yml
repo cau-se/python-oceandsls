@@ -14,7 +14,7 @@ stages:
       when: never
     - when: on_success
 
-# Unit and language server tests of all Python packages (requires-python >= 3.10)
+# Unit and language server tests of all Python packages (requires-python >= 3.10) with branch coverage (.coveragerc)
 tests:
   extends: .regular-pipeline
   tags:
@@ -28,7 +28,15 @@ tests:
     - apt-get update && apt-get install -y --no-install-recommends make
     - pip install -r requirements-dev.txt
   script:
-    - make test
+    - make coverage
+  # Total of the coverage summary (statements and branches): shown in the job, the merge request and the coverage badge
+  coverage: '/^TOTAL\s.*\s(\d+(?:\.\d+)?)%$/'
+  artifacts:
+    # Line coverage in the merge request diff
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
 
 # Build sdists/wheels and validate them like PyPI does (twine check)
 dist:

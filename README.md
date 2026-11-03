@@ -34,6 +34,7 @@ Development, tests and distributions (Python >= 3.10):
 python -m venv .venv && source .venv/bin/activate
 make install-dev      # editable installs of all packages + build/twine
 make test             # pytest in every package (includes LSP end-to-end tests over stdio)
+make coverage         # the same with branch coverage: summary and coverage.xml (Cobertura)
 make check-dist       # build sdists/wheels into dist/ and run twine check --strict
 make publish-test     # upload to TestPyPI
 make publish          # upload odsllib first, then the DSL packages
