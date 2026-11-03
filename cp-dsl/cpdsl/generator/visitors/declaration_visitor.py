@@ -24,6 +24,7 @@ from antlr4 import ParserRuleContext, TerminalNode
 
 # user relative imports
 from cpdsl.model.symbols import Scope, T, P
+from cpdsl.generator.visitors.expression_visitor import ExpressionVisitorMixin
 from cpdsl.model.declaration_model import DeclarationModel, Parameter, ParameterGroup, Feature, FeatureGroup, EKind
 from cpdsl.model.type_system import EnumeralType, InlineEnumeralType, Enumeral, RangeType, ArrayType, Dimension, BaseType, base_types
 from cpdsl.model.unit_model import Unit, UnitPrefix, UnitKind, UnitSpecification, SIUnit, CustomUnit, DivisionUnit, ExponentUnit
@@ -42,7 +43,9 @@ _log = logging.getLogger(__name__)  # diagnostics go to logging, never to stdout
 
 # NOTE: DiagnosticListener bei Sven im Code ansehen
 
-class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
+class GeneratorDeclarationVisitor(ExpressionVisitorMixin, DeclarationVisitor, Generic[T]):
+    _parser = DeclarationParser
+
 
     _model: DeclarationModel
 
@@ -58,10 +61,6 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
         self._logger = logger
         # (list to add to, feature reference context, scope of the declaring feature)
         self._pending_references = []
-
-    @property
-    def symbol_table(self) -> DeclarationModel:
-        return self._model
 
     def visitDeclarationModel(self, ctx: DeclarationParser.DeclarationModelContext):
         self._model.name = ctx.name.text
@@ -325,175 +324,6 @@ class GeneratorDeclarationVisitor(DeclarationVisitor, Generic[T]):
         else:
             self._logger.strict(ctx, "Unknown feature group type. Internal Error")
             return None
-
-    def visitArithmeticExpression(self, ctx: DeclarationParser.ArithmeticExpressionContext):
-        if ctx.left is not None:
-            if ctx.right is not None:
-                left = self.visit(ctx.left)
-                right = self.visit(ctx.right)
-                op = self.visitEAdditionOperator(ctx.op)
-                return ArithmeticExpression(ctx=ctx, unit=None, left=left, right=right, op=op)
-            else:
-                return self.visit(ctx.left)
-
-        if len(ctx.children) == 1:
-            expression = ctx.children[0]
-            if isinstance(expression, DeclarationParser.MultiplicationExpressionContext):
-                return self.visitMultiplicationExpression(expression)
-            else:
-                _log.error(f"ERROR unsupported type in ArithmeticExpression {type(expression)}")
-                return None
-        else:
-            _log.error("ERROR")
-            return None
-
-    def visitEAdditionOperator(self, ctx: DeclarationParser.EAdditionOperatorContext):
-        value = ctx.getText()
-        if value == EAdditionOperator.ADD.value:
-            return EAdditionOperator.ADD
-        if value == EAdditionOperator.SUB.value:
-            return EAdditionOperator.SUB
-
-        _log.error("Illegal addition operator")
-        return None
-
-    def visitMultiplicationExpression(self, ctx: DeclarationParser.MultiplicationExpressionContext):
-        if ctx.left is not None:
-            if ctx.right is not None:
-                left = self.visit(ctx.left)
-                right = self.visit(ctx.right)
-                op = self.visitEMultiplicationOperator(ctx.op)
-                return MultiplicationExpression(ctx=ctx, unit=None, left=left, right=right, op=op)
-            else:
-                return self.visit(ctx.left)
-
-        if len(ctx.children) == 1:
-            expression = ctx.children[0]
-            if isinstance(expression, DeclarationParser.ValueExpressionContext):
-                return self.visitValueExpression(expression)
-            else:
-                _log.error(f"ERROR unsupported type in ValueExpressionContext {type(expression)}")
-                return None
-        else:
-            _log.error("ERROR")
-            return None
-
-    def visitEMultiplicationOperator(self, ctx: DeclarationParser.EMultiplicationOperatorContext):
-        value = ctx.getText()
-        if value == EMultiplicationOperator.MULT.value:
-            return EMultiplicationOperator.MULT
-        if value == EMultiplicationOperator.DIV.value:
-            return EMultiplicationOperator.DIV
-        if value == EMultiplicationOperator.MOD.value:
-            return EMultiplicationOperator.MOD
-
-        return None
-
-    def visitValueExpression(self, ctx: DeclarationParser.ValueExpressionContext):
-        if ctx.parenthesisExpression() is not None:
-            return self.visitParenthesisExpression(ctx.parenthesisExpression())
-        elif ctx.literalExpression() is not None:
-            return self.visitLiteralExpression(ctx.literalExpression())
-        elif ctx.namedElementReference() is not None:
-            return self.visitNamedElementReference(ctx.namedElementReference())
-        elif ctx.arrayExpression() is not None:
-            return self.visitArrayExpression(ctx.arrayExpression())
-        else:
-            _log.error(f"ERROR something {ctx} {type(ctx)}")
-            return None
-
-    def visitParenthesisExpression(self, ctx: DeclarationParser.ParenthesisExpressionContext):
-        return self.visitArithmeticExpression(ctx.arithmeticExpression())
-
-    def visitArrayExpression(self, ctx: DeclarationParser.ArrayExpressionContext):
-        elements:List[ArithmeticExpression] = []
-        for element in ctx.elements:
-            elements.append(self.visit(element))
-        return ArrayExpression(ctx=ctx, unit=None, elements=elements)
-
-    def visitLiteralExpression(self, ctx: DeclarationParser.LiteralExpressionContext):
-        return self.visitLiteral(ctx.literal())
-
-    def visitLiteral(self, ctx: DeclarationParser.LiteralContext):
-        if len(ctx.children) == 1:
-            literal = ctx.children[0]
-            return self.visit(literal)
-        else:
-            _log.error("ERROR")
-            return None
-
-    def visitLongValue(self, ctx: DeclarationParser.LongValueContext):
-        return IntValue(ctx=ctx, unit=None, type=base_types["long"], value=int(ctx.value.text))
-
-    def visitDoubleValue(self, ctx: DeclarationParser.DoubleValueContext):
-        return FloatValue(ctx=ctx, unit=None, type=base_types["double"], value=float(ctx.value.text))
-
-    def visitStringValue(self, ctx: DeclarationParser.StringValueContext):
-        return StringValue(ctx=ctx, unit=None, type=base_types["string"], value=ctx.value.text[1:-1])
-
-    def visitBooleanValue(self, ctx: DeclarationParser.BooleanValueContext):
-        return BooleanValue(ctx=ctx, unit=None, type=base_types["boolean"], value=ctx.value.text == "true")
-
-    def visitNamedElementReference(self, ctx: DeclarationParser.NamedElementReferenceContext):
-        depth = len(ctx.elements)
-        scope = self._scope
-        if depth > 1:
-            for i in range(1,depth):
-                scope = scope.parent
-
-        # check whether it is a parameter
-        parameter_level = 0
-        param = True
-        for i in range(0,depth):
-            scope = scope.resolve_symbol(ctx.elements[i].text)
-
-            if scope is None:
-                parameter_level = i
-                param = False
-                break
-
-        if param:
-            return scope
-
-        # check whether it is an enumeration
-        if depth == 2: # Can be an enumeration
-            data_type = self._model.types.get(ctx.elements[0].text)
-            if isinstance(data_type, EnumeralType):
-                enumeral = data_type.enumerals.get(ctx.elements[1].text, None)
-                if enumeral is None:
-                    self._logger.strict(ctx, f"Symbol {self.print_symbol(ctx.elements, 2)} does not refer to an enumeral nor parameter and parameter group")
-                    return None
-                else:
-                    return enumeral
-            else:
-                self._logger.strict(ctx, f"Symbol {self.print_symbol(ctx.elements, 1)} does not refer to an enumeration type nor parameter and parameter group")
-                return None
-
-        # check whether it is an enumeration inferred by parameter type
-        data_type = self._type_scope
-        if isinstance(data_type, EnumeralType) or isinstance(data_type, InlineEnumeralType):
-            enumeral = data_type.enumerals.get(ctx.elements[0].text, None)
-            if enumeral is None:
-                self._logger.strict(ctx, f"Symbol {self.print_symbol(ctx.elements, 2)} does not refer to an enumeral nor parameter and parameter group")
-                return None
-            else:
-                return enumeral
-
-        # Strange cases
-        self._logger.strict(ctx, f"Symbol {self.print_symbol(ctx.elements, len(ctx.elements))} cannot be resolved.")
-        return None
-
-    def print_symbol(self, elements, level:int):
-        if len(elements) < level+1:
-            level=len(elements)-1
-        result = ""
-        for i in range(0,level+1):
-            name = elements[i].text
-            if result == "":
-                result = f"{name}"
-            else:
-                result = f"{result}.{name}"
-        return result
 
     ##################################
     # Units
