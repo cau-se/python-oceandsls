@@ -12,7 +12,18 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-"""Re-export of :mod:`odsllib.lsp.compute_token_index` (shared implementation in odsllib)."""
+"""Deprecated re-export of :mod:`odsllib.lsp.compute_token_index` (shared implementation in odsllib).
+
+Import :mod:`odsllib.lsp.compute_token_index` instead; this module will be removed in a future version.
+"""
+
+# pylint: disable=wildcard-import,unused-wildcard-import,unused-import
+import warnings
 
 from odsllib.lsp.compute_token_index import *  # noqa: F401,F403
-from odsllib.lsp.compute_token_index import CaretPosition, TokenPosition, compute_token_index, compute_token_position  # noqa: F401
+from odsllib.lsp.compute_token_index import (  # noqa: F401
+    CaretPosition, TokenPosition, compute_token_index, compute_token_position,
+)
+
+warnings.warn(f"{__name__} is deprecated, import odsllib.lsp.compute_token_index instead",
+              DeprecationWarning, stacklevel=2)

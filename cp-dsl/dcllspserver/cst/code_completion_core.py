@@ -12,7 +12,18 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-"""Re-export of :mod:`odsllib.code_completion_core` (shared implementation in odsllib)."""
+"""Deprecated re-export of :mod:`odsllib.code_completion_core` (shared implementation in odsllib).
+
+Import :mod:`odsllib.code_completion_core` instead; this module will be removed in a future version.
+"""
+
+# pylint: disable=wildcard-import,unused-wildcard-import,unused-import
+import warnings
 
 from odsllib.code_completion_core import *  # noqa: F401,F403
-from odsllib.code_completion_core import CandidatesCollection, CodeCompletionCore  # noqa: F401
+from odsllib.code_completion_core import (  # noqa: F401
+    CandidatesCollection, CodeCompletionCore,
+)
+
+warnings.warn(f"{__name__} is deprecated, import odsllib.code_completion_core instead",
+              DeprecationWarning, stacklevel=2)

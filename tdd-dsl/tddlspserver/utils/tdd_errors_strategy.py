@@ -12,8 +12,16 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-"""DSL specific name of the shared :class:`odsllib.lsp.error_strategy.InputMismatchErrorStrategy`."""
+"""Deprecated DSL specific name of :class:`odsllib.lsp.error_strategy.InputMismatchErrorStrategy`.
+
+Use the shared class instead; this module will be removed in a future version.
+"""
+
+import warnings
 
 from odsllib.lsp.error_strategy import InputMismatchErrorStrategy
 
 TDDErrorStrategy = InputMismatchErrorStrategy
+
+warnings.warn(f"{__name__} is deprecated, use odsllib.lsp.error_strategy.InputMismatchErrorStrategy instead",
+              DeprecationWarning, stacklevel=2)

@@ -12,7 +12,18 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-"""Re-export of :mod:`odsllib.lsp.diagnostic_listener` (shared implementation in odsllib)."""
+"""Deprecated re-export of :mod:`odsllib.lsp.diagnostic_listener` (shared implementation in odsllib).
+
+Import :mod:`odsllib.lsp.diagnostic_listener` instead; this module will be removed in a future version.
+"""
+
+# pylint: disable=wildcard-import,unused-wildcard-import,unused-import
+import warnings
 
 from odsllib.lsp.diagnostic_listener import *  # noqa: F401,F403
-from odsllib.lsp.diagnostic_listener import DiagnosticListener  # noqa: F401
+from odsllib.lsp.diagnostic_listener import (  # noqa: F401
+    DiagnosticListener,
+)
+
+warnings.warn(f"{__name__} is deprecated, import odsllib.lsp.diagnostic_listener instead",
+              DeprecationWarning, stacklevel=2)
