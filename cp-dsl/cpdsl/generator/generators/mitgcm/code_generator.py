@@ -13,7 +13,6 @@
 #  limitations under the License.
 
 import jinja2 as j
-import os
 
 __author__ = 'Reiner Jung'
 

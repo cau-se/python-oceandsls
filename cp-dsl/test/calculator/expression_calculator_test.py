@@ -21,11 +21,11 @@ from cpdsl.generator.calculator.expression_calculator import ExpressionCalculato
 from cpdsl.common.logger import GeneratorLogger
 from cpdsl.common.configuration import CompileFlags
 
-from cpdsl.model.type_system import Enumeral, BaseType, base_types
+from cpdsl.model.type_system import base_types
 from cpdsl.model.declaration_model import DeclarationModel, ParameterGroup, Parameter
 
-from cpdsl.model.arithmetic_model import IntValue, StringValue, FloatValue, ArithmeticExpression, MultiplicationExpression, \
-    EMultiplicationOperator, EAdditionOperator, ArrayExpression
+from cpdsl.model.arithmetic_model import IntValue, FloatValue, ArithmeticExpression, MultiplicationExpression, EMultiplicationOperator, \
+    EAdditionOperator
 
 logger=GeneratorLogger(CompileFlags.STRICT)
 

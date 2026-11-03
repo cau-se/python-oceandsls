@@ -19,7 +19,7 @@ __author__ = "sgu"
 # Util
 import os
 import logging
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 # Jinja2
 from jinja2 import Environment, FileSystemLoader
@@ -54,7 +54,7 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
     array_name: str
 
     def __init__(
-            self, template_path: str = os.path.join(TEMPLATE_ROOT, "pf"), files: Dict[str, Tuple[float, str, str]] = {},
+            self, template_path: str = os.path.join(TEMPLATE_ROOT, "pf"), files: Optional[Dict[str, Tuple[float, str, str]]] = None,
             symbol_table: SymbolTable = None, work_path: str = "tdd-dsl/output", test_folder: str = "tests", file_suffix: str = "pf", rel_file_path=None
     ):
         """
@@ -71,7 +71,7 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
 
         self.overwrite = False
         self.overwrite_files: List[str] = []
-        self.files: dict[str, Tuple[float, str, str]] = files
+        self.files: dict[str, Tuple[float, str, str]] = {} if files is None else files
         self.pointers = []
         self.procedure_calls = []
 
@@ -443,4 +443,4 @@ class PFFileGeneratorVisitor(TestSuiteVisitor):
             # Write rendered and optional merged content to file
             with open(path, mode="w", encoding="utf-8") as f:
                 f.write()
-                logger.info(f"... wrote file {path}")
+                logger.info("... wrote file %s", path)

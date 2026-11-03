@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+# The public names follow the antlr4-c3 (TypeScript) API, of which this module is a port
+# pylint: disable=invalid-name
+
 __author__ = 'sgu'
 
 #  Copyright (c) 2023.  OceanDSL (https://oceandsl.uni-kiel.de)

@@ -33,8 +33,8 @@ def read(name):
         return f.read()
 
 
-@pytest.fixture
-def server(tmp_path):
+@pytest.fixture(name="server")
+def server_fixture(tmp_path):
     srv = TDDLSPServer("tdd-test", "0")
     srv.work_path = str(tmp_path)
     srv.fxtran_path = "fxtran-not-installed"

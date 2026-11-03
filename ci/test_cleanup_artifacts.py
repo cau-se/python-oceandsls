@@ -24,8 +24,8 @@ import pytest
 from cleanup_artifacts import main, select_for_deletion, select_logs_for_erasure
 
 NOW = datetime(2026, 11, 2, 12, tzinfo=timezone.utc)
-ARCHIVE = [{"file_type": "archive"}, {"file_type": "trace"}]
-LOG = [{"file_type": "trace"}]
+ARCHIVE = ({"file_type": "archive"}, {"file_type": "trace"})
+LOG = ({"file_type": "trace"},)
 
 
 def job(job_id, days_old, ref="main", name="pylint", artifacts=ARCHIVE, status="success"):
@@ -105,8 +105,8 @@ class FakeGitLab(BaseHTTPRequestHandler):
         self.wfile.write(b"{}")
 
 
-@pytest.fixture
-def gitlab():
+@pytest.fixture(name="gitlab")
+def gitlab_fixture():
     FakeGitLab.jobs = ([job(i, days_old=10 * i) for i in range(1, 8)] + [job(20, 60, ref="feature")]
                        + [job(30, 200, artifacts=LOG), job(31, 300, ref="feature", artifacts=LOG),
                           job(32, 100, artifacts=LOG)])

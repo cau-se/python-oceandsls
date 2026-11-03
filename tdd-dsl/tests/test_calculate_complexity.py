@@ -21,7 +21,7 @@ import xml.etree.ElementTree as ET
 from math import log2
 from xml.etree.ElementTree import Element
 from tddlspserver.utils.calculate_complexity import (
-    UniqueList, Scope, testability, ns, is_external_call, add_operands_to, add_operators_to, calculate_metrics,
+    UniqueList, Scope, ns, is_external_call, add_operands_to, add_operators_to, calculate_metrics,
 )
 
 class TestUniqueList(unittest.TestCase):

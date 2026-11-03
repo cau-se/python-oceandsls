@@ -204,8 +204,8 @@ class ExprServer(AntlrLanguageServer):
         self.saved.append(uri)
 
 
-@pytest.fixture
-def server():
+@pytest.fixture(name="server")
+def server_fixture():
     srv = ExprServer()
     srv.capabilities = srv.lsp.lsp_initialize(
         InitializeParams(process_id=None, root_uri=None, capabilities=ClientCapabilities())).capabilities

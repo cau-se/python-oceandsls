@@ -54,8 +54,8 @@ connection assimilation(N, P) from Phy to Ki {
 """
 
 
-@pytest.fixture
-def server():
+@pytest.fixture(name="server")
+def server_fixture():
     return bgcLSPServer("bgc-test", "0")
 
 

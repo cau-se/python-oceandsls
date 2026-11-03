@@ -35,16 +35,16 @@ class GeneratorLogger:
 
     def relax(self, context, message: str):
         if (self.mode == CompileFlags.RELAX):
-            self.logger.warning(f"[{self.location(context)}] {message}")
+            self.logger.warning("[%s] %s", self.location(context), message)
             self.warning_count = self.warning_count + 1
             self.messages.append(("warning", context, message))
         elif (self.mode == CompileFlags.STRICT):
-            self.logger.error(f"[{self.location(context)}] {message}")
+            self.logger.error("[%s] %s", self.location(context), message)
             self.error_count = self.error_count + 1
             self.messages.append(("error", context, message))
 
     def strict(self, context, message: str):
-        self.logger.error(f"[{self.location(context)}] {message}")
+        self.logger.error("[%s] %s", self.location(context), message)
         self.error_count = self.error_count + 1
         self.messages.append(("error", context, message))
 

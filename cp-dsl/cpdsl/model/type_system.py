@@ -13,9 +13,8 @@
 #  limitations under the License.
 
 from __future__ import annotations
-from enum import Enum
 from dataclasses import dataclass
-from typing import List, Optional, Dict
+from typing import List, Dict
 from .utils import classproperty  # pylint: disable=unused-import
 
 #

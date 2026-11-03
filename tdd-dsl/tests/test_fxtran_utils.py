@@ -14,7 +14,7 @@
 
 import unittest
 from os import path
-from unittest.mock import patch, mock_open, MagicMock
+from unittest.mock import patch, MagicMock
 from parameterized import parameterized
 import subprocess
 

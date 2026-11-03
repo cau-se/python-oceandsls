@@ -15,7 +15,6 @@
 
 import glob
 import os
-import shutil
 import sys
 
 import pytest
@@ -64,20 +63,20 @@ def labels(items):
     return [i.label for i in items]
 
 
-@pytest.fixture
-def dcl():
+@pytest.fixture(name="dcl")
+def dcl_fixture():
     return dclLSPServer("dcl-test", "0")
 
 
-@pytest.fixture
-def conf():
+@pytest.fixture(name="conf")
+def conf_fixture():
     server = confLSPServer("conf-test", "0")
     server.lsp.lsp_initialize(InitializeParams(process_id=None, root_uri=None, capabilities=ClientCapabilities()))
     return server
 
 
-@pytest.fixture
-def workspace(tmp_path):
+@pytest.fixture(name="workspace")
+def workspace_fixture(tmp_path):
     (tmp_path / "m.decl").write_text(DECLARATION)
     return tmp_path
 

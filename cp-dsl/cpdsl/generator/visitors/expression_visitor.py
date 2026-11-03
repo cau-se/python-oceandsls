@@ -58,7 +58,7 @@ class ExpressionVisitorMixin:
             if isinstance(expression, self._parser.MultiplicationExpressionContext):
                 return self.visitMultiplicationExpression(expression)
             else:
-                _log.error(f"ERROR unsupported type in ArithmeticExpression {type(expression)}")
+                _log.error("ERROR unsupported type in ArithmeticExpression %s", type(expression))
                 return None
         else:
             _log.error("ERROR")
@@ -89,7 +89,7 @@ class ExpressionVisitorMixin:
             if isinstance(expression, self._parser.ValueExpressionContext):
                 return self.visitValueExpression(expression)
             else:
-                _log.error(f"ERROR unsupported type in ValueExpressionContext {type(expression)}")
+                _log.error("ERROR unsupported type in ValueExpressionContext %s", type(expression))
                 return None
         else:
             _log.error("ERROR")
@@ -116,7 +116,7 @@ class ExpressionVisitorMixin:
         elif ctx.arrayExpression() is not None:
             return self.visitArrayExpression(ctx.arrayExpression())
         else:
-            _log.error(f"ERROR something {ctx} {type(ctx)}")
+            _log.error("ERROR something %s %s", ctx, type(ctx))
             return None
 
     def visitParenthesisExpression(self, ctx):

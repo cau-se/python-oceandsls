@@ -15,22 +15,19 @@
 __author__ = "reiner"
 
 # util imports
-from typing import Generic, Callable, Dict, List
+from typing import Generic, Dict
 
 # antlr4
-from antlr4.tree.Tree import ParseTree
 from antlr4.Token import CommonToken
 from antlr4 import ParserRuleContext, TerminalNode
 
 # user relative imports
-from cpdsl.model.symbols import Scope, T, P
+from cpdsl.model.symbols import Scope, T
 from cpdsl.generator.visitors.expression_visitor import ExpressionVisitorMixin
 from cpdsl.model.declaration_model import DeclarationModel, Parameter, ParameterGroup, Feature, FeatureGroup, EKind
-from cpdsl.model.type_system import EnumeralType, InlineEnumeralType, Enumeral, RangeType, ArrayType, Dimension, BaseType, base_types
-from cpdsl.model.unit_model import Unit, UnitPrefix, UnitKind, UnitSpecification, SIUnit, CustomUnit, DivisionUnit, ExponentUnit
+from cpdsl.model.type_system import EnumeralType, InlineEnumeralType, Enumeral, RangeType, ArrayType, Dimension, base_types
+from cpdsl.model.unit_model import UnitPrefix, UnitKind, UnitSpecification, SIUnit, CustomUnit, DivisionUnit, ExponentUnit
 from cpdsl.common.logger import GeneratorLogger
-from cpdsl.model.arithmetic_model import ArithmeticExpression, MultiplicationExpression, IntValue, FloatValue, StringValue, BooleanValue, \
-    EMultiplicationOperator, EAdditionOperator, ArrayExpression
 
 from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
 from dcllspserver.gen.python.Declaration.DeclarationVisitor import DeclarationVisitor
@@ -330,7 +327,7 @@ class GeneratorDeclarationVisitor(ExpressionVisitorMixin, DeclarationVisitor, Ge
     ##################################
 
     def print_tree(self, ctx: ParserRuleContext, indent: str):
-        _log.debug(f"V {indent} NODE {ctx} {type(ctx)}")
+        _log.debug("V %s NODE %s %s", indent, ctx, type(ctx))
         if isinstance(ctx, TerminalNode):
             return
         for c in ctx.children:
@@ -453,7 +450,7 @@ class GeneratorDeclarationVisitor(ExpressionVisitorMixin, DeclarationVisitor, Ge
         if type is not None:
             return type
         if node is None:
-            _log.error(f"No parent, cannot resolve type {type_name}")
+            _log.error("No parent, cannot resolve type %s", type_name)
             return None
         elif isinstance(node, DeclarationModel):
             return node.resolve_type(type_name)

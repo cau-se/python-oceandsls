@@ -17,7 +17,6 @@ import importlib
 import sys
 import warnings
 
-import pytest
 from antlr4 import CommonTokenStream, InputStream
 
 from odsllib.code_completion_core import CandidatesCollection, CodeCompletionCore, FollowSetsHolder

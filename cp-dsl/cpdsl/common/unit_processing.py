@@ -1,5 +1,4 @@
 from cpdsl.model.unit_model import UnitSpecification, Unit, UnitKind, UnitPrefix, SIUnit, ExponentUnit, DivisionUnit, CustomUnit
-from typing import List
 
 import logging
 _log = logging.getLogger(__name__)  # diagnostics go to logging, never to stdout
@@ -41,7 +40,7 @@ kind = { 's': UnitKind.Second,
         'Pa': UnitKind.Pascal
         }
 
-def parse_unit(unit : str, user_defined_units:list = []) -> UnitSpecification:
+def parse_unit(unit : str, user_defined_units: tuple = ()) -> UnitSpecification:
     for u in user_defined_units:
         if unit == u:
             return UnitSpecification([CustomUnit(unit)])
@@ -214,7 +213,7 @@ def tokenize(unit: str):
         elif c in [ '(', ')', '/']:
             token = c
         else:
-            _log.error(f"Unit symbol {c} in {unit} not supported")
+            _log.error("Unit symbol %s in %s not supported", c, unit)
             token = c
         tokens.append(token)
         i+=1

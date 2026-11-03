@@ -16,7 +16,6 @@ __author__ = "stu222808"
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import operator as op
 
 # Relative Imports
 from cpdsl.model.declaration_model import DeclarationModel, Parameter, ParameterGroup, Feature

@@ -2,7 +2,6 @@
 
 __author__ = "sgu"
 
-import logging
 #  Copyright (c) 2023.  OceanDSL (https://oceandsl.uni-kiel.de)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");

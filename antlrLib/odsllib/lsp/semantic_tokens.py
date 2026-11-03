@@ -15,7 +15,7 @@
 
 from __future__ import annotations
 
-from typing import Iterable, List, Optional, Set
+from typing import FrozenSet, Iterable, List, Optional, Set
 
 from antlr4 import BufferedTokenStream, Parser, Token
 from lsprotocol.types import SemanticTokensLegend
@@ -23,9 +23,10 @@ from lsprotocol.types import SemanticTokensLegend
 TOKEN_TYPES: List[str] = ["keyword", "string", "number", "comment", "operator"]
 LEGEND = SemanticTokensLegend(token_types=TOKEN_TYPES, token_modifiers=[])
 
-DEFAULT_STRING_TOKENS: Set[str] = {"STRING"}
-DEFAULT_NUMBER_TOKENS: Set[str] = {"INT", "NUM", "DP", "ELONG", "EDOUBLE", "FLOAT", "NUMBER", "DOUBLE"}
-DEFAULT_COMMENT_TOKENS: Set[str] = {"COMMENT", "SL_COMMENT", "ML_COMMENT", "LINE_COMMENT", "TDD_COMMENT"}
+DEFAULT_STRING_TOKENS: FrozenSet[str] = frozenset({"STRING"})
+DEFAULT_NUMBER_TOKENS: FrozenSet[str] = frozenset({"INT", "NUM", "DP", "ELONG", "EDOUBLE", "FLOAT", "NUMBER", "DOUBLE"})
+DEFAULT_COMMENT_TOKENS: FrozenSet[str] = frozenset(
+    {"COMMENT", "SL_COMMENT", "ML_COMMENT", "LINE_COMMENT", "TDD_COMMENT"})
 
 
 def classify(parser: Parser, token: Token, string_tokens: Set[str], number_tokens: Set[str],

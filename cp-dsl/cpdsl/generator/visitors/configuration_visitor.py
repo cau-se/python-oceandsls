@@ -15,29 +15,23 @@
 __author__ = "reiner"
 
 # util imports
-from typing import Generic, Callable, List
+import os
+from typing import Callable, Generic
 
 # antlr4
 from antlr4.tree.Tree import ParseTree
-from antlr4.Token import CommonToken
-from antlr4 import ParserRuleContext, TerminalNode
 
 # user relative imports
-from cpdsl.model.symbols import Scope, T, P
+from cpdsl.model.symbols import T
 from cpdsl.generator.visitors.expression_visitor import ExpressionVisitorMixin
 from cpdsl.model.declaration_model import DeclarationModel, ParameterGroup, Feature, Parameter, SelectorExpression
 from cpdsl.model.unit_model import UnitPrefix
-from cpdsl.model.arithmetic_model import ArithmeticExpression, MultiplicationExpression, EMultiplicationOperator, EAdditionOperator, \
-    ArrayExpression, IntValue, FloatValue, StringValue, BooleanValue
-from cpdsl.model.type_system import ArrayType, EnumeralType, InlineEnumeralType, base_types
 from cpdsl.common.logger import GeneratorLogger
 from cpdsl.common.unit_processing import parse_unit
 
-from conflspserver.gen.python.Configuration.ConfigurationLexer import ConfigurationLexer
 from conflspserver.gen.python.Configuration.ConfigurationParser import ConfigurationParser
 from conflspserver.gen.python.Configuration.ConfigurationVisitor import ConfigurationVisitor
 
-import os
 
 import logging
 _log = logging.getLogger(__name__)  # diagnostics go to logging, never to stdout

@@ -19,6 +19,9 @@ Shared by the DSL packages, which add their own symbols (e.g. test cases and mod
 
 from __future__ import annotations
 
+# The public names follow the antlr4-c3 (TypeScript) API, of which this module is a port
+# pylint: disable=invalid-name
+
 __author__ = "sgu"
 
 __all__ = [

@@ -15,10 +15,9 @@
 from __future__ import annotations
 from enum import Enum
 from dataclasses import dataclass
-from typing import Optional, Coroutine, TypeVar, List, Dict
+from typing import List, Dict
 
 # Antlr4
-from antlr4.tree.Tree import ParseTree
 
 from cpdsl.model.symbols import Scope, NamedElement
 from cpdsl.model.type_system import NamedType

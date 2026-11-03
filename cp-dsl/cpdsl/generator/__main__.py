@@ -12,7 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from antlr4 import InputStream, CommonTokenStream, FileStream
+from antlr4 import CommonTokenStream, FileStream
 import argparse
 import os
 import sys
@@ -30,7 +30,7 @@ from cpdsl.generator.generators.uvic.code_generator import UvicCodeGenerator
 from cpdsl.generator.generators.mitgcm.code_generator import MitGcmCodeGenerator
 from cpdsl.generator.generators.eval.code_generator import EvalCodeGenerator
 from cpdsl.model.declaration_model import DeclarationModel, Feature, ParameterGroup, Parameter, SelectorExpression
-from cpdsl.model.symbols import UnitSymbol
+from cpdsl.model.unit_model import UnitSpecification
 from cpdsl.model.arithmetic_model import AbstractExpression
 from cpdsl.common.logger import GeneratorLogger
 
@@ -66,10 +66,10 @@ def make_declaration_model(model: DeclarationModel, input_path: str):
 
     return model
 
-def check_unit_compatibility(target_unit:UnitSymbol, source_unit:UnitSymbol, element:Parameter):
+def check_unit_compatibility(target_unit:UnitSpecification, source_unit:UnitSpecification, element:Parameter):
     pass
 
-def derive_expression_unit(expression:AbstractExpression) -> UnitSymbol:
+def derive_expression_unit(expression:AbstractExpression) -> UnitSpecification:
     # TODO derive the unit of composed expressions; for now only the unit given with a value is known
     return getattr(expression, "unit", None)
 
@@ -92,7 +92,7 @@ def check_feature_integrity(feature: Feature):
     if feature.is_activated:
         for r in feature.requires:
             if not r.is_activated:
-                logger.logger.error(f"Feature missing. Feature {feature.name} requires {r.name}, but {r.name} is not activated.")
+                logger.logger.error("Feature missing. Feature %s requires %s, but %s is not activated.", feature.name, r.name, r.name)
         for group in feature.groups.values():
             check_parameter_group_integrity(group)
 

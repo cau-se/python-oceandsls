@@ -62,7 +62,7 @@ class ImportLogger(PathFinder):
 
         Source: https://docs.python.org/3/library/importlib.html#importlib.machinery.PathFinder.find_spec
         """
-        self.logger.info(f"Importing: {fullname} | Path: {path} | Target: {target}")
+        self.logger.info("Importing: %s | Path: %s | Target: %s", fullname, path, target)
         return super().find_spec(fullname, path, target)
 
 class LoggerWithImports(Logger):

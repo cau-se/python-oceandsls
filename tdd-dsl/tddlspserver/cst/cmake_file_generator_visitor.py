@@ -19,7 +19,7 @@ __author__ = "sgu"
 import os
 import stat
 # Util
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 # Jinja2
 from jinja2 import Environment, FileSystemLoader
@@ -41,7 +41,7 @@ class CMakeFileGeneratorVisitor(TestSuiteVisitor):
     cwd: str
 
     def __init__(
-            self, template_path: str = os.path.join(TEMPLATE_ROOT, "cmake"), files: Dict[str, Tuple[float, str, str]] = {},
+            self, template_path: str = os.path.join(TEMPLATE_ROOT, "cmake"), files: Optional[Dict[str, Tuple[float, str, str]]] = None,
             symbol_table: SymbolTable = None, work_path: str = "tdd-dsl/output"
     ):
         """
@@ -56,7 +56,7 @@ class CMakeFileGeneratorVisitor(TestSuiteVisitor):
 
         self.overwrite = False
         self.overwrite_files: List[str] = []
-        self.files: dict[str, Tuple[float, str, str]] = files
+        self.files: dict[str, Tuple[float, str, str]] = {} if files is None else files
 
         self.symbol_table = symbol_table
 

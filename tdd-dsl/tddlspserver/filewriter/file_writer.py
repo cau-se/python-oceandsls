@@ -21,9 +21,9 @@ from hashlib import md5
 # Utils
 from logging import DEBUG, getLogger
 from re import search, sub, escape, IGNORECASE, MULTILINE, DOTALL
-from os import path, makedirs
+from os import makedirs
 from os.path import getmtime, dirname, isdir, splitext, exists
-from typing import Any, Dict, List, Tuple
+from typing import Dict, List, Tuple
 
 # Debug
 logger = getLogger(__name__)
@@ -287,10 +287,10 @@ def file_modified(path=None, mtime: float = 0, fileHash: str = None) -> bool:
     :return: If modification time or file hash is changed
     """
     if getmtime(path) > mtime or fileHash != hash_file(path):
-        logger.debug(f"... modified {path}")
+        logger.debug("... modified %s", path)
         return True
     else:
-        logger.debug(f"... not modified {path}")
+        logger.debug("... not modified %s", path)
         return False
 
 
@@ -313,7 +313,7 @@ def write_file(file_path: str = "", content: str | Dict = "", file_attr: tuple[f
     if path and not isdir(path):
         makedirs(path)
         if show_debug_output and logger.isEnabledFor(DEBUG):
-            logger.debug(f"... create {path}")
+            logger.debug("... create %s", path)
 
     # Get File extension for merge functions
     extension: str = splitext(file_path)[1]
@@ -331,7 +331,7 @@ def write_file(file_path: str = "", content: str | Dict = "", file_attr: tuple[f
 
         # Log
         if show_debug_output and logger.isEnabledFor(DEBUG):
-            logger.debug(f"...try merge {file_path}")
+            logger.debug("...try merge %s", file_path)
 
         # Merge current content with original file content based on file extension
         match extension:
@@ -366,6 +366,6 @@ def write_file(file_path: str = "", content: str | Dict = "", file_attr: tuple[f
     with open(file_path, mode="w", encoding="utf-8") as f:
         f.write(content)
         if show_debug_output and logger.isEnabledFor(DEBUG):
-            logger.debug(f"... write {file_path}")
+            logger.debug("... write %s", file_path)
 
     return getmtime(file_path), hash_file(file_path), content_org

@@ -50,7 +50,7 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
     found_par: bool
 
     def __init__(
-            self, template_path: str = os.path.join(TEMPLATE_ROOT, "f90"), files: Dict[str, Tuple[float, str, str]] = {},
+            self, template_path: str = os.path.join(TEMPLATE_ROOT, "f90"), files: Optional[Dict[str, Tuple[float, str, str]]] = None,
             symbol_table: SymbolTable = None, work_path: str = "tdd-dsl/output", file_suffix: str = "f90", rel_file_path=None
     ):
         """
@@ -65,7 +65,7 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
         super().__init__()
         self.overwrite = False
         self.overwrite_files: List[str] = []
-        self.files: dict[str, Tuple[float, str, str]] = files
+        self.files: dict[str, Tuple[float, str, str]] = {} if files is None else files
         self.template_path = template_path
         self.rel_file_path = rel_file_path
         self.work_path = work_path
