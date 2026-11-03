@@ -32,7 +32,7 @@ from ..symboltable.symbol_table import ModuleSymbol
 from ..filewriter.file_writer import write_file
 from ..gen.python.TestSuite.TestSuiteParser import TestSuiteParser
 from ..gen.python.TestSuite.TestSuiteVisitor import TestSuiteVisitor
-from ..utils.suggest_variables import get_scope
+from odsllib.lsp.symbols import get_scope
 
 
 class F90FileGeneratorVisitor(TestSuiteVisitor):

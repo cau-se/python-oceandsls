@@ -32,7 +32,7 @@ from ..gen.python.TestSuite.TestSuiteParser import TestSuiteParser
 from odsllib.symbol_table import SymbolTable
 from ..symboltable.symbol_table import TestCaseSymbol
 from ..gen.python.TestSuite.TestSuiteVisitor import TestSuiteVisitor
-from ..utils.suggest_variables import get_scope
+from odsllib.lsp.symbols import get_scope
 
 
 class CMakeFileGeneratorVisitor(TestSuiteVisitor):

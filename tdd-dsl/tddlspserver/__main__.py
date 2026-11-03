@@ -14,93 +14,43 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from argparse import ArgumentTypeError, ArgumentParser
-from logging import basicConfig, getLogger, DEBUG, INFO
+from argparse import ArgumentTypeError
+from logging import getLogger
 from shutil import which
-from os import access, getcwd, R_OK
-from os.path import isfile, join, isdir, dirname, abspath
-from subprocess import check_output, STDOUT, CalledProcessError, run
+from os import getcwd
+from os.path import join, dirname, abspath
+from subprocess import check_output, STDOUT, CalledProcessError
 from sys import executable
+
+from odsllib.lsp.cli import configure_logging, readable_directory, readable_file, server_argument_parser, start_server
 
 # Package imports
 from .server import did_save, recommend_software_under_test, tdd_server
 
 
-def add_arguments(parser):
-    parser.prog = "TDD-Language-Server"
-    parser.description = "A program for a language server based on the test driven development ocean-dsl"
-    parser.epilog = "TDD-DSL Language Server"
-
-    parser.add_argument(
-        "--tcp", dest="tcp", action="store_true", help="Use TCP server"
-    )
-    parser.add_argument(
-        "--ws", dest="ws", action="store_true", help="Use WebSocket server"
-    )
-    parser.add_argument(
-        "--host", dest="host", default="127.0.0.1", help="Bind to this address"
-    )
-    parser.add_argument(
-        "--port", dest="port", type=int, default=2087, help="Bind to this port"
-    )
+def make_parser():
+    """Parser with the common server options (odsllib.lsp.cli) and the options of TDD-DSL."""
+    parser = server_argument_parser(
+        "TDD-Language-Server", "A program for a language server based on the test driven development ocean-dsl",
+        epilog="TDD-DSL Language Server", file_help="TDD-File input file for pFUnit generator", log_file=False,
+        debug_help="Log debug output (stderr) and write metric tables to files")
     parser.add_argument(
         # No default: argparse would validate a string default with type=..., and the server could not start at all
         # without fxtran. fxtran is only required to analyse the SUT (content assist and generation use it if present).
         "-fx", "--fxtran", dest="fxtran", type=fxtran_executable, default=None,
         help="Path to fxtran (default: fxtran on PATH)"
     )
-
     parser.add_argument(
-        "-m", "--metric", dest="metric", default="Test Index", help="Metric to sort SuT recommendations, e.g. Testability Factor"
+        "-m", "--metric", dest="metric", default="Test Index",
+        help="Metric to sort SuT recommendations, e.g. Testability Factor"
     )
-
-    parser.add_argument(
-        "-f", "--file", dest="file", type=readable_file, help="TDD-File input file for pFUnit generator"
-    )
-
     parser.add_argument(
         "-s", "--source", dest="source", type=readable_directory, help="Path of source code to analyse"
     )
-
     parser.add_argument(
         "-d", "--descending", action="store_true", help="Sort the list in descending order"
     )
-
-    parser.add_argument(
-        "--debug", action="store_true", help="Log debug output (stderr) and write metric tables to files"
-    )
-
-
-def readable_file(file_path: str):
-    """
-    Check for an existing and readable file.
-
-    :param file_path: path to file
-    :return: valid readable file path
-    """
-
-    abs_file_path = join(getcwd(), file_path)
-
-    if isfile(abs_file_path) and access(abs_file_path, R_OK):
-        return abs_file_path
-    else:
-        raise ArgumentTypeError(f"File {abs_file_path} doesn't exist or isn't readable.")
-
-
-def readable_directory(dir_path: str):
-    """
-    Check for an existing and readable directory.
-
-    :param dir_path: path to directory
-    :return: valid readable directory path
-    """
-
-    abs_dir_path = join(getcwd(), dir_path)
-
-    if isdir(abs_dir_path) and access(abs_dir_path, R_OK):
-        return abs_dir_path
-    else:
-        raise ArgumentTypeError(f"Directory {abs_dir_path} doesn't exist or isn't readable.")
+    return parser
 
 
 def fxtran_executable(path: str):
@@ -110,16 +60,18 @@ def fxtran_executable(path: str):
     :param path: readable path to fxtran executable
     :return: valid path
     """
-    # Add help argument to succeed.
-    cmd: str = " ".join([path, "-help"])
-
     try:
-        # Call "fxtran -help" via subprocess
-        check_output(cmd, shell=True, stderr=STDOUT)
+        # Call "fxtran -help"
+        check_output([path, "-help"], stderr=STDOUT)
     except CalledProcessError as e:
         raise ArgumentTypeError(
-            f"Did not found fxtran. Command '{e.cmd}' returned error (code {e.returncode}): {e.output}. Provide valid path via -fx PATH or add to system PATH."
-        )
+            f"Did not find fxtran. Command '{e.cmd}' returned error (code {e.returncode}): {e.output}. "
+            "Provide a valid path via -fx PATH or add fxtran to the system PATH."
+        ) from e
+    except OSError as e:
+        raise ArgumentTypeError(
+            f"Did not find fxtran at {path} ({e}). Provide a valid path via -fx PATH or add fxtran to the system PATH."
+        ) from e
 
     return path
 
@@ -155,12 +107,10 @@ def process_recommended_metrics(metrics_path):
 
 
 def main():
-    parser = ArgumentParser()
-    add_arguments(parser)
-    args = parser.parse_args()
+    args = make_parser().parse_args()
 
     # Logging goes to stderr: stdout carries the JSON-RPC stream when the server runs over stdio
-    basicConfig(level=DEBUG if args.debug else INFO)
+    configure_logging(args)
     tdd_server.SHOW_DEBUG_OUTPUT = args.debug
 
     # Sort the list based on the descending flag
@@ -189,16 +139,7 @@ def main():
         # Pass the recommended metrics to the llm analyzer
         process_recommended_metrics(metrics_path)
     else:
-
-        if args.tcp:
-            # Start server via tcp
-            tdd_server.start_tcp(args.host, args.port)
-        elif args.ws:
-            # Start server via WebSocket
-            tdd_server.start_ws(args.host, args.port)
-        else:
-            # Start server via IO
-            tdd_server.start_io()
+        start_server(tdd_server, args)
 
 
 if __name__ == "__main__":

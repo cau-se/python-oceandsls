@@ -31,7 +31,7 @@ from odsllib.symbol_table import SymbolTable
 from ..filewriter.file_writer import write_file
 from ..gen.python.TestSuite.TestSuiteParser import TestSuiteParser
 from ..gen.python.TestSuite.TestSuiteVisitor import TestSuiteVisitor
-from ..utils.suggest_variables import get_scope
+from odsllib.lsp.symbols import get_scope
 
 # Debug Log
 logger = logging.getLogger(__name__)

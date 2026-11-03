@@ -34,7 +34,7 @@ from .cst.symbol_table_visitor import SymbolTableVisitor
 from .gen.python.BgcDsl.BgcDslLexer import BgcDslLexer
 from .gen.python.BgcDsl.BgcDslParser import BgcDslParser
 from odsllib.symbol_table import VariableSymbol
-from .utils.suggest_variables import suggest_symbols
+from odsllib.lsp.symbols import suggest_symbols
 
 logger = logging.getLogger(__name__)
 

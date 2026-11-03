@@ -1,7 +1,3 @@
-"""computeTokenIndex module."""
-
-__author__ = "sgu"
-
 #  Copyright (c) 2023.  OceanDSL (https://oceandsl.uni-kiel.de)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,121 +7,37 @@ __author__ = "sgu"
 #      http://www.apache.org/licenses/LICENSE-2.0
 #
 #  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
 
-# utils
-import asyncio
-import threading
-from typing import List, ParamSpec, Type
+"""Symbol based completion of TDD-DSL: paths and metrics are suggested by their values.
 
-# antlr4
-from antlr4 import ParserRuleContext
+The scope lookup and the collection of the visible symbols are shared (:mod:`odsllib.lsp.symbols`).
+"""
 
-# user relative imports
-from odsllib.symbol_table import RoutineSymbol, SymbolTable, Symbol, ScopedSymbol, VariableSymbol
-from ..symboltable.symbol_table import MetricSymbol, ModuleSymbol, PathSymbol
+from typing import List, Type
+
 from odsllib.lsp.compute_token_index import TokenPosition
+from odsllib.lsp.symbols import filter_symbols as filter_symbol_names, get_scope, suggest_symbols as suggest
+from odsllib.symbol_table import RoutineSymbol, Symbol, SymbolTable, VariableSymbol
+from ..symboltable.symbol_table import MetricSymbol, ModuleSymbol, PathSymbol
 
-P = ParamSpec("P")
-
-
-class RunThread(threading.Thread):
-    def __init__(self, func, *args: P.args or None, **kwargs: P.kwargs or None):
-        self.func = func
-        self.args = args
-        self.kwargs = kwargs
-        self.result = None
-        super().__init__()
-
-    def run(self):
-        self.result = asyncio.run(self.func(*self.args, **self.kwargs))
+__all__ = ["get_scope", "suggest_symbols", "filter_symbols"]
 
 
-def run_async(func, *args: P.args or None, **kwargs: P.kwargs or None):
-    try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:  # RuntimeError: There is no current event loop...
-        loop = None
-    if loop and loop.is_running():
-        thread = RunThread(func, *args, **kwargs)
-        thread.start()
-        thread.join()
-        return thread.result
-
-        # print("Async event loop already running. Adding coroutine to the event loop.")
-        # tsk = loop.create_task(symbolTable.symbolWithContext( context ))
-        # https://docs.python.org/3/library/asyncio-task.html#task-object
-        # Optionally, a callback function can be executed when the coroutine completes
-        # tsk.add_done_callback( lambda t: print(f"Task done with result={t.result()}  << return val of main()"))
-    else:
-        return asyncio.run(func(*args, **kwargs))
+def suggest_symbols(symbol_table: SymbolTable, position: TokenPosition, symbol_type: Type = VariableSymbol,
+                    descending_sort=False) -> List[str]:
+    """Completion candidates of a symbol type at ``position`` (metric values sorted, descending if requested)."""
+    return suggest(symbol_table, position, symbol_type,
+                   lambda text, symbols, kind: filter_symbols(text, symbols, kind, descending_sort))
 
 
-def get_scope(context: ParserRuleContext, symbolTable: SymbolTable):
-    if context is None:
-        return None
-
-    scope = run_async(symbolTable.symbol_with_context, context)
-
-    if scope is not None:
-        return scope
-    else:
-        return get_scope(context.parentCtx, symbolTable)
-
-
-def get_all_symbols_of_type(scope: ScopedSymbol, symbol_type: type):
-    symbols: List[Symbol] = run_async(scope.get_symbols_of_type, symbol_type, False)
-    parent = scope.parent()
-    broken_chain: bool = False
-    while parent is not None and not isinstance(parent, ScopedSymbol):
-        parent = parent.parent()
-        broken_chain = True
-    if parent is not None and broken_chain:
-        symbols.extend(get_all_symbols_of_type(parent, symbol_type))
-    return symbols
-
-
-def suggest_symbols(symbol_table: SymbolTable, position: TokenPosition, symbol_type: Type = VariableSymbol, descending_sort=False) -> List[str]:
-    if position:
-        context = position.context
-        scope = get_scope(context, symbol_table)
-        symbols: List[Symbol]
-        if isinstance(scope, ScopedSymbol):  # Local scope
-            symbols = get_all_symbols_of_type(scope, symbol_type)
-        else:  # Global scope
-            symbols = run_async(symbol_table.get_symbols_of_type, symbol_type, False)
-
-        text: str = position.text
-
-    else:
-        symbols = run_async(symbol_table.get_nested_symbols_of_type, symbol_type)
-        text = ""
-    return filter_symbols(text, symbols, symbol_type, descending_sort)
-
-
-def filter_symbols(text: str, symbols: List[Symbol], symbol_type: Type = VariableSymbol, descending_sort=False) -> List[str]:
-    match symbol_type:
-        case symbol_type if issubclass(symbol_type, PathSymbol):
-            candidates = list(map(lambda s: s.value, symbols))
-
-            return candidates
-
-        case symbol_type if issubclass(symbol_type, MetricSymbol):
-            scopes: List = list(map(lambda s: s.value, symbols))
-            scopes.sort(reverse=descending_sort)
-            candidates: List[str] = list(map(lambda scope: str(scope), scopes))
-
-            return candidates
-
-        case symbol_type if any(map(lambda sType: issubclass(symbol_type, sType), [VariableSymbol, ModuleSymbol, RoutineSymbol])):
-            candidates = list(map(lambda s: s.name, symbols))
-            if len(text.strip()) == 0:
-                return candidates
-            else:
-                return list(filter(lambda c: c.lower().startswith(text.lower()), candidates))
-
-        case _:
-            return []
+def filter_symbols(text: str, symbols: List[Symbol], symbol_type: Type = VariableSymbol,
+                   descending_sort=False) -> List[str]:
+    """Paths and metrics by value, variables, modules and routines by the names starting with ``text``."""
+    if issubclass(symbol_type, PathSymbol):
+        return [symbol.value for symbol in symbols]
+    if issubclass(symbol_type, MetricSymbol):
+        values = sorted((symbol.value for symbol in symbols), reverse=descending_sort)
+        return [str(value) for value in values]
+    if issubclass(symbol_type, (VariableSymbol, ModuleSymbol, RoutineSymbol)):
+        return filter_symbol_names(text, symbols)
+    return []

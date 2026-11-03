@@ -18,6 +18,9 @@ Shared library of the [OceanDSL](https://oceandsl.uni-kiel.de) languages
   - token-based semantic highlighting (`encode_semantic_tokens()`),
   - `AntlrLanguageServer`, a base server providing diagnostics, completion, semantic tokens
     and the `registerCompletions`/`unregisterCompletions` commands,
+  - symbol completion from a symbol table (`odsllib.lsp.symbols.suggest_symbols()`),
+  - the common command line of the servers (`odsllib.lsp.cli.server_argument_parser()`,
+    `run_server()`: --tcp, --ws, --host, --port, -f/--file, --log-file, --debug),
   - `odsllib.lsp.testing.run_lsp_session()` to test a server process end-to-end over stdio.
 
 ## Install

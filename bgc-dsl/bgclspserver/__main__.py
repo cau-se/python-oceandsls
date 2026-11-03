@@ -1,5 +1,3 @@
-"""exampleLSPServer package."""
-
 #  Copyright (c) 2023.  OceanDSL (https://oceandsl.uni-kiel.de)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,80 +11,23 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+"""Command line of the BGC-DSL language server (``python -m bgclspserver``)."""
 
-import argparse
-import logging
-import os
-from os.path import isfile
+from odsllib.lsp.cli import run_server, server_argument_parser
 
 from .server import bgc_server, did_save
 
 
-
-def add_arguments(parser):
-    parser.prog = "BGC-Language-Server"
-    parser.description = "bgc-dsl server"
-    parser.epilog = "BGC-DSL Language Server"
-
-    parser.add_argument(
-        "--tcp", dest="tcp", action="store_true",
-        help="Use TCP server"
-    )
-    parser.add_argument(
-        "--ws", dest="ws", action="store_true",
-        help="Use WebSocket server"
-    )
-    parser.add_argument(
-        "--host", dest="host", default="127.0.0.1",
-        help="Bind to this address"
-    )
-    parser.add_argument(
-        "--port", dest="port", type=int, default=2087,
-        help="Bind to this port"
-    )
-    parser.add_argument(
-        "-f", "--file", dest="file", type=readable_file,
-        help="Input file for file generator"
-    )
-    parser.add_argument("--log-file", dest="log_file", default=None, help="Write the log to this file")
-    parser.add_argument("--debug", action="store_true", help="Log debug output")
-
-
-def readable_file(file_path: str):
-    """
-    Check for readable file.
-
-    :param file_path: path to file
-    :return: valid readable file path
-    """
-
-    abs_file_path = os.path.join(os.getcwd(), file_path)
-
-    if isfile(abs_file_path) and os.access(abs_file_path, os.R_OK):
-        return abs_file_path
-    else:
-        raise argparse.ArgumentTypeError(f"File {abs_file_path} doesn't exist or isn't readable.")
+def generate(path: str) -> None:
+    """Run the file generator for a BGC-DSL file (-f/--file)."""
+    bgc_server.input_path = path
+    did_save(bgc_server, None)
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    add_arguments(parser)
-    args = parser.parse_args()
-
-    # Log to stderr (stdout carries the JSON-RPC stream in stdio mode) or to a file with --log-file
-    logging.basicConfig(filename=args.log_file, level=logging.DEBUG if args.debug else logging.INFO)
-
-    if args.file:
-        # Start cli code gen with given path
-        bgc_server.input_path = os.path.join(os.getcwd(), args.file)
-        did_save(bgc_server, None)
-    else:
-        if args.tcp:
-            bgc_server.start_tcp(args.host, args.port)
-        elif args.ws:
-            bgc_server.start_ws(args.host, args.port)
-        else:
-            bgc_server.start_io()
+    parser = server_argument_parser("BGC-Language-Server", "bgc-dsl server", epilog="BGC-DSL Language Server",
+                                    file_help="Input file for file generator")
+    run_server(bgc_server, parser, on_file=generate)
 
 
 if __name__ == "__main__":
