@@ -1,10 +1,4 @@
-"""Port of antlr-c3 typescript symbol table implementation to python"""
-
-from __future__ import annotations
-
-__author__ = "sgu"
-
-#  Copyright (c) 2023.  OceanDSL (https://oceandsl.uni-kiel.de)
+#  Copyright (c) 2023-2026.  OceanDSL (https://oceandsl.uni-kiel.de)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -17,6 +11,43 @@ __author__ = "sgu"
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+"""Symbol table of the OceanDSL language servers: a Python port of the antlr4-c3 (TypeScript) symbol table.
+
+Shared by the DSL packages, which add their own symbols (e.g. test cases and modules in TDD-DSL) as subclasses of
+:class:`Symbol` or :class:`ScopedSymbol`.
+"""
+
+from __future__ import annotations
+
+__author__ = "sgu"
+
+__all__ = [
+    "DuplicateSymbolError",
+    "MemberVisibility",
+    "TypeKind",
+    "UnitKind",
+    "UnitPrefix",
+    "Unit",
+    "Type",
+    "SymbolTableOptions",
+    "classproperty",
+    "FundamentalUnit",
+    "FundamentalType",
+    "get_fundamental_type",
+    "Symbol",
+    "P",
+    "T",
+    "TypedSymbol",
+    "UnitSymbol",
+    "ScopedSymbol",
+    "VariableSymbol",
+    "ParameterSymbol",
+    "ReturnSymbol",
+    "RoutineSymbol",
+    "FunctionSymbol",
+    "SymbolTableInfo",
+    "SymbolTable",
+]
 
 # Utils import
 import asyncio
@@ -96,13 +127,11 @@ class UnitKind(Enum):
     Unknown = 0
     Second = 1
     Metre = 2
-    # TODO si unit is kilogram | added to FundamentalUnit
     Gram = 3
     Ampere = 4
     Kelvin = 5
     Mole = 6
     Candela = 7
-    # TODO add non si units?
     Pascal = 8
     Joule = 9
     ton = 10
@@ -147,12 +176,9 @@ class Unit:
     name: str
 
     # The super unit of this unit or empty if this is a SI unit such as second.
-    # TODO add units
-    # TODO add aliases?
     base_types: List[Unit]
     prefix: UnitPrefix
     kind: UnitKind
-    # reference: ReferenceKind
 
 
 @dataclass
@@ -166,7 +192,6 @@ class Type:
     # Also used as the target type for type aliases.
     base_types: Optional[List[Type]]
     kind: Optional[TypeKind]
-    # reference: Optional[ReferenceKind]
 
 
 @dataclass
@@ -175,7 +200,6 @@ class SymbolTableOptions:
 
 
 class classproperty(property):
-    # TODO use metaclass factory https://stackoverflow.com/q/6760685/
     def __get__(self, cls, owner):
         return classmethod(self.fget).__get__(None, owner)()
 
@@ -185,7 +209,8 @@ class FundamentalUnit(Unit):
     A single class for all fundamental units which are mostly SI units. They are distinguished via the kind field.
     """
 
-    def __init__(self, name: str, base_types=[], unit_prefix=UnitPrefix.NoP, unit_kind=UnitKind.Unknown):
+    def __init__(self, name: str, base_types=None, unit_prefix=UnitPrefix.NoP, unit_kind=UnitKind.Unknown):
+        base_types = [] if base_types is None else base_types
         super().__init__(name=name, base_types=base_types, kind=unit_kind, prefix=unit_prefix)
 
     @classproperty
@@ -196,12 +221,10 @@ class FundamentalUnit(Unit):
     def metre_unit(self) -> FundamentalUnit:
         return FundamentalUnit(name="metre", unit_kind=UnitKind.Metre)
 
-    # TODO si unit is kilogram but unitKind has gram
     @classproperty
     def gram_unit(self) -> FundamentalUnit:
         return FundamentalUnit(name="gram", unit_kind=UnitKind.Gram)
 
-    # TODO si unit is kilogram but unitKind has gram
     @classproperty
     def kilogram_unit(self) -> FundamentalUnit:
         return FundamentalUnit(name="kilogram", unit_prefix=UnitPrefix.Kilo, unit_kind=UnitKind.Gram)
@@ -230,7 +253,6 @@ class FundamentalUnit(Unit):
     def joule_unit(self) -> FundamentalUnit:
         return FundamentalUnit(name="Joule", unit_kind=UnitKind.Joule)
 
-    # TODO si unit is kilogram. unitKind has gram but could include ton
     @classproperty
     def ton_unit(self) -> FundamentalUnit:
         return FundamentalUnit(name="Ton", unit_prefix=UnitPrefix.Mega, unit_kind=UnitKind.Gram)
@@ -241,9 +263,8 @@ class FundamentalType(Type):
     A single class for all fundamental types. They are distinguished via the kind field.
     """
 
-    # , reference_kind=ReferenceKind.Irrelevant
-    def __init__(self, name: str, base_types=[], type_kind=TypeKind.Unknown):
-        # , reference=reference_kind
+    def __init__(self, name: str, base_types=None, type_kind=TypeKind.Unknown):
+        base_types = [] if base_types is None else base_types
         super().__init__(name=name, base_types=base_types, kind=type_kind)
 
     @classproperty
@@ -267,20 +288,18 @@ class FundamentalType(Type):
         return FundamentalType(name="bool", type_kind=TypeKind.Boolean)
 
 
-def get_fundamental_type(type: str = "") -> Type | FundamentalType:
+def get_fundamental_type(type: str = "") -> Type | FundamentalType | None:  # pylint: disable=redefined-builtin
     """
-    Return FundamentalType of type or, if non-existent, new Type of type
-    :param type: Type name to return
-    :return: FundamentalType of type or, if non-existent, new Type of type
+    Return the FundamentalType of a type name or, if there is none, a new Type of that name
+    :param type: Type name to return (case-insensitive), e.g. "integer" or "real"
+    :return: FundamentalType of type or, if non-existent, new Type of type; None for an empty name
     """
-    for key in FundamentalType.__dict__.keys():
-        if type:
-            if key == type.lower() + "_type":
-                return getattr(FundamentalType, key)
-
-            return Type(name=type.lower(), base_types=None, kind=None)
-        else:
-            return None
+    if not type:
+        return None
+    key = type.lower() + "_type"
+    if isinstance(FundamentalType.__dict__.get(key), classproperty):
+        return getattr(FundamentalType, key)
+    return Type(name=type.lower(), base_types=None, kind=None)
 
 
 class Symbol:
@@ -408,14 +427,15 @@ class Symbol:
             self.__the_parent.remove_symbol(self)
             self.__the_parent = None
 
-    async def resolve(self, name: str, t: type = None, type_only: bool = False, local_only: bool = False) -> Optional[Symbol]:
+    async def resolve(self, name: str, t: type = None, type_only: bool = False,
+                      local_only: bool = False) -> Optional[Symbol]:
         """
         Asynchronously looks up a symbol with a given name, in a bottom-up manner.
 
         :param name: The name of the symbol to find.
         :param type_only: no subtype
         :param t: parameter type
-        :param local_only: If true only child symbols are returned, otherwise also symbols from the parent of this symbol
+        :param local_only: If true only child symbols are returned, otherwise also symbols of the parent scopes
         (recursively).
         :return: A promise resolving to the first symbol with a given name, in the order of appearance in this scope or
         any of the parent scopes (conditionally).
@@ -426,14 +446,15 @@ class Symbol:
 
         return None
 
-    def resolve_sync(self, name: str, t: type = None, type_only: bool = False, local_only: bool = False) -> Optional[Symbol]:
+    def resolve_sync(self, name: str, t: type = None, type_only: bool = False,
+                     local_only: bool = False) -> Optional[Symbol]:
         """
         Synchronously looks up a symbol with a given name, in a bottom-up manner.
 
         :param name: The name of the symbol to find.
         :param type_only: no subtype
         :param t: parameter type
-        :param local_only: If true only child symbols are returned, otherwise also symbols from the parent of this symbol
+        :param local_only: If true only child symbols are returned, otherwise also symbols of the parent scopes
         (recursively).
         :return: the first symbol with a given name, in the order of appearance in this scope or any of the parent
         scopes (conditionally).
@@ -494,7 +515,6 @@ class TypedSymbol(Symbol):
 
     # Type such as int
     attached_type: Optional[Type]
-    # TODO make enum baseclass?
     # List of keys such as parameter
     attached_type_keys: Optional[List[str]]
 
@@ -518,26 +538,6 @@ class UnitSymbol(TypedSymbol):
     def __init__(self, name: str, attached_type: Type = None, attached_keys=None, attached_unit: Unit = None):
         super().__init__(name, attached_type, attached_keys)
         self.attached_unit = attached_unit
-
-
-# class TypeAlias(Symbol, Type):
-#     """
-#     An alias for another type.
-#     """
-#     __target_type: Type
-#
-#     def __init__(self, name: str, target: Type):
-#         super().__init__(name)
-#         self.__target_type = target
-#
-#     def base_types(self) -> List[Type]:
-#         return [self.__target_type]
-#
-#     def kind(self) -> TypeKind:
-#         return TypeKind.Alias
-#
-#     def reference(self) -> ReferenceKind:
-#         return ReferenceKind.Irrelevant
 
 
 class ScopedSymbol(Symbol):
@@ -609,7 +609,8 @@ class ScopedSymbol(Symbol):
         symbol_table = self.symbol_table()
         if symbol_table is None or not symbol_table.options.allow_duplicate_symbols:
             for child in self.children():
-                if child is symbol or (type(symbol) is type(child) and child.name == symbol.name) and isinstance(child, type(symbol)):
+                same_name = type(symbol) is type(child) and child.name == symbol.name
+                if child is symbol or same_name and isinstance(child, type(symbol)):
                     symbol_name = symbol.name if symbol.name else "<anonymous>"
                     scope_name = self.name if self.name else "<anonymous>"
                     msg: str = f"Attempt to add duplicate symbol \"{symbol_name}\" to \"{scope_name}\""
@@ -623,6 +624,7 @@ class ScopedSymbol(Symbol):
         if symbol in self.children():
             self.children().remove(symbol)
             symbol.set_parent(None)
+
 
     async def get_nested_symbols_of_type(self, t: type) -> List[T]:
         """
@@ -647,7 +649,6 @@ class ScopedSymbol(Symbol):
 
         return result
 
-    # TODO async
     def get_nested_symbols_of_type_and_name_sync(self, t: type, name: str = None) -> List[T]:
         """
         Synchronously retrieves child symbols of a given type and name from this symbol.
@@ -722,16 +723,19 @@ class ScopedSymbol(Symbol):
 
         return result
 
-    def get_symbols_of_type_and_name_sync(self, t: type, name: str = None, local_only=True, callers: List[T] = []) -> List[T]:
+    def get_symbols_of_type_and_name_sync(self, t: type, name: str = None, local_only=True,
+                                          callers: Optional[List[T]] = None) -> List[T]:
         """
         Synchronously returns symbols of the type and optionally the name, if given.
 
         :param callers: List of visited scopes, that should not be visited again
         :param t: The type of the objects to return.
         :param name: If given only returns symbols with that name.
-        :param local_only: If true only child symbols are returned, otherwise also symbols from the parent of this symbol (recursively) and included scopes.
+        :param local_only: If true only child symbols are returned, otherwise also symbols of the parent scopes
+        (recursively) and included scopes.
         :return: A promise resolving to direct children of a given type.
         """
+        callers = [] if callers is None else callers
         result: List[T] = []
         for child in self.children():
             if isinstance(child, t) and (name is None or child.name == name):
@@ -745,20 +749,24 @@ class ScopedSymbol(Symbol):
             # Call scopes that are included
             for include_scope in self._include_scopes:
                 if isinstance(include_scope, ScopedSymbol) and include_scope not in callers:
-                    result.extend(include_scope.get_symbols_of_type_and_name_sync(t, name, local_only, callers + [self]))
+                    result.extend(
+                        include_scope.get_symbols_of_type_and_name_sync(t, name, local_only, callers + [self]))
 
         return result
 
-    async def get_symbols_of_type_and_name(self, t: type, name: str = None, local_only: bool = True, callers: List[T] = []) -> List[T]:
+    async def get_symbols_of_type_and_name(self, t: type, name: str = None, local_only: bool = True,
+                                           callers: Optional[List[T]] = None) -> List[T]:
         """
         Asynchronously returns symbols of the type and optionally the name, if given.
 
         :param callers: List of visited scopes, that should not be visited again
         :param t: The type of the objects to return.
         :param name: If given only returns symbols with that name.
-        :param local_only: If true only child symbols are returned, otherwise also symbols from the parent of this symbol (recursively) and included scopes.
+        :param local_only: If true only child symbols are returned, otherwise also symbols of the parent scopes
+        (recursively) and included scopes.
         :return: A promise resolving to direct children of a given type.
         """
+        callers = [] if callers is None else callers
         result: List[T] = []
         for child in self.children():
             if isinstance(child, t) and (name is None or child.name == name):
@@ -767,24 +775,27 @@ class ScopedSymbol(Symbol):
         if not local_only:
             # Call parent scope
             if isinstance(self.parent(), ScopedSymbol):
-                local_list: List[T] = await self.parent().get_symbols_of_type_and_name(t, name, local_only, callers + [self])
+                local_list: List[T] = await self.parent().get_symbols_of_type_and_name(
+                    t, name, local_only, callers + [self])
                 result.extend(local_list)
 
             # Call scopes that are included
             for include_scope in self._include_scopes and self.parent() not in callers:
                 if isinstance(include_scope, ScopedSymbol) and include_scope not in callers:
-                    result.extend(include_scope.get_symbols_of_type_and_name_sync(t, name, local_only, callers + [self]))
+                    result.extend(
+                        include_scope.get_symbols_of_type_and_name_sync(t, name, local_only, callers + [self]))
 
         return result
 
-    def get_symbols_of_type_sync(self, t: type, local_only: bool = True, callers: List[T] = []) -> List[T]:
+    def get_symbols_of_type_sync(self, t: type, local_only: bool = True, callers: Optional[List[T]] = None) -> List[T]:
         """
         :param callers: List of visited scopes, that should not be visited again
-        :param local_only: If true only child symbols are returned, otherwise also symbols from the parent of this symbol
+        :param local_only: If true only child symbols are returned, otherwise also symbols of the parent scopes
         (recursively).
         :param t: The type of the objects to return.
         :return: A promise resolving to direct children of a given type.
         """
+        callers = [] if callers is None else callers
         result: List[T] = []
         for child in self.children():
             if isinstance(child, t):
@@ -802,14 +813,15 @@ class ScopedSymbol(Symbol):
 
         return result
 
-    async def get_symbols_of_type(self, t: type, local_only: bool = True, callers: List[T] = []) -> List[T]:
+    async def get_symbols_of_type(self, t: type, local_only: bool = True, callers: Optional[List[T]] = None) -> List[T]:
         """
         :param callers: List of visited scopes, that should not be visited again
-        :param local_only: If true only child symbols are returned, otherwise also symbols from the parent of this symbol
+        :param local_only: If true only child symbols are returned, otherwise also symbols of the parent scopes
         (recursively) and scopes that are included.
         :param t: The type of the objects to return.
         :return: A promise resolving to direct children of a given type.
         """
+        callers = [] if callers is None else callers
         result: List[T] = []
         for child in self.children():
             if isinstance(child, t):
@@ -829,16 +841,16 @@ class ScopedSymbol(Symbol):
 
         return result
 
-    # TODO: add optional position dependency (only symbols defined before a given caret pos are viable).
-    async def get_all_symbols(self, t: type, local_only: bool = False, callers: List[T] = []) -> List[T]:
+    async def get_all_symbols(self, t: type, local_only: bool = False, callers: Optional[List[T]] = None) -> List[T]:
         """
         :param callers: List of visited scopes, that should not be visited again
         :param t: The type of the objects to return.
-        :param local_only: If true only child symbols are returned, otherwise also symbols from the parent of this symbol
+        :param local_only: If true only child symbols are returned, otherwise also symbols of the parent scopes
         (recursively) and scopes that are included.
         :return: A promise resolving to all symbols of the given type, accessible from this scope (if local_only is
         false), within the owning symbol table.
         """
+        callers = [] if callers is None else callers
         result: List[T] = []
 
         # Special handling for namespaces, which act like grouping symbols in this scope, so we show them as available
@@ -867,16 +879,16 @@ class ScopedSymbol(Symbol):
 
         return result
 
-    # TODO: add optional position dependency (only symbols defined before a given caret pos are viable).
-    def get_all_symbols_sync(self, t: type, local_only: bool = False, callers: List[T] = []) -> List[T]:
+    def get_all_symbols_sync(self, t: type, local_only: bool = False, callers: Optional[List[T]] = None) -> List[T]:
         """
         :param callers: List of visited scopes, that should not be visited again
         :param t: The type of the objects to return.
-        :param local_only: If true only child symbols are returned, otherwise also symbols from the parent of this symbol
+        :param local_only: If true only child symbols are returned, otherwise also symbols of the parent scopes
         (recursively) and scopes that are included.
         :return: A list with all symbols of the the given type, accessible from this scope (if local_only is false),
         within the owning symbol table.
         """
+        callers = [] if callers is None else callers
         result: List[T] = []
 
         # Special handling for namespaces, which act like grouping symbols in this scope, so we show them as available
@@ -904,17 +916,19 @@ class ScopedSymbol(Symbol):
 
         return result
 
-    async def resolve(self, name: str, t: type = None, type_only: bool = False, local_only: bool = False, callers: List[T] = []) -> Optional[Symbol]:
+    async def resolve(self, name: str, t: type = None, type_only: bool = False, local_only: bool = False,
+                      callers: Optional[List[T]] = None) -> Optional[Symbol]:
         """
         :param name: The name of the symbol to resolve.
         :param type_only: no subtype
         :param t: parameter type
-        :param local_only: If true only child symbols are returned, otherwise also symbols from the parent of this symbol
+        :param local_only: If true only child symbols are returned, otherwise also symbols of the parent scopes
         (recursively) or scopes that are included.
         :param callers: List of visited scopes, that should not be visited again
         :return: A promise resolving to the first symbol with a given name, in the order of appearance in this scope or
         any of the parent scopes (conditionally) or any scope included.
         """
+        callers = [] if callers is None else callers
         for child in self.children():
             if child.name == name:
                 if not t or (not type_only and isinstance(child, t)) or (type_only and type(child) is t):
@@ -933,17 +947,19 @@ class ScopedSymbol(Symbol):
 
         return None
 
-    def resolve_sync(self, name: str, t: type = None, type_only: bool = False, local_only: bool = False, callers: List[T] = []) -> Optional[Symbol]:
+    def resolve_sync(self, name: str, t: type = None, type_only: bool = False, local_only: bool = False,
+                     callers: Optional[List[T]] = None) -> Optional[Symbol]:
         """
         :param name: The name of the symbol to resolve.
         :param type_only: no subtype
         :param t: parameter type
-        :param local_only: If true only child symbols are returned, otherwise also symbols from the parent of this symbol
+        :param local_only: If true only child symbols are returned, otherwise also symbols of the parent scopes
         (recursively) or scopes that are included.
         :param callers: List of visited scopes, that should not be visited again
         :return: the first symbol with a given name, in the order of appearance in this scope or any of the parent
         scopes (conditionally) or any scope included.
         """
+        callers = [] if callers is None else callers
         for child in self.children():
             if child.name == name:
                 if not t or (not type_only and isinstance(child, t)) or (type_only and type(child) is t):
@@ -962,13 +978,14 @@ class ScopedSymbol(Symbol):
 
         return None
 
-    def get_typed_symbols(self, local_only: bool = True, callers: List[T] = []) -> List[TypedSymbol]:
+    def get_typed_symbols(self, local_only: bool = True, callers: Optional[List[T]] = None) -> List[TypedSymbol]:
         """
-        :param local_only: If true only child symbols are returned, otherwise also symbols from the parent of this symbol
+        :param local_only: If true only child symbols are returned, otherwise also symbols of the parent scopes
         (recursively) and scopes that are included.
         :param callers: List of visited scopes, that should not be visited again
         :return: all accessible symbols that have a type assigned.
         """
+        callers = [] if callers is None else callers
         result: List[TypedSymbol] = []
 
         for child in self.children():
@@ -989,16 +1006,17 @@ class ScopedSymbol(Symbol):
 
         return result
 
-    def get_typed_symbol_names(self, local_only: bool = True, callers: List[T] = []) -> List[str]:
+    def get_typed_symbol_names(self, local_only: bool = True, callers: Optional[List[T]] = None) -> List[str]:
         """
         The names of all accessible symbols with a type.
 
-        :param local_only: If true only child symbols are returned, otherwise also symbols from the parent of this symbol
+        :param local_only: If true only child symbols are returned, otherwise also symbols of the parent scopes
         (recursively) and scopes that are included.
         :param callers: List of visited scopes, that should not be visited again
         :return: A list of names.
         :param callers:
         """
+        callers = [] if callers is None else callers
         result: List[str] = []
         for child in self.children():
             if isinstance(child, TypedSymbol):
@@ -1050,8 +1068,7 @@ class ScopedSymbol(Symbol):
         :param child: The child to search for.
         :return: the index of the given child symbol in the child list or -1 if it couldn't be found.
         """
-        # two pass org
-        # return lambda child,self.children() : self.children().index(child) if child in self.children() else -1
+
         try:
             return self.children().index(child)
         except ValueError:
@@ -1102,19 +1119,12 @@ class ScopedSymbol(Symbol):
 
 class VariableSymbol(UnitSymbol):
 
-    # TODO add unit
-    def __init__(self, name: str, value=None, attached_type: Type = None, attached_keys: List[str] = None):
+    def __init__(self, name: str, value=None, attached_type: Type = None, attached_keys: List[str] = None,
+                 array_elements: List = None):
         super().__init__(name, attached_type, attached_keys)
 
         self.value = value
-
-
-class PathSymbol(VariableSymbol):
-    pass
-
-
-class MetricSymbol(VariableSymbol):
-    pass
+        self.array_elements = array_elements
 
 
 class ParameterSymbol(VariableSymbol):
@@ -1127,22 +1137,16 @@ class ReturnSymbol(VariableSymbol):
 
 class RoutineSymbol(ScopedSymbol):
     """
-    A standalone function/procedure/rule.
+    A standalone procedure rule.
     """
-    __return_type: Optional[Type]  # Can be null if result is void.
 
-    def __init__(self, name: str, return_type: Type = None, is_generated: bool = False):
+    def __init__(self, name: str, is_generated: bool = False):
         super().__init__(name)
-        self.__return_type = return_type
         self.__is_generated = is_generated
 
     @property
     def is_generated(self) -> bool:
         return self.__is_generated
-
-    @property
-    def return_type(self) -> Type | None:
-        return self.__return_type
 
     def get_variables(self, local_only=True) -> Coroutine[List[T]]:
         return self.get_symbols_of_type(VariableSymbol, local_only)
@@ -1152,7 +1156,18 @@ class RoutineSymbol(ScopedSymbol):
 
 
 class FunctionSymbol(RoutineSymbol):
-    pass
+    """
+    A standalone function rule.
+    """
+    __return_type: Optional[Type]  # Can be null if result is void.
+
+    def __init__(self, name: str, return_type: Type = None, is_generated: bool = False):
+        super().__init__(name, is_generated)
+        self.__return_type = return_type
+
+    @property
+    def return_type(self) -> Type | None:
+        return self.__return_type
 
 
 @dataclass
@@ -1193,7 +1208,8 @@ class SymbolTable(ScopedSymbol):
             self.dependencies.remove(table)
 
     def add_new_symbol_of_type(
-            self, t: type, parent: Optional[ScopedSymbol] = None, *my_args: P.args or None, **my_kwargs: P.kwargs or None
+            self, t: type, parent: Optional[ScopedSymbol] = None, *my_args: P.args or None,
+            **my_kwargs: P.kwargs or None
     ) -> T:
         result = t(*my_args, **my_kwargs)
         if parent is None or parent is self:
@@ -1203,7 +1219,7 @@ class SymbolTable(ScopedSymbol):
 
         return result
 
-    async def get_all_symbols(self, t: type, local_only: bool = False, callers: List[T] = []) -> List[T]:
+    async def get_all_symbols(self, t: type, local_only: bool = False, callers: Optional[List[T]] = None) -> List[T]:
         """
         Asynchronously returns all symbols from this scope (and optionally those from dependencies) of a specific type.
 
@@ -1211,11 +1227,10 @@ class SymbolTable(ScopedSymbol):
         :param local_only: If true do not search dependencies.
         :return: A promise which resolves when all symbols are collected.
         """
+        callers = [] if callers is None else callers
         result: List[T] = await super().get_all_symbols(t, local_only, callers)
 
         if not local_only and self.parent() not in callers:
-            # TODO alternative
-            # dependencyResults = await asyncio.gather(*[x.get_all_symbols(t, local_only) for x in self.dependencies])
             dependencyResults = await asyncio.gather(
                 *(map((lambda x: x.get_all_symbols(t, local_only, callers + [self])), self.dependencies))
             )
@@ -1323,7 +1338,8 @@ class SymbolTable(ScopedSymbol):
 
         return None
 
-    async def resolve(self, name: str, t: type = None, type_only: bool = False, local_only: bool = False) -> Optional[Symbol]:
+    async def resolve(self, name: str, t: type = None, type_only: bool = False,
+                      local_only: bool = False) -> Optional[Symbol]:
         """
         Asynchronously resolves a name to a symbol.
 
@@ -1342,7 +1358,8 @@ class SymbolTable(ScopedSymbol):
 
         return result
 
-    def resolve_sync(self, name: str, t: type = None, type_only: bool = False, local_only: bool = False) -> Optional[Symbol]:
+    def resolve_sync(self, name: str, t: type = None, type_only: bool = False,
+                     local_only: bool = False) -> Optional[Symbol]:
         """
         Synchronously resolves a name to a symbol.
 

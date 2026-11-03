@@ -27,7 +27,7 @@ from jinja2 import Environment, FileSystemLoader
 from ..filewriter.jinjatemplates import TEMPLATE_ROOT
 
 # User relative imports
-from ..symboltable.symbol_table import SymbolTable
+from odsllib.symbol_table import SymbolTable
 from ..filewriter.file_writer import write_file
 from ..gen.python.TestSuite.TestSuiteParser import TestSuiteParser
 from ..gen.python.TestSuite.TestSuiteVisitor import TestSuiteVisitor

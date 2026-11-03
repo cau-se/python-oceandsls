@@ -27,7 +27,8 @@ from antlr4.tree.Tree import ParseTree
 from ..fxca.util.fxtran_utils import get_subdirectories_gen
 from ..gen.python.TestSuite.TestSuiteParser import TestSuiteParser
 from ..gen.python.TestSuite.TestSuiteVisitor import TestSuiteVisitor
-from ..symboltable.symbol_table import SymbolTable, PathSymbol, SymbolTableOptions, P, T, TestCaseSymbol
+from odsllib.symbol_table import SymbolTable, SymbolTableOptions, P, T
+from ..symboltable.symbol_table import PathSymbol, TestCaseSymbol
 
 
 class SystemFileVisitor(TestSuiteVisitor, Generic[T]):

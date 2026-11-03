@@ -6,6 +6,8 @@ Shared library of the [OceanDSL](https://oceandsl.uni-kiel.de) languages
 - `odsllib.code_completion_core` – a Python port of
   [antlr4-c3](https://github.com/mike-lischke/antlr4-c3), which computes code completion
   candidates (tokens and rules) from an ANTLR4 parser's ATN.
+- `odsllib.symbol_table` – a Python port of the antlr4-c3 symbol table (scopes, typed and unit
+  symbols, routines, fundamental types and units); the DSLs add their own symbols as subclasses.
 - `odsllib.lsp` – language server infrastructure built on
   [pygls](https://github.com/openlawlibrary/pygls):
   - `parse_source()` parses a document with a fresh lexer/parser and returns syntax diagnostics

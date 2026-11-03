@@ -29,7 +29,8 @@ from ..filewriter.jinjatemplates import TEMPLATE_ROOT
 # User relative imports
 from ..filewriter.file_writer import write_file
 from ..gen.python.TestSuite.TestSuiteParser import TestSuiteParser
-from ..symboltable.symbol_table import SymbolTable, TestCaseSymbol
+from odsllib.symbol_table import SymbolTable
+from ..symboltable.symbol_table import TestCaseSymbol
 from ..gen.python.TestSuite.TestSuiteVisitor import TestSuiteVisitor
 from ..utils.suggest_variables import get_scope
 

@@ -25,7 +25,8 @@ from typing import List, ParamSpec, Type
 from antlr4 import ParserRuleContext
 
 # user relative imports
-from ..symboltable.symbol_table import MetricSymbol, ModuleSymbol, PathSymbol, RoutineSymbol, SymbolTable, Symbol, ScopedSymbol, VariableSymbol
+from odsllib.symbol_table import RoutineSymbol, SymbolTable, Symbol, ScopedSymbol, VariableSymbol
+from ..symboltable.symbol_table import MetricSymbol, ModuleSymbol, PathSymbol
 from odsllib.lsp.compute_token_index import TokenPosition
 
 P = ParamSpec("P")

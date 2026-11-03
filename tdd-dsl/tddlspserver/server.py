@@ -49,7 +49,8 @@ from .cst.pf_file_generator_visitor import PFFileGeneratorVisitor
 from .cst.symbol_table_visitor import SymbolTableVisitor
 from .gen.python.TestSuite.TestSuiteLexer import TestSuiteLexer
 from .gen.python.TestSuite.TestSuiteParser import TestSuiteParser
-from .symboltable.symbol_table import MetricSymbol, ModuleSymbol, RoutineSymbol, VariableSymbol
+from odsllib.symbol_table import RoutineSymbol, VariableSymbol
+from .symboltable.symbol_table import MetricSymbol, ModuleSymbol
 from .utils.suggest_variables import suggest_symbols
 
 LOG = getLogger(__name__)

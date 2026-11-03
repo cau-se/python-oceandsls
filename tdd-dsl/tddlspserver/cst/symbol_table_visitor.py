@@ -29,8 +29,20 @@ from antlr4.tree.Tree import ParseTree
 from ..fxca.util.fxtran_utils import filter_xml, get_files, write_decorate_src_xml
 from ..gen.python.TestSuite.TestSuiteParser import TestSuiteParser
 from ..gen.python.TestSuite.TestSuiteVisitor import TestSuiteVisitor
-from ..symboltable.symbol_table import DuplicateSymbolError, FunctionSymbol, ModuleSymbol, ParameterSymbol, RoutineSymbol, ScopedSymbol, SymbolTable, SymbolTableOptions, \
-    TestCaseSymbol, VariableSymbol, P, T, get_fundamental_type
+from odsllib.symbol_table import (
+    DuplicateSymbolError,
+    FunctionSymbol,
+    ParameterSymbol,
+    RoutineSymbol,
+    ScopedSymbol,
+    SymbolTable,
+    SymbolTableOptions,
+    VariableSymbol,
+    P,
+    T,
+    get_fundamental_type,
+)
+from ..symboltable.symbol_table import ModuleSymbol, TestCaseSymbol
 
 # Debug Log
 logger = logging.getLogger(__name__)

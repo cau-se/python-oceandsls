@@ -24,7 +24,7 @@ from typing import Generic, Callable
 from antlr4.tree.Tree import ParseTree
 
 # user relative imports
-from ..symboltable.symbol_table import DuplicateSymbolError, SymbolTable, P, T, VariableSymbol, SymbolTableOptions
+from odsllib.symbol_table import DuplicateSymbolError, SymbolTable, P, T, VariableSymbol, SymbolTableOptions
 from ..gen.python.BgcDsl.BgcDslParser import BgcDslParser
 from ..gen.python.BgcDsl.BgcDslVisitor import BgcDslVisitor
 

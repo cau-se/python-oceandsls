@@ -31,7 +31,8 @@ from ..fxca.util.fxtran_utils import get_files, write_decorate_src_xml
 from ..gen.python.TestSuite.TestSuiteParser import TestSuiteParser
 from ..gen.python.TestSuite.TestSuiteVisitor import TestSuiteVisitor
 from ..utils.calculate_complexity import calculate_metrics
-from ..symboltable.symbol_table import MetricSymbol, SymbolTable, SymbolTableOptions, P, T, TestCaseSymbol
+from odsllib.symbol_table import SymbolTable, SymbolTableOptions, P, T
+from ..symboltable.symbol_table import MetricSymbol, TestCaseSymbol
 
 # Debug Log
 LOGGER = getLogger(__name__)
