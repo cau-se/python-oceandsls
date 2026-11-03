@@ -76,9 +76,13 @@ pylint:
       antlrLib tdd-dsl bgc-dsl cp-dsl ci
   after_script:
     - sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' public/lint/pylint.txt > public/badges/$CI_JOB_NAME.score || true
-    - echo "Messages per category (C convention, R refactor, W warning, E error, F fatal):"
-    - grep -oE '^[^ ]+:[0-9]+:[0-9]+: [CRWEF]' public/lint/pylint.txt | awk '{print $NF}' | sort | uniq -c || true
-    - echo "Errors:"; grep -E '^[^ ]+:[0-9]+:[0-9]+: [EF][0-9]{4}:' public/lint/pylint.txt || echo "none"
+    # Block scalars: the grep patterns contain ": ", which YAML would read as a mapping in a plain scalar
+    - |
+      echo "Messages per category (C convention, R refactor, W warning, E error, F fatal):"
+      grep -oE '^[^ ]+:[0-9]+:[0-9]+: [CRWEF]' public/lint/pylint.txt | awk '{print $NF}' | sort | uniq -c || true
+    - |
+      echo "Errors:"
+      grep -E '^[^ ]+:[0-9]+:[0-9]+: [EF][0-9]{4}:' public/lint/pylint.txt || echo "none"
     - anybadge --overwrite --label $CI_JOB_NAME --value=$(cat public/badges/$CI_JOB_NAME.score) --file=public/badges/$CI_JOB_NAME.svg 4=red 6=orange 8=yellow 10=green
     - |
       echo "Your score is: $(cat public/badges/$CI_JOB_NAME.score)"
