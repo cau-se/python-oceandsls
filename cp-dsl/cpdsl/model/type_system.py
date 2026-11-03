@@ -16,7 +16,7 @@ from __future__ import annotations
 from enum import Enum
 from dataclasses import dataclass
 from typing import List, Optional, Dict
-from .utils import classproperty
+from .utils import classproperty  # pylint: disable=unused-import
 
 #
 # Type system
@@ -111,6 +111,8 @@ def get_fundamental_type(type: str = "") -> Type | FundamentalType:
     :param type: Type name to return
     :return: FundamentalType of type or, if non-existent, new Type of type
     """
+    # Work in progress: FundamentalType is not part of the CP-DSL type system (yet)
+    # pylint: disable=undefined-variable,unexpected-keyword-arg
     for key in FundamentalType.__dict__.keys():
         if type:
             if key == type.lower() + "_type":

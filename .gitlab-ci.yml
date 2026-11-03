@@ -69,9 +69,9 @@ pylint:
   script:
     # A single pylint run of the packages (settings in .pylintrc, as make lint) writes all reports: the text report
     # (with the score) and an HTML report as job artifacts, Code Climate for merge requests. The log only shows a
-    # summary, so it stays small.
+    # summary, so it stays small. The job fails on errors (E) and fatal messages (F) only; the score is informative.
     - >
-      pylint --exit-zero --recursive=y
+      pylint --fail-under=0 --fail-on=E,F --recursive=y
       --output-format=text:public/lint/pylint.txt,pylint_gitlab.GitlabCodeClimateReporter:codeclimate.json,pylint_gitlab.GitlabPagesHtmlReporter:public/lint/index.html
       antlrLib tdd-dsl bgc-dsl cp-dsl ci
   after_script:

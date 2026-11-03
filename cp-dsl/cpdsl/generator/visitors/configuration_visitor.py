@@ -352,6 +352,10 @@ class GeneratorConfigurationVisitor(ConfigurationVisitor, Generic[T]):
             return feature
 
     def visitInclude(self, ctx: ConfigurationParser.IncludeContext):
+        # Work in progress (not called yet, includes are reported in visitConfigurationModel): uses the configuration
+        # symbol table of the former conflspserver, so ConfigurationCPVisitor, InputStream and CommonTokenStream are
+        # not defined here.
+        # pylint: disable=undefined-variable
         info = ctx.importedNamespace.text.split(".")
         # visit configuration table
         confVisitor = ConfigurationCPVisitor(info[0] + "_ConfVisit")
