@@ -62,5 +62,6 @@ namespaces = false
 pythonpath = [".", "test"]
 testpaths = ["test"]
 # test modules in different folders share names (e.g. visitor_base_test.py)
-addopts = "--import-mode=importlib"
+# test/main_test.py runs the generator tests with unittest; pytest collects them from their own modules
+addopts = "--import-mode=importlib --ignore=test/main_test.py"
 filterwarnings = ["ignore::pytest.PytestCollectionWarning"]
