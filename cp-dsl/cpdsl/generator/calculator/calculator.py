@@ -43,7 +43,7 @@ class Calculator():
                 parameter.value = calculator.calculate(parameter)
             # 2. calculate all entries over the default value
             for entry in parameter.entries:
-                calculator.calculate_and_overlay(parameter, entry)
+                parameter.value = calculator.calculate_and_overlay(parameter, entry)
 
     def calculate_group(self, group:ParameterGroup):
         for parameter in group.parameters.values():

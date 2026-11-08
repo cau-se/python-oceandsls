@@ -36,8 +36,9 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-# Unit conversion (cpdsl.generator.calculator.unit_calculator) needs cfunits and the UDUNITS-2 C library
-units = ["cfunits"]
+# Unit checks and conversions (cpdsl.generator.calculator.unit_calculator) need cfunits and the UDUNITS-2 C library;
+# without them only custom units are compared
+units = ["odsllib[units]"]
 test = ["pytest>=7", "parameterized"]
 
 [project.urls]

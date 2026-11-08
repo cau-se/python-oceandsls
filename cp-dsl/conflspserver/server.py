@@ -118,6 +118,7 @@ class confLSPServer(AntlrLanguageServer):
                                        f"next to this configuration")]
 
         from cpdsl.generator.visitors.configuration_visitor import GeneratorConfigurationVisitor
+        from cpdsl.generator.calculator.unit_calculator import UnitCalculator
         diagnostics: List[Diagnostic] = []
         if self.declaration_problems:
             token = tree.declarationModel
@@ -130,6 +131,8 @@ class confLSPServer(AntlrLanguageServer):
         model_logger = new_logger()
         try:
             GeneratorConfigurationVisitor(model, model_logger).visit(tree)
+            # configured values must be given in units compatible with the declared units
+            UnitCalculator(model_logger).check_model(model)
         except Exception:
             logger.exception("Configuration visitor failed for %s", uri)
         diagnostics.extend(messages_to_diagnostics(model_logger.messages, self.diagnostic_source))

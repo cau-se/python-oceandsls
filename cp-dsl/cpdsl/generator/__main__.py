@@ -16,6 +16,7 @@ from antlr4 import CommonTokenStream, FileStream
 import argparse
 import os
 import sys
+from typing import Optional
 from cpdsl.common.configuration import CompileFlags
 
 # relative imports
@@ -33,6 +34,7 @@ from cpdsl.model.declaration_model import DeclarationModel, Feature, ParameterGr
 from cpdsl.model.unit_model import UnitSpecification
 from cpdsl.model.arithmetic_model import AbstractExpression
 from cpdsl.common.logger import GeneratorLogger
+from cpdsl.generator.calculator.unit_calculator import UnitCalculator, unit_of
 
 logger: GeneratorLogger
 
@@ -66,12 +68,23 @@ def make_declaration_model(model: DeclarationModel, input_path: str):
 
     return model
 
+_unit_calculator: Optional[UnitCalculator] = None
+
+
+def unit_calculator() -> UnitCalculator:
+    """The unit calculator reporting through the current logger."""
+    global _unit_calculator  # pylint: disable=global-statement
+    if _unit_calculator is None or _unit_calculator.logger is not logger:
+        _unit_calculator = UnitCalculator(logger)
+    return _unit_calculator
+
 def check_unit_compatibility(target_unit:UnitSpecification, source_unit:UnitSpecification, element:Parameter):
-    pass
+    # values must be given in a unit compatible with the declared unit (checked with cfunits, if installed)
+    unit_calculator().check(target_unit, source_unit, element)
 
 def derive_expression_unit(expression:AbstractExpression) -> UnitSpecification:
-    # TODO derive the unit of composed expressions; for now only the unit given with a value is known
-    return getattr(expression, "unit", None)
+    # TODO derive the unit of composed expressions; for now the unit given with a value or of a referenced parameter
+    return unit_of(expression)
 
 def check_parameter_integrity(parameter: Parameter):
     target_unit = parameter.unit

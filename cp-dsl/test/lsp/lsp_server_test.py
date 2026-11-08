@@ -29,6 +29,7 @@ from pygls.uris import from_fs_path
 from conflspserver.server import confLSPServer
 from dcllspserver.server import dclLSPServer, declaration_outline
 from odsllib.lsp.testing import run_lsp_session, subprocess_env
+from odsllib.units import units_available
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 INPUT = os.path.join(ROOT, "input")
@@ -60,6 +61,7 @@ group g : "General group" {
 }
 """
 ERROR = DiagnosticSeverity.Error
+REQUIRES_CFUNITS = unittest.skipUnless(units_available(), "cfunits or the UDUNITS-2 library is not installed")
 WARNING = DiagnosticSeverity.Warning
 PAPER_SYNTAX = ("configuration c : m\n\ngroup g {\n\tlevels(4:5) : [ 1, 2 ]\n\tlevels(1) : 5\n"
                 "\tgBaro : 9.81 m/s^2\n\tspeed : 2 km/h\n\tNx : SIZE.sNx*SIZE.nSx*SIZE.nPx\n}\n")
@@ -504,6 +506,34 @@ class TestConfigurationServer(unittest.TestCase):
         # Expected Result: no diagnostics
     ])
     def test_validate(self, test_name, text, expected):
+        self.assertEqual(expected, diagnostics_of(self.conf.validate(self.conf_uri(text), text)), test_name)
+
+    @parameterized.expand([
+        ("incompatible_unit", "p : 3 s", [("Unit second of the value is not compatible with unit meter of parameter p",
+                                           ERROR, 4)]),
+        # Configured values must be given in a unit compatible with the declared unit
+        # Input: 'p : 3 s' for the parameter p in meter
+        # Expected Result: an error at the value
+
+        ("prefixed_unit", "p : 3 km", []),
+        # Values in other compatible units are accepted (and converted when generating)
+        # Input: 'p : 3 km' for the parameter p in meter
+        # Expected Result: no diagnostics
+
+        ("other_time_unit", "q : 2 h", []),
+        # Another unit of time
+        # Input: 'q : 2 h' for the parameter q in second
+        # Expected Result: no diagnostics
+
+        ("length_for_time", "q : 2 m", [("Unit meter of the value is not compatible with unit second of parameter q",
+                                         ERROR, 4)]),
+        # A length for a time
+        # Input: 'q : 2 m' for the parameter q in second
+        # Expected Result: an error at the value
+    ])
+    @REQUIRES_CFUNITS
+    def test_unit_diagnostics(self, test_name, assignment, expected):
+        text = f"configuration c : m\n\nactivate a, b, r\ngroup g {{\n\t{assignment}\n}}\n"
         self.assertEqual(expected, diagnostics_of(self.conf.validate(self.conf_uri(text), text)), test_name)
 
     @parameterized.expand([

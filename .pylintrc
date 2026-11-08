@@ -7,7 +7,6 @@ ignore-paths=^antlrLib/tests/gen/.*,
              ^cp-dsl/(conf|dcl)lspserver/cst/symbol_table_visitor[.]py,
              ^cp-dsl/(conf|dcl)lspserver/utils/suggest_variables[.]py,
              ^cp-dsl/conflspserver/test[.]py,
-             ^cp-dsl/cpdsl/generator/calculator/unit_calculator[.]py,
              ^bgc-dsl/tests/__main__zum_testen[.]py
 # The folders are not packages but contain them: each one is an import root (like the editable installs and the
 # pytest pythonpath); nested roots come first (cp-dsl/test before cp-dsl)

@@ -15,8 +15,10 @@
 from cpdsl.common.logger import GeneratorLogger
 from cpdsl.model.declaration_model import DeclarationModel, Parameter, SelectorExpression
 from cpdsl.model.arithmetic_model import AbstractExpression, ArithmeticExpression, MultiplicationExpression, \
-    AbstractTypedValue, StringValue, BooleanValue, IntValue, FloatValue, EAdditionOperator, EMultiplicationOperator
+    AbstractTypedValue, StringValue, BooleanValue, IntValue, FloatValue, EAdditionOperator, EMultiplicationOperator, \
+    ArrayExpression
 from cpdsl.model.type_system import Enumeral
+from cpdsl.generator.calculator.unit_calculator import UnitCalculator, unit_of
 
 class ExpressionCalculator():
     logger: GeneratorLogger
@@ -31,10 +33,13 @@ class ExpressionCalculator():
         return self.calculate_expression(expression)
 
     def calculate_and_overlay(self, parameter:Parameter, entry:SelectorExpression):
-        # compute values
-        self.logger.error("Calculate and overlay not implemented")
-        exit(1)
-        # adjust for unit
+        if isinstance(entry, SelectorExpression) or isinstance(entry, ArrayExpression):
+            # TODO overlay selected elements and arrays
+            self.logger.error("Calculate and overlay of arrays not implemented")
+            exit(1)
+        # a configured value replaces the value, converted into the declared unit
+        value = self.calculate_expression(entry)
+        return UnitCalculator(self.logger).convert(value, unit_of(entry), parameter.unit, parameter)
 
     def calculate_expression(self, expression:AbstractExpression) -> AbstractTypedValue:
         if isinstance(expression, ArithmeticExpression):
