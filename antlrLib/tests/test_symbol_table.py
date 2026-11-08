@@ -49,10 +49,11 @@ class TestSymbolTable(TestCase):
         # Expected Result: its variable and routine, which have the module as parent; the module has no parent
         # scope, but belongs to the table
 
-        ("routine", ["local_var"], "module", True, False),
+        ("routine", ["local_var"], "module", True, True),
         # Symbols are added to the scope they are created in
         # Input: the routine
-        # Expected Result: its local variable, which has the routine as parent; the module is the routine's parent
+        # Expected Result: its local variable, which has the routine as parent; the module is the routine's parent;
+        # the routine belongs to the table
     ])
     def test_symbols_are_added_to_their_scopes(self, test_name, expected_children, expected_parent,
                                                children_have_scope_as_parent, check_symbol_table):
@@ -64,6 +65,38 @@ class TestSymbolTable(TestCase):
         self.assertIs(self.scope(expected_parent) if expected_parent else None, scope.parent(), test_name)
         if check_symbol_table:
             self.assertIs(self.table, scope.symbol_table(), test_name)
+
+    @parameterized.expand([
+        ("table", lambda test: test.table, True, None),
+        # The table is its own table
+        # Input: the symbol table
+        # Expected Result: the table, no raw parent
+
+        ("top_level_scope", lambda test: test.module, True, "table"),
+        # A top-level scope belongs to the table, which is its raw parent
+        # Input: the module
+        # Expected Result: the table; raw_parent() is the table while parent() is None
+
+        ("nested_scope", lambda test: test.routine, True, "module"),
+        # Regression: symbol_table() walked up with parent(), which hides the table, and returned None
+        # Input: the routine in the module
+        # Expected Result: the table
+
+        ("nested_variable", lambda test: test.routine.children()[0], True, "routine"),
+        # Symbols two levels below the top-level scopes
+        # Input: the local variable of the routine
+        # Expected Result: the table
+
+        ("detached_symbol", lambda test: VariableSymbol("loose", 0), False, None),
+        # A symbol that was not added to a table
+        # Input: a new VariableSymbol
+        # Expected Result: no table, no raw parent
+    ])
+    def test_symbol_table_of_nested_symbols(self, test_name, select, expected_in_table, expected_raw_parent):
+        symbol = select(self)
+        self.assertIs(self.table if expected_in_table else None, symbol.symbol_table(), test_name)
+        self.assertIs(self.scope(expected_raw_parent) if expected_raw_parent else None, symbol.raw_parent(),
+                      test_name)
 
     @parameterized.expand([
         ("duplicate_rejected", False, "global_var", DuplicateSymbolError, 2),
@@ -80,15 +113,27 @@ class TestSymbolTable(TestCase):
         # A new name is always added
         # Input: 'other_var' in the module of a table without allow_duplicate_symbols
         # Expected Result: the symbol is added
+
+        ("nested_duplicate_allowed", True, "local_var", None, 2, "routine"),
+        # Regression: nested scopes did not find their table and rejected duplicates although the table allows them
+        # Input: a second 'local_var' in the routine of a table with allow_duplicate_symbols
+        # Expected Result: the symbol is added
+
+        ("nested_duplicate_rejected", False, "local_var", DuplicateSymbolError, 1, "routine"),
+        # Nested scopes still reject duplicates if the table does not allow them
+        # Input: a second 'local_var' in the routine of a table without allow_duplicate_symbols
+        # Expected Result: DuplicateSymbolError, the routine keeps its one child
     ])
-    def test_duplicate_symbols(self, test_name, allow_duplicates, name, expected_error, expected_children):
+    def test_duplicate_symbols(self, test_name, allow_duplicates, name, expected_error, expected_children,
+                               scope_name="module"):
+        scope = self.scope(scope_name)
         self.table.options = SymbolTableOptions(allow_duplicates)
         if expected_error:
             with self.assertRaises(expected_error, msg=test_name):
-                self.table.add_new_symbol_of_type(VariableSymbol, self.module, name)
+                self.table.add_new_symbol_of_type(VariableSymbol, scope, name)
         else:
-            self.table.add_new_symbol_of_type(VariableSymbol, self.module, name)
-        self.assertEqual(expected_children, len(self.module.children()), test_name)
+            self.table.add_new_symbol_of_type(VariableSymbol, scope, name)
+        self.assertEqual(expected_children, len(scope.children()), test_name)
 
     @parameterized.expand([
         ("local_variable", "routine", "local_var", None, False, 2),

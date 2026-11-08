@@ -332,6 +332,13 @@ class Symbol:
     def parent(self) -> Optional[ScopedSymbol]:
         return self.__the_parent
 
+    def raw_parent(self) -> Optional[Symbol]:
+        """
+        :return: the symbol this one was added to, including the symbol table. Unlike ScopedSymbol.parent(), which
+            returns None for the top-level scopes of a table, this is never hidden.
+        """
+        return self.__the_parent
+
     def first_sibling(self) -> Symbol:
         if isinstance(self.__the_parent, ScopedSymbol):
             # Expect not to be None
@@ -389,14 +396,12 @@ class Symbol:
         """
         :return: the symbol table we belong too or undefined if we are not yet assigned.
         """
-        if isinstance(self, SymbolTable):
-            return self
-
-        run: Optional[Symbol] = self.__the_parent
+        # Walk the real parent chain: ScopedSymbol.parent() hides the symbol table, so it cannot be used here
+        run: Optional[Symbol] = self
         while run is not None:
             if isinstance(run, SymbolTable):
                 return run
-            run = run.parent()
+            run = run.raw_parent()
 
         return None
 
@@ -567,6 +572,10 @@ class ScopedSymbol(Symbol):
         return self.__child_symbols
 
     def parent(self) -> Optional[ScopedSymbol]:
+        """
+        :return: the enclosing scope. Unlike antlr4-c3, the symbol table is not returned as parent of its top-level
+            scopes (callers walking up the scopes stop below the table); use raw_parent() to reach the table.
+        """
         s_parent: Symbol = super().parent()
         if not isinstance(s_parent, SymbolTable):
             return s_parent
