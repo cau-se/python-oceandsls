@@ -15,24 +15,52 @@
 
 import os
 import sys
+import tempfile
+import unittest
+
+from parameterized import parameterized
 
 from odsllib.lsp.testing import run_lsp_session, subprocess_env
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TEXT = "suite su:\ntest t1:\n    srcpath: 'src'\n    var:\n        x: real = 1D0\n    assert Equal:\n" \
-       "        in:\n            x\n        out:\n            1D0\n    test t1:\n"
+VALID = "suite su:\ntest t1:\n    srcpath: 'src'\n    var:\n        x: real = 1D0\n    assert Equal:\n" \
+        "        in:\n            x\n        out:\n            1D0\n"
+INVALID = VALID + "    test t1:\n"
 
 
-def test_stdio_session(tmp_path):
-    env = subprocess_env(ROOT)
-    result = run_lsp_session(
-        [sys.executable, "-m", "tddlspserver"], "file:///tmp/e2e.tdd", TEXT, "oceandsl_tdd",
-        completion_positions=[(7, 12), (2, 4)], cwd=str(tmp_path), env=env,
-    )
-    assert result.server_name == "pygls-odsl-tdd-prototype"
-    # 'test t1:' inside the assertion is a syntax error; the missing source path an information
-    severities = sorted(d.severity for d in result.diagnostics)
-    assert severities[0] == 1 and len(result.diagnostics) >= 1
-    assert "x" in result.completions[(7, 12)]
-    assert "srcpath" in result.completions[(2, 4)]
-    assert result.semantic_tokens
+class TestStdio(unittest.TestCase):
+
+    @parameterized.expand([
+        ("syntax_error", INVALID, [(7, 12), (2, 4)], 1, {(7, 12): {"x"}, (2, 4): {"srcpath"}}),
+        # 'test t1:' inside the assertion is a syntax error; the missing source path an information
+        # Input: a test case followed by a misplaced 'test t1:', completions in the assertion and the header
+        # Expected Result: an error first, the variable x and the keyword srcpath are proposed
+
+        ("valid_document", VALID, [(7, 12)], 3, {(7, 12): {"x"}}),
+        # A valid document only gets the information about the missing source path
+        # Input: a valid test case whose source path does not exist, completion in the assertion
+        # Expected Result: an information, the variable x is proposed
+
+        ("empty_document", "", [(0, 0)], 1, {(0, 0): {"suite"}}),
+        # An empty document lacks the required suite
+        # Input: an empty document, completion at its start
+        # Expected Result: an error, the keyword suite is proposed
+    ])
+    def test_stdio_session(self, test_name, text, positions, first_severity, expected_completions):
+        with tempfile.TemporaryDirectory() as directory:
+            result = run_lsp_session(
+                [sys.executable, "-m", "tddlspserver"], "file:///tmp/e2e.tdd", text, "oceandsl_tdd",
+                completion_positions=positions, cwd=directory, env=subprocess_env(ROOT),
+            )
+
+        self.assertEqual("pygls-odsl-tdd-prototype", result.server_name, test_name)
+        severities = sorted(d.severity for d in result.diagnostics)
+        self.assertEqual(first_severity, severities[0], test_name)
+        for position, labels in expected_completions.items():
+            self.assertLessEqual(labels, set(result.completions[position]), f"{test_name}: {position}")
+        if text:
+            self.assertTrue(result.semantic_tokens, test_name)
+
+
+if __name__ == '__main__':
+    unittest.main()

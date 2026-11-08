@@ -14,12 +14,15 @@
 """Language server behavior of the TDD-DSL (diagnostics, content assist, highlighting and generation)."""
 
 import os
+import pathlib
+import tempfile
+import unittest
 
-import pytest
 from lsprotocol.types import (
     ClientCapabilities, CompletionItemKind, DiagnosticSeverity, DidSaveTextDocumentParams, InitializeParams, Position,
     TextDocumentIdentifier, TextDocumentItem,
 )
+from parameterized import parameterized
 
 from odsllib.lsp.semantic_tokens import TOKEN_TYPES
 from tddlspserver.server import TDDLSPServer, did_save
@@ -33,155 +36,307 @@ def read(name):
         return f.read()
 
 
-@pytest.fixture(name="server")
-def server_fixture(tmp_path):
-    srv = TDDLSPServer("tdd-test", "0")
-    srv.work_path = str(tmp_path)
-    srv.fxtran_path = "fxtran-not-installed"
-    srv.lsp.lsp_initialize(InitializeParams(process_id=None, root_uri=None, capabilities=ClientCapabilities()))
-    srv.published = []
-    srv.publish_diagnostics = lambda uri, diagnostics, *a, **k: srv.published.append((uri, diagnostics))
-    srv.show_message = lambda *a, **k: None
-    return srv
-
-
-def labels(server, text, line, character):
-    return [i.label for i in server.complete(URI, text, Position(line=line, character=character)).items]
-
-
 def suite(body: str, src: str = "src") -> str:
     return f"suite su:\ntest t1:\n    srcpath: '{src}'\n{body}"
 
 
-# ---------------------------------------------------------------------------------------------------------------------
-# Diagnostics
-# ---------------------------------------------------------------------------------------------------------------------
-
-class TestDiagnostics:
-    def test_valid_paper_example_has_only_source_path_information(self, server):
-        diagnostics = server.validate(URI, read("paper_listing1.tdd"))
-        assert [d.severity for d in diagnostics] == [DiagnosticSeverity.Information]
-        assert "does not exist" in diagnostics[0].message
-
-    def test_existing_source_path_is_accepted(self, server, tmp_path):
-        (tmp_path / "src").mkdir()
-        assert server.validate(URI, suite("")) == []
-
-    def test_syntax_error_position(self, server, tmp_path):
-        (tmp_path / "src").mkdir()
-        diagnostics = server.validate(URI, suite("    assert Foo:\n"))
-        assert diagnostics[0].severity == DiagnosticSeverity.Error
-        assert diagnostics[0].range.start == Position(line=3, character=11)
-        assert diagnostics[0].range.end == Position(line=3, character=14)
-
-    def test_duplicate_test_cases_are_reported(self, server, tmp_path):
-        (tmp_path / "src").mkdir()
-        text = suite("") + "test t1:\n    srcpath: 'src'\n"
-        diagnostics = server.validate(URI, text)
-        assert [d.message for d in diagnostics] == ["duplicate test case 't1'"]
-        assert diagnostics[0].range.start == Position(line=3, character=5)
-
-    def test_duplicate_variables_are_reported(self, server, tmp_path):
-        (tmp_path / "src").mkdir()
-        diagnostics = server.validate(URI, suite("    var:\n        x: real = 1D0\n        x: real = 2D0\n"))
-        assert [d.message for d in diagnostics] == ["duplicate variable 'x' in test case 't1'"]
-        assert diagnostics[0].range.start == Position(line=5, character=8)
-
-    def test_did_save_publishes_and_generates(self, server, tmp_path):
-        (tmp_path / "src").mkdir()
-        path = tmp_path / "suite.tdd"
-        text = read("paper_listing1.tdd").replace("'tdd-dsl/input/tdd_dev/UVic_example_opem'", "'src'")
-        path.write_text(text)
-        uri = path.as_uri()
-        server.lsp.workspace.put_text_document(TextDocumentItem(uri=uri, language_id="tdd", version=1, text=text))
-
-        server.on_did_save(DidSaveTextDocumentParams(text_document=TextDocumentIdentifier(uri=uri)))
-
-        assert server.published[-1] == (uri, [])
-        pf_file = tmp_path / "src" / "tests" / "test_fT_ME.pf"
-        assert pf_file.is_file()
-        pf = pf_file.read_text()
-        assert "@assertEqual( 0D0, fT_ME ( xIntercept ), message='fails x-Intercept at 14.89D0', tolerance=1D-12)" in pf
-        assert "use cfo_example" in pf
-        # A Fortran template for the not yet implemented SUT and the CMake setup are generated as well
-        assert "FUNCTION fT_ME" in (tmp_path / "src" / "cfo_example.f90").read_text()
-        assert (tmp_path / "src" / "CMakeLists.txt").is_file()
-        assert (tmp_path / "src" / "tests" / "CMakeLists.txt").is_file()
+LISTING1 = read("paper_listing1.tdd")
+LISTING1_SRC = LISTING1.replace("'tdd-dsl/input/tdd_dev/UVic_example_opem'", "'src'")
+ASSERT_TRUE = suite("    assert True:\n        in:\n            1\n        out:\n            1\n")
+TWO_CASES = ASSERT_TRUE + "test t2:\n    srcpath: 'src'\n    assert False:\n        in:\n            0\n" \
+                          "        out:\n            0\n"
+WITH_MODULE = suite("    modules:\n        mod_a\n    assert True:\n        in:\n            1\n        out:\n"
+                    "            1\n")
+DUPLICATE_CASE = suite("    var:\n        x: real = 1D0\n    assert Equal:\n        in:\n            x\n        out:\n"
+                       "            1D0\n") + "test t1:\n    srcpath: 'src'\n"
+CMAKE_FILES = ["src/CMakeLists.txt", "src/build_with_cmake_and_run.x", "src/tests/CMakeLists.txt"]
 
 
-# ---------------------------------------------------------------------------------------------------------------------
-# Content assist
-# ---------------------------------------------------------------------------------------------------------------------
+class TestServer(unittest.TestCase):
+    """Base class with a TDD-DSL language server working in a temporary directory."""
 
-class TestCompletion:
-    def test_start_of_document(self, server):
-        assert labels(server, "", 0, 0) == ["suite"]
+    def setUp(self):
+        directory = tempfile.TemporaryDirectory()  # pylint: disable=consider-using-with
+        self.addCleanup(directory.cleanup)
+        self.tmp_path = pathlib.Path(directory.name)
 
-    def test_after_suite_header(self, server):
-        assert labels(server, "suite su:\n", 1, 0) == ["test"]
+        self.server = TDDLSPServer("tdd-test", "0")
+        self.server.work_path = str(self.tmp_path)
+        self.server.fxtran_path = "fxtran-not-installed"
+        self.server.lsp.lsp_initialize(InitializeParams(process_id=None, root_uri=None,
+                                                        capabilities=ClientCapabilities()))
+        self.server.published = []
+        self.server.publish_diagnostics = lambda uri, diagnostics, *a, **k: self.server.published.append(
+            (uri, diagnostics))
+        self.server.show_message = lambda *a, **k: None
 
-    def test_test_case_header(self, server):
-        assert set(labels(server, "suite su:\ntest t1:\n", 2, 4)) == {"srcpath", "overwrite"}
+    def make_dirs(self, *directories: str):
+        for directory in directories:
+            (self.tmp_path / directory).mkdir(parents=True, exist_ok=True)
 
-    def test_test_case_sections(self, server):
-        assert set(labels(server, suite("    "), 3, 4)) >= {"var", "modules", "assert", "test"}
-
-    def test_overwrite_flags(self, server):
-        assert set(labels(server, "suite su:\ntest t1:\n    overwrite: ", 2, 15)) == {"pf", "cmake", "f90"}
-
-    def test_assertion_directives(self, server):
-        result = labels(server, suite("    assert "), 3, 11)
-        assert {"Equal", "NotEqual", "LessThan", "True", "IsNaN"} <= set(result)
-
-    def test_test_variables_in_assertion(self, server):
-        text = read("paper_listing1.tdd")
-        result = server.complete(URI, text, Position(line=12, character=12)).items
-        variables = {i.label for i in result if i.kind == CompletionItemKind.Variable}
-        assert variables == {"dp", "xIntercept", "yIntercept"}
-        assert "call" in {i.label for i in result}
-
-    def test_typed_prefix_filters_case_insensitive(self, server):
-        text = read("paper_listing1.tdd").replace("fT_ME(xIntercept), K", "XI")
-        assert labels(server, text, 12, 14) == ["xIntercept"]
-
-    def test_source_path_directories(self, server, tmp_path):
-        (tmp_path / "models" / "uvic").mkdir(parents=True)
-        (tmp_path / "models" / "mitgcm").mkdir()
-        (tmp_path / "models" / ".hidden").mkdir()
-        (tmp_path / "models" / "file.f90").write_text("")
-        text = "suite su:\ntest t1:\n    srcpath: 'models/'\n"
-        assert labels(server, text, 2, 21) == ["mitgcm", "uvic"]
-        assert labels(server, "suite su:\ntest t1:\n    srcpath: 'models/u'\n", 2, 22) == ["uvic"]
-
-    def test_modules(self, server):
-        text = suite("    modules:\n        mod_a\n        ")
-        assert "mod_a" in labels(server, text, 5, 8)
+    def generated_files(self):
+        return sorted(f.relative_to(self.tmp_path).as_posix() for f in self.tmp_path.rglob("*") if f.is_file())
 
 
-def test_semantic_tokens_classify_keywords_strings_and_numbers(server):
-    data = server.semantic_tokens("suite su:\ntest t1:\n    srcpath: 'src'\n    var:\n        x: real = 1D0\n").data
-    entries = [data[i:i + 5] for i in range(0, len(data), 5)]
-    kinds = [TOKEN_TYPES[e[3]] for e in entries]
-    assert kinds[0] == "keyword"  # suite
-    assert "string" in kinds  # 'src'
-    assert "number" in kinds  # 1D0
+class TestDiagnostics(TestServer):
+
+    @parameterized.expand([
+        ("paper_example_without_source_path", LISTING1, [],
+         [(DiagnosticSeverity.Information, "source path 'tdd-dsl/input/tdd_dev/UVic_example_opem' does not exist; "
+                                           "new modules will be created there", (3, 13), (3, 54))]),
+        # A valid paper example whose source path is missing only gets an information
+        # Input: paper Listing 1, its source path does not exist
+        # Expected Result: one information that the source path does not exist
+
+        ("missing_source_path", suite(""), [],
+         [(DiagnosticSeverity.Information, "source path 'src' does not exist; new modules will be created there",
+           (2, 13), (2, 18))]),
+        # The information marks the source path
+        # Input: a test case with the source path 'src' that does not exist
+        # Expected Result: an information at 'src'
+
+        ("existing_source_path", suite(""), ["src"], []),
+        # An existing source path is accepted
+        # Input: a test case with the existing source path 'src'
+        # Expected Result: no diagnostics
+
+        ("syntax_error", suite("    assert Foo:\n"), ["src"],
+         [(DiagnosticSeverity.Error, "no viable alternative at input 'assert Foo'", (3, 11), (3, 14))]),
+        # A syntax error is reported at the offending token
+        # Input: 'assert Foo:'
+        # Expected Result: an error at 'Foo'
+
+        ("duplicate_test_cases", suite("") + "test t1:\n    srcpath: 'src'\n", ["src"],
+         [(DiagnosticSeverity.Error, "duplicate test case 't1'", (3, 5), (3, 7))]),
+        # Test case names are unique
+        # Input: two test cases named t1
+        # Expected Result: an error at the name of the second test case
+
+        ("duplicate_variables", suite("    var:\n        x: real = 1D0\n        x: real = 2D0\n"), ["src"],
+         [(DiagnosticSeverity.Error, "duplicate variable 'x' in test case 't1'", (5, 8), (5, 9))]),
+        # Variable names are unique within a test case
+        # Input: the variable x declared twice
+        # Expected Result: an error at the second declaration
+
+        ("distinct_variables", suite("    var:\n        x: real = 1D0\n        y: real = 2D0\n"), ["src"], []),
+        # Different variables are accepted
+        # Input: the variables x and y
+        # Expected Result: no diagnostics
+    ])
+    def test_validate(self, test_name, text, directories, expected):
+        self.make_dirs(*directories)
+
+        diagnostics = self.server.validate(URI, text)
+
+        self.assertEqual(expected, [(d.severity, d.message, (d.range.start.line, d.range.start.character),
+                                     (d.range.end.line, d.range.end.character)) for d in diagnostics], test_name)
 
 
-def test_cli_generation(tmp_path):
-    """``tdd_dsl -f suite.tdd`` generates the pFUnit files without an LSP client."""
-    (tmp_path / "src").mkdir()
-    path = tmp_path / "suite.tdd"
-    path.write_text(suite("    assert True:\n        in:\n            1 == 1\n        out:\n            1\n")
-                    .replace("1 == 1", "1"))
-    srv = TDDLSPServer("tdd-cli-test", "0")
-    srv.work_path = str(tmp_path)
-    srv.input_path = str(path)
-    did_save(srv, None)
-    assert (tmp_path / "src" / "tests" / "t1.pf").is_file()  # named after the test case
+class TestGeneration(TestServer):
+
+    @parameterized.expand([
+        ("paper_example_on_save", "save", LISTING1_SRC, ["src/cfo_example.f90", "src/tests/test_fT_ME.pf"],
+         {"src/tests/test_fT_ME.pf": ["@assertEqual( 0D0, fT_ME ( xIntercept ), message='fails x-Intercept at "
+                                      "14.89D0', tolerance=1D-12)", "use cfo_example"],
+          "src/cfo_example.f90": ["FUNCTION fT_ME"]}),
+        # Saving publishes the diagnostics and generates the pFUnit test, the SUT template and the CMake setup
+        # Input: paper Listing 1 with the existing source path 'src', saved in the client
+        # Expected Result: no diagnostics, test_fT_ME.pf with the assertion, cfo_example.f90 with FUNCTION fT_ME
+
+        ("assert_true_on_save", "save", ASSERT_TRUE, ["src/tests/t1.pf"], {"src/tests/t1.pf": ["@assertTrue( 1, 1)"]}),
+        # The pFUnit file is named after the test case
+        # Input: test case t1 with 'assert True', saved in the client
+        # Expected Result: t1.pf with @assertTrue
+
+        ("two_test_cases_on_save", "save", TWO_CASES, ["src/tests/t1.pf", "src/tests/t2.pf"],
+         {"src/tests/t2.pf": ["@assertFalse"]}),
+        # Each test case gets its own pFUnit file
+        # Input: test cases t1 and t2, saved in the client
+        # Expected Result: t1.pf and t2.pf
+
+        ("paper_example_cli", "cli", LISTING1_SRC, ["src/cfo_example.f90", "src/tests/test_fT_ME.pf"],
+         {"src/tests/test_fT_ME.pf": ["use cfo_example"]}),
+        # 'tdd_dsl -f suite.tdd' generates the files without an LSP client
+        # Input: paper Listing 1 given as input file
+        # Expected Result: test_fT_ME.pf, cfo_example.f90 and the CMake setup
+
+        ("assert_true_cli", "cli", ASSERT_TRUE, ["src/tests/t1.pf"], {"src/tests/t1.pf": ["SUBROUTINE t1()"]}),
+        # The pFUnit file is named after the test case
+        # Input: test case t1 with 'assert True' given as input file
+        # Expected Result: t1.pf with the test subroutine t1
+
+        ("module_template_cli", "cli", WITH_MODULE, ["src/mod_a.f90", "src/tests/t1.pf"],
+         {"src/tests/t1.pf": ["use mod_a"], "src/mod_a.f90": ["MODULE mod_a"]}),
+        # A Fortran template is generated for a module under test that does not exist
+        # Input: test case t1 using the module mod_a given as input file
+        # Expected Result: mod_a.f90 with MODULE mod_a, t1.pf uses mod_a
+    ])
+    def test_generation(self, test_name, mode, text, expected_files, expected_contents):
+        self.make_dirs("src")
+        path = self.tmp_path / "suite.tdd"
+        path.write_text(text, encoding="utf-8")
+
+        if mode == "save":
+            uri = path.as_uri()
+            self.server.lsp.workspace.put_text_document(TextDocumentItem(uri=uri, language_id="tdd", version=1,
+                                                                         text=text))
+            self.server.on_did_save(DidSaveTextDocumentParams(text_document=TextDocumentIdentifier(uri=uri)))
+            self.assertEqual((uri, []), self.server.published[-1], test_name)
+        else:
+            cli_server = TDDLSPServer("tdd-cli-test", "0")
+            cli_server.work_path = str(self.tmp_path)
+            cli_server.input_path = str(path)
+            did_save(cli_server, None)
+
+        self.assertEqual(sorted(CMAKE_FILES + expected_files + ["suite.tdd"]), self.generated_files(), test_name)
+        for file_name, parts in expected_contents.items():
+            content = (self.tmp_path / file_name).read_text(encoding="utf-8")
+            for part in parts:
+                self.assertIn(part, content, f"{test_name}: {file_name}")
 
 
-def test_duplicate_test_case_does_not_break_completion(server):
-    """The symbol table used to raise DuplicateSymbolError, which disabled all symbol completions."""
-    text = suite("    var:\n        x: real = 1D0\n    assert Equal:\n        in:\n            x\n        out:\n"
-                 "            1D0\n") + "test t1:\n    srcpath: 'src'\n"
-    assert "x" in labels(server, text, 7, 12)
+class TestCompletion(TestServer):
+
+    def labels(self, text, line, character, kind=None):
+        items = self.server.complete(URI, text, Position(line=line, character=character)).items
+        return [i.label for i in items if kind is None or i.kind == kind]
+
+    @parameterized.expand([
+        ("start_of_document", "", 0, 0, "equal", ["suite"]),
+        # An empty document starts with a suite
+        # Input: empty document, position 0:0
+        # Expected Result: exactly 'suite'
+
+        ("after_suite_header", "suite su:\n", 1, 0, "equal", ["test"]),
+        # A suite contains test cases
+        # Input: 'suite su:', position 1:0
+        # Expected Result: exactly 'test'
+
+        ("test_case_header", "suite su:\ntest t1:\n", 2, 4, "set", {"srcpath", "overwrite"}),
+        # A test case starts with its source path or overwrite flags
+        # Input: test case header, position 2:4
+        # Expected Result: 'srcpath' and 'overwrite'
+
+        ("test_case_sections", suite("    "), 3, 4, "superset", {"var", "modules", "assert", "test"}),
+        # The sections of a test case
+        # Input: a test case after its source path, position 3:4
+        # Expected Result: at least 'var', 'modules', 'assert' and 'test'
+
+        ("overwrite_flags", "suite su:\ntest t1:\n    overwrite: ", 2, 15, "set", {"pf", "cmake", "f90"}),
+        # The files that may be overwritten
+        # Input: 'overwrite: ', position 2:15
+        # Expected Result: 'pf', 'cmake' and 'f90'
+
+        ("assertion_directives", suite("    assert "), 3, 11, "superset",
+         {"Equal", "NotEqual", "LessThan", "True", "IsNaN"}),
+        # The pFUnit assertion directives
+        # Input: 'assert ', position 3:11
+        # Expected Result: at least 'Equal', 'NotEqual', 'LessThan', 'True' and 'IsNaN'
+
+        ("call_in_assertion", LISTING1, 12, 12, "superset", {"call"}),
+        # Keywords of the assertion input
+        # Input: paper Listing 1, position 12:12 in an assertion
+        # Expected Result: at least 'call'
+
+        ("typed_prefix_filters_case_insensitive", LISTING1.replace("fT_ME(xIntercept), K", "XI"), 12, 14, "equal",
+         ["xIntercept"]),
+        # A typed prefix filters the proposals case-insensitively
+        # Input: 'XI' typed in the assertion, position 12:14
+        # Expected Result: exactly 'xIntercept'
+
+        ("modules", suite("    modules:\n        mod_a\n        "), 5, 8, "superset", {"mod_a"}),
+        # Declared modules are proposed
+        # Input: a module section with mod_a, position 5:8
+        # Expected Result: at least 'mod_a'
+
+        ("duplicate_test_case_does_not_break_completion", DUPLICATE_CASE, 7, 12, "superset", {"x"}),
+        # The symbol table used to raise DuplicateSymbolError, which disabled all symbol completions
+        # Input: a test case with the variable x and a second test case t1, position 7:12 in the assertion
+        # Expected Result: at least 'x'
+    ])
+    def test_completion(self, test_name, text, line, character, comparison, expected):
+        labels = self.labels(text, line, character)
+        if comparison == "equal":
+            self.assertEqual(expected, labels, test_name)
+        elif comparison == "set":
+            self.assertEqual(expected, set(labels), test_name)
+        else:
+            self.assertLessEqual(expected, set(labels), test_name)
+
+    @parameterized.expand([
+        ("test_variables", LISTING1, 12, 12, CompletionItemKind.Variable, {"dp", "xIntercept", "yIntercept"}),
+        # The variables of the test case are proposed in an assertion
+        # Input: paper Listing 1, position 12:12 in an assertion
+        # Expected Result: the variables dp, xIntercept and yIntercept
+
+        ("suite_keyword", "", 0, 0, CompletionItemKind.Keyword, {"suite"}),
+        # Keywords are proposed as keywords
+        # Input: empty document, position 0:0
+        # Expected Result: the keyword 'suite'
+
+        ("operators_in_assertion", LISTING1, 12, 12, CompletionItemKind.Operator, {"-", "(", "+"}),
+        # Operators are proposed in an assertion
+        # Input: paper Listing 1, position 12:12 in an assertion
+        # Expected Result: the operators '-', '(' and '+'
+    ])
+    def test_completion_kinds(self, test_name, text, line, character, kind, expected):
+        self.assertEqual(expected, set(self.labels(text, line, character, kind)), test_name)
+
+    @parameterized.expand([
+        ("directories", "models/", 21, ["mitgcm", "uvic"]),
+        # The directories in the source path are proposed, without hidden directories and files
+        # Input: 'models/' with uvic, mitgcm, .hidden and file.f90
+        # Expected Result: 'mitgcm' and 'uvic'
+
+        ("prefix", "models/u", 22, ["uvic"]),
+        # A typed prefix filters the directories
+        # Input: 'models/u'
+        # Expected Result: 'uvic'
+
+        ("work_path", "", 14, ["models"]),
+        # An empty source path proposes the directories of the work path
+        # Input: ''
+        # Expected Result: 'models'
+
+        ("no_match", "models/x", 22, []),
+        # No directory matches
+        # Input: 'models/x'
+        # Expected Result: no proposals
+    ])
+    def test_source_path_directories(self, test_name, srcpath, character, expected):
+        self.make_dirs("models/uvic", "models/mitgcm", "models/.hidden")
+        (self.tmp_path / "models" / "file.f90").write_text("", encoding="utf-8")
+
+        text = f"suite su:\ntest t1:\n    srcpath: '{srcpath}'\n"
+        self.assertEqual(expected, self.labels(text, 2, character, CompletionItemKind.Folder), test_name)
+
+
+class TestSemanticTokens(TestServer):
+
+    @parameterized.expand([
+        ("keywords_strings_and_numbers", "suite su:\ntest t1:\n    srcpath: 'src'\n    var:\n        x: real = 1D0\n",
+         ["keyword", "operator", "keyword", "operator", "keyword", "operator", "string", "keyword", "operator",
+          "operator", "operator", "number"]),
+        # Keywords, strings and numbers are classified
+        # Input: a test case with the source path 'src' and the variable x = 1D0
+        # Expected Result: 'suite' is a keyword, 'src' a string and 1D0 a number
+
+        ("suite_header", "suite su:\n", ["keyword", "operator"]),
+        # The suite header
+        # Input: 'suite su:'
+        # Expected Result: the keyword 'suite' and the operator ':'
+
+        ("overwrite_flags", "suite su:\ntest t1:\n    overwrite: pf\n",
+         ["keyword", "operator", "keyword", "operator", "keyword", "operator", "keyword"]),
+        # Overwrite flags are keywords
+        # Input: 'overwrite: pf'
+        # Expected Result: 'pf' is a keyword
+    ])
+    def test_semantic_tokens(self, test_name, text, expected_kinds):
+        data = self.server.semantic_tokens(text).data
+        kinds = [TOKEN_TYPES[data[i + 3]] for i in range(0, len(data), 5)]
+        self.assertEqual(expected_kinds, kinds, test_name)
+
+
+if __name__ == '__main__':
+    unittest.main()
