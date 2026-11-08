@@ -1,5 +1,5 @@
 # Development environment for all Python packages of this repository: pip install -r requirements-dev.txt
--e ./antlrLib[test]
+-e ./antlrLib[test,units]
 -e ./tdd-dsl[test]
 -e ./bgc-dsl[test]
 -e ./cp-dsl[test]

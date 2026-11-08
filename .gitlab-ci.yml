@@ -25,7 +25,8 @@ tests:
     matrix:
       - PYTHON_VERSION: ["3.10", "3.12"]
   before_script:
-    - apt-get update && apt-get install -y --no-install-recommends make
+    # libudunits2-0: UDUNITS-2 C library of cfunits, so that the unit checks and conversions are tested as well
+    - apt-get update && apt-get install -y --no-install-recommends make libudunits2-0
     - pip install -r requirements-dev.txt
   script:
     - make coverage
