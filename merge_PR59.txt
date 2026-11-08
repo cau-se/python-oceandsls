@@ -1,0 +1,142 @@
+Prompt: integrate cfunits custom units into the OceanDSL languages after NCAS-CMS/cfunits PR #59 is merged
+=========================================================================================================
+
+Context
+-------
+You are working on python-oceandsls (packages antlrLib/odsllib, cp-dsl, tdd-dsl, bgc-dsl). The languages use
+units to check models and configurations and to convert values, with cfunits (NCAS-CMS, Python interface to the
+UDUNITS-2 C library). cfunits 3.3.7 cannot define new units, so the first integration ("option (a)") keeps custom
+units beside the UDUNITS-2 part:
+
+- antlrLib/odsllib/units.py: CompositeUnit = UDUNITS-2 part (string) + custom units (sorted (name, exponent)
+  pairs). Equivalent if the UDUNITS-2 parts are equivalent and the custom units are identical; conversions only
+  scale the UDUNITS-2 part, so prefixed custom units (kilopebble) cannot be converted. cfunits is optional
+  (odsllib[units]); without it checks return None and are skipped.
+- cp-dsl/cpdsl/common/units.py: CP-DSL unit model -> CompositeUnit (UDUNITS-2 names such as kilotonne; quoted
+  custom units -> custom units; "" -> dimensionless).
+- cp-dsl/cpdsl/generator/calculator/unit_calculator.py: UnitCalculator.check/convert/check_model, used by the
+  generator (check_unit_compatibility, ConfigurationCalculator) and the configuration language server.
+- TDD-DSL and BGC-DSL do not use units yet.
+
+PR #59 (https://github.com/NCAS-CMS/cfunits/pull/59, issue #58) adds the class method Units.new_unit, which
+defines a new base unit for the rest of the process. Follow-up fixes were prepared in the repository
+cfunits_custom_units_feature (branch pr59; see its README): ASCII name and symbol mappings so that units can be
+formatted, new_unit(name, symbol=None, plural=None), ValueError instead of failed asserts for invalid or existing
+names (e.g. "cups"), a Units return value, no match statement (Python < 3.10).
+
+Goal
+----
+Replace option (a) by real UDUNITS-2 custom units wherever cfunits provides Units.new_unit, keep option (a) as the
+fallback, and extend the unit checks to all three languages.
+
+Step 0: Verify what was merged and released
+-------------------------------------------
+1. Read the merged PR and the cfunits change log. Determine the first released cfunits version with
+   Units.new_unit and check its exact signature and behaviour:
+   - Does it accept symbol and plural? What is the default symbol?
+   - Does it raise ValueError (not AssertionError) for invalid or already defined names, plurals and symbols?
+   - Does it return a Units instance?
+   - Can units containing a custom unit be formatted (Units('pebble/m').formatted())?
+   - Is a derived definition possible (e.g. definition='12 pebble'), and can definitions be removed?
+2. If a follow-up fix is missing, handle the gap in odsllib.units where that is possible with the public API
+   (e.g. catch AssertionError and report it as UnitError). Gaps that need private API (e.g. a missing symbol
+   mapping, so that units cannot be formatted) require a cfunits version that contains the fix: make it the
+   minimum version. Do not use private cfunits functions (_ut_*).
+3. Record the findings in the commit message of the first commit.
+
+Step 1: Dependency and feature detection
+----------------------------------------
+- antlrLib/pyproject.toml: units = ["cfunits>=<first version with new_unit>"]; cp-dsl uses odsllib[units].
+- odsllib.units: custom_units_supported() = units_available() and hasattr(cfunits.Units, "new_unit").
+  Everything must keep working with cfunits 3.3.7 (option (a)) and without cfunits (checks skipped).
+
+Step 2: Custom-unit registry in odsllib.units
+---------------------------------------------
+- register_custom_unit(name, symbol=None, plural=None) -> bool: idempotent wrapper around Units.new_unit. Keep a
+  module-level registry of the units defined by the OceanDSL tools (name -> (symbol, plural)). A second
+  registration of the same definition is a no-op; a conflicting one (other symbol/plural) or a name that UDUNITS-2
+  already knows raises UnitError with a clear message (e.g. "cup is a UDUNITS-2 unit; choose another name").
+- Definitions are global to the process and cannot be removed. Never decide validity by "UDUNITS-2 knows the
+  name" alone: a unit is valid in a document only if the document (or its model) declares it. Keep the declared
+  custom units per model and check against them.
+- Name clashes: unit names of the languages may collide with UDUNITS-2 symbols or with each other across models
+  (BGC substances N, C, P are newton, coulomb, poise). Register internal, collision-free names (e.g.
+  "substance_N") and map them back to the user's names in messages.
+- CompositeUnit: when custom units are supported, convert custom parts into the UDUNITS-2 part
+  (e.g. ("pebble", 1) -> "pebble") so that prefixed and scaled custom units become equivalent and convertible
+  (kilopebble -> 1000 pebble). Keep the public API (of, custom_unit, *, /, **, is_valid, equivalent, convert,
+  str) unchanged, so callers need no changes. Keep the option (a) behaviour as fallback.
+
+Step 3: CP-DSL
+--------------
+- Decide with the maintainers how custom units are declared. Today any quoted unit ("pebble") is a custom unit,
+  so a typo silently becomes a new unit. Recommended: an explicit declaration section in
+  cp-dsl/dcllspserver/grammars/Declaration.g4 (and the copy in conflspserver/grammars), e.g.
+      units
+          unit pebble : "pebbles" symbol pbl
+  Regenerate the declaration parsers with ANTLR 4.13.1 (java -jar antlr-4.13.1-complete.jar Declaration.g4
+  -o ../gen/python/Declaration -visitor -package Declaration -Dlanguage=Python3, and the same for Java), extend
+  GeneratorDeclarationVisitor and the declaration model, and report undeclared custom units as diagnostics.
+  Keep "" as dimensionless.
+- cpdsl.common.units: map declared custom units to their registered UDUNITS-2 names.
+- cpdsl.common.unit_processing.parse_unit (configurations): accept SI prefixes on user-defined units
+  ("kpebble", "kilopebbles"); today split_symbols() fails and the whole word becomes an unknown custom unit.
+  Pass the declared units as user_defined_units.
+- UnitCalculator: conversions of prefixed custom units now work; extend the tests.
+- Still open from option (a): units of composed expressions are not derived (derive_expression_unit), and arrays
+  and selected elements are not overlaid (ExpressionCalculator.calculate_and_overlay).
+
+Step 4: TDD-DSL
+---------------
+- Units appear in assertions (tdd-dsl/tddlspserver/grammars/PhysicalUnits.g4, e.g. 'K', 'mol * kg ** -1' and
+  quoted custom units such as 'ppm'). Write the parse tree as a UDUNITS-2 string without spaces around operators
+  (UDUNITS-2 rejects 'mol * kg ** -1'), report invalid units in the language server, and register quoted custom
+  units that UDUNITS-2 does not know.
+- The generated Fortran compares unit strings at run time (testFunction_template.txt: unit /= "{{unit}}").
+  Emit a normalized unit (CompositeUnit) so that equivalent spellings match, and where the unit of the routine
+  under test is known, generate the conversion factor instead of only comparing strings.
+- The grammar still labels the milli alternative "mili" (PhysicalUnits.g4, unitPrefix); fix it when touching the
+  grammar (CP-DSL already uses milli).
+
+Step 5: BGC-DSL
+---------------
+- bgc-dsl/bgclspserver/grammars/BgcDsl.g4: prefixUnit = (UNIT_STRING | CUSTOM_STRING) (substance=ID)?
+  ('^' exponent)?. Map 'my' to micro, '#d' to day (alias, not a new base unit) and other '#...' to declared custom
+  units.
+- Substances (N, C, P, Chl) become custom base units under internal names (see Step 2), so that
+  'mmol C (mmol N)^-1' keeps the C:N dimension and mixing up substances is an error. Without custom-unit support
+  (option (a)) keep them as custom units of CompositeUnit.
+- Check parameter declarations and the dimensions of update expressions (state per time).
+
+Step 6: Tests
+-------------
+- All tests use @parameterized.expand; every case has a descriptive name, its inputs and the expected result,
+  followed by the comment block
+      # Short description
+      # Input: ...
+      # Expected Result: ...
+  and every parameterized test has at least three cases. Mark regression cases ("Regression: ...").
+- Test each feature in three environments: without cfunits, with cfunits 3.3.7 (option (a)) and with the cfunits
+  version that has new_unit. Skip the cfunits cases with unittest.skipUnless when the library is missing.
+- Required cases: idempotent and conflicting registration, names that UDUNITS-2 knows, per-model validity in
+  the language servers (two documents declaring different custom units in one process), prefixed custom units
+  in configurations, BGC substance ratios, TDD normalization.
+- Locally, UDUNITS-2 can be used without root: apt-get download libudunits2-0 libudunits2-data, dpkg -x into a
+  folder, then set LD_LIBRARY_PATH to its usr/lib/x86_64-linux-gnu and UDUNITS2_XML_PATH to its
+  usr/share/xml/udunits/udunits2.xml (with a libudunits2.so symlink for ctypes.util.find_library).
+
+Step 7: CI and documentation
+----------------------------
+- The tests job installs libudunits2-0 (already done); pin the cfunits version in the units extra.
+- Document the units feature (README of each package, change log) and the minimum cfunits version.
+
+Verification
+------------
+- All suites pass in the three environments; coverage is not lower than before; pylint reports no errors
+  (pylint --fail-under=0 --fail-on=E,F --recursive=y antlrLib tdd-dsl bgc-dsl cp-dsl ci); lines <= 120.
+- The bundled models still validate without diagnostics (cp-dsl/test/lsp/lsp_server_test.py).
+
+Conventions
+-----------
+- One commit per step and package, author and committer Sven Gundlach <sven.gundlach@email.uni-kiel.de>, no
+  Co-Authored-By or session trailers. Do not push.
