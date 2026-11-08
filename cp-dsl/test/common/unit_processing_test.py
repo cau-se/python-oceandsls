@@ -18,11 +18,9 @@ import unittest
 
 from parameterized import parameterized
 
-from cpdsl.common.unit_processing import parse_unit, tokenize, resolve, process_tokens
+from cpdsl.common.unit_processing import parse_unit, tokenize, split_symbols
 from cpdsl.model.unit_model import UnitKind, UnitPrefix, UnitSpecification, SIUnit, DivisionUnit, ExponentUnit, \
     CustomUnit
-
-MILLI_METER = [UnitPrefix.Milli, UnitKind.Meter]  # 'm' is milli or meter: the tokenizer keeps both readings
 
 # SI prefixes except milli, whose symbol is the one of meter and is tested separately
 PREFIX_CASES = [
@@ -194,48 +192,28 @@ KIND_CASES = [
     # The unit kind Pascal
     # Input: 'Pa'
     # Expected Result: UnitKind.Pascal
+
+    ("hour", "h", UnitKind.Hour),
+    # Regression: hours were missing, so km/h could not be parsed (h is the hecto prefix otherwise)
+    # Input: 'h'
+    # Expected Result: UnitKind.Hour
+
+    ("day", "d", UnitKind.Day),
+    # Days (d is the deci prefix otherwise)
+    # Input: 'd'
+    # Expected Result: UnitKind.Day
 ]
 
 EXPONENTS = [("^2", 2), ("^+2", 2), ("^-2", -2)]
 
 
+KILOGRAM = SIUnit(UnitPrefix.Kilo, UnitKind.Gram)
+MILLIMETER = SIUnit(UnitPrefix.Milli, UnitKind.Meter)
+METER = SIUnit(None, UnitKind.Meter)
+SECOND = SIUnit(None, UnitKind.Second)
+
+
 class TestUnitProcessionVisitor(unittest.TestCase):
-
-    @parameterized.expand(KIND_CASES)
-    def test_tokenize_kind(self, test_name, symbol, expected_kind):
-        self.assertEqual([expected_kind], tokenize(symbol), test_name)
-
-    @parameterized.expand(PREFIX_CASES)
-    def test_tokenize_prefix(self, test_name, symbol, expected_prefix):
-        self.assertEqual([expected_prefix], tokenize(symbol), test_name)
-
-    @parameterized.expand(PREFIX_CASES)
-    def test_tokenize_prefix_kind(self, test_name, symbol, expected_prefix):
-        self.assertEqual([expected_prefix, UnitKind.Meter], tokenize(f"{symbol}m"), test_name)
-
-    @parameterized.expand(PREFIX_CASES)
-    def test_tokenize_prefix_kind_exponent(self, test_name, symbol, expected_prefix):
-        # an exponent with and without sign: '^2', '^+2' and '^-2'
-        for exponent, expected_exponent in EXPONENTS:
-            with self.subTest(exponent=exponent):
-                self.assertEqual([expected_prefix, MILLI_METER, expected_exponent],
-                                 tokenize(f"{symbol}m{exponent}"), test_name)
-
-    @parameterized.expand(PREFIX_CASES)
-    def test_tokenize_groups_division(self, test_name, symbol, expected_prefix):
-        self.assertEqual(["(", expected_prefix, MILLI_METER, UnitPrefix.Kilo, UnitKind.Gram, ")", "/", UnitKind.Kelvin],
-                         tokenize(f"({symbol}mkg)/K"), test_name)
-
-    @parameterized.expand(PREFIX_CASES_WITH_MILLI)
-    def test_resolve_groups_division(self, test_name, symbol, expected_prefix):
-        self.assertEqual(["(", expected_prefix, UnitKind.Meter, UnitPrefix.Kilo, UnitKind.Gram, ")", "/",
-                          UnitKind.Kelvin], resolve(tokenize(f"({symbol}mkg)/K")), test_name)
-
-    @parameterized.expand(PREFIX_CASES_WITH_MILLI)
-    def test_parse_unit_prefix(self, test_name, symbol, expected_prefix):
-        spec = parse_unit(f"{symbol}m")
-        self.assertIsInstance(spec, UnitSpecification, test_name)
-        self.assertEqual([SIUnit(expected_prefix, UnitKind.Meter)], spec.units, test_name)
 
     @parameterized.expand(KIND_CASES)
     def test_parse_unit_base(self, test_name, symbol, expected_kind):
@@ -243,99 +221,103 @@ class TestUnitProcessionVisitor(unittest.TestCase):
         self.assertIsInstance(spec, UnitSpecification, test_name)
         self.assertEqual([SIUnit(None, expected_kind)], spec.units, test_name)
 
+    @parameterized.expand(PREFIX_CASES_WITH_MILLI)
+    def test_parse_unit_prefix(self, test_name, symbol, expected_prefix):
+        spec = parse_unit(f"{symbol}m")
+        self.assertIsInstance(spec, UnitSpecification, test_name)
+        self.assertEqual([SIUnit(expected_prefix, UnitKind.Meter)], spec.units, test_name)
+
+    @parameterized.expand(PREFIX_CASES_WITH_MILLI)
+    def test_parse_unit_prefix_exponent(self, test_name, symbol, expected_prefix):
+        # an exponent with and without sign: '^2', '^+2' and '^-2'
+        for exponent, expected_exponent in EXPONENTS:
+            with self.subTest(exponent=exponent):
+                self.assertEqual([ExponentUnit(SIUnit(expected_prefix, UnitKind.Meter), expected_exponent)],
+                                 parse_unit(f"{symbol}m{exponent}").units, test_name)
+
+    @parameterized.expand(PREFIX_CASES_WITH_MILLI)
+    def test_parse_unit_groups_division(self, test_name, symbol, expected_prefix):
+        # Regression: a parenthesized group was processed twice and became an empty unit specification
+        self.assertEqual([DivisionUnit(UnitSpecification([SIUnit(expected_prefix, UnitKind.Meter), KILOGRAM]),
+                                       SIUnit(None, UnitKind.Kelvin))],
+                         parse_unit(f"({symbol}mkg)/K").units, test_name)
+
     @parameterized.expand([
-        ("millimeter", "mm", [MILLI_METER, UnitKind.Meter]),
-        # The first 'm' may be milli or meter, the last one is a meter
-        # Input: 'mm'
-        # Expected Result: both readings for the first 'm', meter for the second
+        ("division_exponent", "kg/mm^2", [("symbol", "kg"), ("operator", "/"), ("symbol", "mm"), ("exponent", 2)]),
+        # Symbols, operators and exponents
+        # Input: 'kg/mm^2'
+        # Expected Result: kg, /, mm, ^2
 
-        ("millimeter_exponent", "mm^2", [MILLI_METER, MILLI_METER, 2]),
-        # Before an exponent both 'm' keep both readings
-        # Input: 'mm^2'
-        # Expected Result: both readings for both 'm', the exponent 2
+        ("operator_after_exponent", "m^2/s", [("symbol", "m"), ("exponent", 2), ("operator", "/"), ("symbol", "s")]),
+        # Regression: the character after an exponent was skipped
+        # Input: 'm^2/s'
+        # Expected Result: m, ^2, /, s
 
-        ("division", "kg/mm", [UnitPrefix.Kilo, UnitKind.Gram, "/", MILLI_METER, UnitKind.Meter]),
-        # A division
-        # Input: 'kg/mm'
-        # Expected Result: kilo, gram, '/', both readings of 'm', meter
+        ("symbol_after_exponent", "s^-1K", [("symbol", "s"), ("exponent", -1), ("symbol", "K")]),
+        # Regression: the symbol after a negative exponent was skipped
+        # Input: 's^-1K'
+        # Expected Result: s, ^-1, K
 
-        ("kind_division", "mol/s", [UnitKind.Mole, "/", UnitKind.Second]),
-        # A division of unit kinds
-        # Input: 'mol/s'
-        # Expected Result: mole, '/', second
+        ("signed_exponent_and_space", "(m s^+2)", [("operator", "("), ("symbol", "m"), ("symbol", "s"),
+                                                   ("exponent", 2), ("operator", ")")]),
+        # Whitespace separates symbols, a plus sign is allowed
+        # Input: '(m s^+2)'
+        # Expected Result: (, m, s, ^2, )
     ])
     def test_tokenize(self, test_name, unit_string, expected_tokens):
         self.assertEqual(expected_tokens, tokenize(unit_string), test_name)
 
     @parameterized.expand([
-        ("division", "kg/mm", [UnitPrefix.Kilo, UnitKind.Gram, "/", UnitPrefix.Milli, UnitKind.Meter]),
-        # Resolving decides the readings of 'm'
-        # Input: 'kg/mm'
-        # Expected Result: kilo, gram, '/', milli, meter
+        ("prefixed_units", "kgmm", [KILOGRAM, MILLIMETER]),
+        # A run of symbols is split into prefixed units
+        # Input: 'kgmm'
+        # Expected Result: kg and mm
 
-        ("millimeter", "mm", [UnitPrefix.Milli, UnitKind.Meter]),
-        # A prefix followed by a kind
-        # Input: 'mm'
-        # Expected Result: milli, meter
+        ("milli_mole", "mmol", [SIUnit(UnitPrefix.Milli, UnitKind.Mole)]),
+        # A prefix in front of a multi-letter unit
+        # Input: 'mmol'
+        # Expected Result: millimole
 
-        ("kilometer_exponent", "km^2", [UnitPrefix.Kilo, UnitKind.Meter, 2]),
-        # Before an exponent 'm' after a prefix is a meter
-        # Input: 'km^2'
-        # Expected Result: kilo, meter, 2
+        ("millisecond", "ms", [SIUnit(UnitPrefix.Milli, UnitKind.Second)]),
+        # 'm' followed by a unit kind is milli
+        # Input: 'ms'
+        # Expected Result: millisecond
 
-        ("meter", "m", [UnitKind.Meter]),
-        # A single 'm' is a meter
-        # Input: 'm'
-        # Expected Result: meter
+        ("candela", "cd", [SIUnit(None, UnitKind.Candela)]),
+        # Multi-letter units take precedence over a prefix and a unit
+        # Input: 'cd'
+        # Expected Result: candela, not centi day
+
+        ("hectopascal", "hPa", [SIUnit(UnitPrefix.Hecto, UnitKind.Pascal)]),
+        # A prefix in front of Pa
+        # Input: 'hPa'
+        # Expected Result: hectopascal
+
+        ("unknown", "xyz", None),
+        # Letters that are no units
+        # Input: 'xyz'
+        # Expected Result: None
     ])
-    def test_resolve(self, test_name, unit_string, expected_tokens):
-        self.assertEqual(expected_tokens, resolve(tokenize(unit_string)), test_name)
+    def test_split_symbols(self, test_name, symbols, expected_units):
+        self.assertEqual(expected_units, split_symbols(symbols), test_name)
 
     @parameterized.expand([
-        ("division", "kg/mm", [SIUnit(UnitPrefix.Kilo, UnitKind.Gram), "/", SIUnit(UnitPrefix.Milli, UnitKind.Meter)]),
-        # Prefixes and kinds are combined to SI units
-        # Input: 'kg/mm'
-        # Expected Result: kg, '/', mm
-
-        ("millimeter", "mm", [SIUnit(UnitPrefix.Milli, UnitKind.Meter)]),
-        # A unit with prefix
-        # Input: 'mm'
-        # Expected Result: mm
-
-        ("kilometer_exponent", "km^2", [ExponentUnit(SIUnit(UnitPrefix.Kilo, UnitKind.Meter), 2)]),
-        # An exponent applies to the unit before it
-        # Input: 'km^2'
-        # Expected Result: km to the power of 2
-
-        ("pascal", "Pa", [SIUnit(None, UnitKind.Pascal)]),
-        # A unit without prefix
-        # Input: 'Pa'
-        # Expected Result: Pa
-    ])
-    def test_process_tokens(self, test_name, unit_string, expected_units):
-        self.assertEqual(expected_units, process_tokens(resolve(tokenize(unit_string))), test_name)
-
-    @parameterized.expand([
-        ("division", "kg/mm", None,
-         [DivisionUnit(SIUnit(UnitPrefix.Kilo, UnitKind.Gram), SIUnit(UnitPrefix.Milli, UnitKind.Meter))]),
+        ("division", "kg/mm", None, [DivisionUnit(KILOGRAM, MILLIMETER)]),
         # A division of two units
         # Input: 'kg/mm'
         # Expected Result: kg divided by mm
 
-        ("division_exponent", "kg/mm^2", None,
-         [DivisionUnit(SIUnit(UnitPrefix.Kilo, UnitKind.Gram),
-                       ExponentUnit(SIUnit(UnitPrefix.Milli, UnitKind.Meter), 2))]),
+        ("division_exponent", "kg/mm^2", None, [DivisionUnit(KILOGRAM, ExponentUnit(MILLIMETER, 2))]),
         # The exponent binds stronger than the division
         # Input: 'kg/mm^2'
         # Expected Result: kg divided by mm^2
 
-        ("normalized_exponent", "kgmm^-2", None,
-         [SIUnit(UnitPrefix.Kilo, UnitKind.Gram), ExponentUnit(SIUnit(UnitPrefix.Milli, UnitKind.Meter), -2)]),
+        ("normalized_exponent", "kgmm^-2", None, [KILOGRAM, ExponentUnit(MILLIMETER, -2)]),
         # A negative exponent instead of a division
         # Input: 'kgmm^-2'
         # Expected Result: kg and mm^-2
 
-        ("negative_exponent", "s^-1", None, [ExponentUnit(SIUnit(None, UnitKind.Second), -1)]),
+        ("negative_exponent", "s^-1", None, [ExponentUnit(SECOND, -1)]),
         # A unit without prefix and a negative exponent
         # Input: 's^-1'
         # Expected Result: s^-1
@@ -344,10 +326,89 @@ class TestUnitProcessionVisitor(unittest.TestCase):
         # A user-defined unit
         # Input: 'pebbles' with the custom unit pebbles
         # Expected Result: the custom unit pebbles
+
+        ("meter_numerator", "m/kg", None, [DivisionUnit(METER, KILOGRAM)]),
+        # Regression: 'm' in front of '/' was read as milli (also in configurations)
+        # Input: 'm/kg'
+        # Expected Result: meter divided by kg
+
+        ("prefixed_numerator", "km/s", None, [DivisionUnit(SIUnit(UnitPrefix.Kilo, UnitKind.Meter), SECOND)]),
+        # Regression: km/s became kilo, milli, '/' and a raw second
+        # Input: 'km/s'
+        # Expected Result: km divided by s
+
+        ("multi_letter_numerator", "mol/s", None, [DivisionUnit(SIUnit(None, UnitKind.Mole), SECOND)]),
+        # Regression: the '/' itself was wrapped as SIUnit(None, '/')
+        # Input: 'mol/s'
+        # Expected Result: mol divided by s
+
+        ("exponent_before_division", "m^2/s", None, [DivisionUnit(ExponentUnit(METER, 2), SECOND)]),
+        # Regression: the '/' after an exponent was lost
+        # Input: 'm^2/s'
+        # Expected Result: m^2 divided by s
+
+        ("hour", "km/h", None, [DivisionUnit(SIUnit(UnitPrefix.Kilo, UnitKind.Meter), SIUnit(None, UnitKind.Hour))]),
+        # Regression: hours were not supported (paper example 'speed : 2 km/h')
+        # Input: 'km/h'
+        # Expected Result: km divided by h
+
+        ("product_with_space", "mmol m^-3", None,
+         [SIUnit(UnitPrefix.Milli, UnitKind.Mole), ExponentUnit(METER, -3)]),
+        # Whitespace separates the factors of a product
+        # Input: 'mmol m^-3'
+        # Expected Result: mmol and m^-3
+
+        ("explicit_product", "kg*m/s^2", None, [DivisionUnit(UnitSpecification([KILOGRAM, METER]),
+                                                             ExponentUnit(SECOND, 2))]),
+        # '*' separates factors; the numerator is the product in front of '/'
+        # Input: 'kg*m/s^2'
+        # Expected Result: kg m divided by s^2
+
+        ("chained_division", "kg/m/s", None, [DivisionUnit(DivisionUnit(KILOGRAM, METER), SECOND)]),
+        # Divisions are left associative
+        # Input: 'kg/m/s'
+        # Expected Result: (kg / m) / s
+
+        ("group_exponent", "(m/s)^2", None, [ExponentUnit(DivisionUnit(METER, SECOND), 2)]),
+        # An exponent applies to a parenthesized group
+        # Input: '(m/s)^2'
+        # Expected Result: (m / s)^2
+
+        ("user_defined_in_division", "pebbles/s", ["pebbles"], [DivisionUnit(CustomUnit("pebbles"), SECOND)]),
+        # Regression: user-defined units were only recognized as the whole unit
+        # Input: 'pebbles/s' with the custom unit pebbles
+        # Expected Result: pebbles divided by s
     ])
     def test_parse_unit(self, test_name, unit_string, custom_units, expected_units):
         spec = parse_unit(unit_string) if custom_units is None else parse_unit(unit_string, custom_units)
         self.assertIsInstance(spec, UnitSpecification, test_name)
+        self.assertEqual(expected_units, spec.units, test_name)
+
+    @parameterized.expand([
+        ("unknown_symbol", "xyz", "Unit symbol xyz in xyz not supported", [CustomUnit("xyz")]),
+        # Unknown symbols are reported and kept as custom unit
+        # Input: 'xyz'
+        # Expected Result: an error, the custom unit xyz
+
+        ("missing_exponent", "m^", "Missing exponent after ^ in m^", [METER]),
+        # An exponent needs digits
+        # Input: 'm^'
+        # Expected Result: an error, meter
+
+        ("missing_parenthesis", "(m", "Missing ) in unit (m", [METER]),
+        # An open parenthesis needs to be closed
+        # Input: '(m'
+        # Expected Result: an error, meter
+
+        ("unexpected_parenthesis", "m)", "Unexpected ) in unit m)", [METER]),
+        # A closing parenthesis without opening one
+        # Input: 'm)'
+        # Expected Result: an error, meter
+    ])
+    def test_parse_unit_errors(self, test_name, unit_string, expected_message, expected_units):
+        with self.assertLogs("cpdsl.common.unit_processing", level="ERROR") as logs:
+            spec = parse_unit(unit_string)
+        self.assertEqual([expected_message], [record.getMessage() for record in logs.records], test_name)
         self.assertEqual(expected_units, spec.units, test_name)
 
 

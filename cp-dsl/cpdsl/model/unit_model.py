@@ -39,6 +39,8 @@ class UnitKind(Enum):
     Pascal = 8
     Joule = 9
     ton = 10
+    Hour = 11
+    Day = 12
 
 
 class UnitPrefix(Enum):

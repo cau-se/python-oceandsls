@@ -18,9 +18,12 @@ import unittest
 
 from parameterized import parameterized
 
-from cpdsl.model.unit_model import UnitSpecification, UnitKind, UnitPrefix, SIUnit, ExponentUnit
+from cpdsl.model.unit_model import UnitSpecification, UnitKind, UnitPrefix, SIUnit, ExponentUnit, DivisionUnit
 
 from generator.visitors.test_utils import AbstractTestGeneratorConfigurationVisitor, describe_expression
+
+METER_PER_KILOGRAM = UnitSpecification(units=[DivisionUnit(SIUnit(None, UnitKind.Meter),
+                                                       SIUnit(UnitPrefix.Kilo, UnitKind.Gram))])
 
 DECLARATION = """
         model eval
@@ -33,15 +36,15 @@ DECLARATION = """
 class TestUnitGeneratorConfigurationVisitor(AbstractTestGeneratorConfigurationVisitor):
 
     @parameterized.expand([
-        ("division", "4 m/kg", ("int", 4), UnitSpecification),
-        # A configured value with a unit
+        ("division", "4 m/kg", ("int", 4), METER_PER_KILOGRAM),
+        # Regression: the meter in front of '/' was read as milli
         # Input: 'param: 4 m/kg' for the parameter declared with meter / kilo gram
-        # Expected Result: the value 4 with a unit specification
+        # Expected Result: the value 4 in meter per kilogram
 
-        ("float_with_unit", "2.5 m/kg", ("float", 2.5), UnitSpecification),
+        ("float_with_unit", "2.5 m/kg", ("float", 2.5), METER_PER_KILOGRAM),
         # A float value with a unit
         # Input: 'param: 2.5 m/kg'
-        # Expected Result: the value 2.5 with a unit specification
+        # Expected Result: the value 2.5 in meter per kilogram
 
         ("without_unit", "4", ("int", 4), None),
         # A configured value without unit
@@ -74,10 +77,7 @@ class TestUnitGeneratorConfigurationVisitor(AbstractTestGeneratorConfigurationVi
 
         entries = model.groups["my_group"].parameters["param"].entries
         self.assertEqual([expected_value], [describe_expression(entry) for entry in entries], test_name)
-        if isinstance(expected_unit, type):
-            self.assertIsInstance(entries[0].unit, expected_unit, test_name)
-        else:
-            self.assertEqual(expected_unit, entries[0].unit, test_name)
+        self.assertEqual(expected_unit, entries[0].unit, test_name)
 
 
 if __name__ == '__main__':
