@@ -1,8 +1,4 @@
-"""unittest example for CodeCompletionCore"""
-
-__author__ = 'sgu'
-
-#  Copyright (c) 2023.  OceanDSL (https://oceandsl.uni-kiel.de)
+#  Copyright (c) 2023-2026.  OceanDSL (https://oceandsl.uni-kiel.de)
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -15,91 +11,70 @@ __author__ = 'sgu'
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+"""Candidates of the c3 engine for 'var c = a + b()' (the antlr4-c3 example), at different caret positions."""
 
-# util imports
 from unittest import TestCase
 
-# antlr4
-from antlr4 import InputStream, CommonTokenStream, DiagnosticErrorListener
+from antlr4 import CommonTokenStream, DiagnosticErrorListener, InputStream
+from parameterized import parameterized
 
-# antlr4-c3
 from odsllib.code_completion_core import CodeCompletionCore
-
-# grammar imports (test grammar generated into tests/gen)
 from tests.gen.TestExprCore.TestExprCoreLexer import TestExprCoreLexer
 from tests.gen.TestExprCore.TestExprCoreParser import TestExprCoreParser
+
+EXAMPLE = "var c = a + b()"
+ASSIGNMENT_FOLLOW = [TestExprCoreLexer.ID, TestExprCoreLexer.EQUAL]
+OPERATORS = {TestExprCoreLexer.PLUS, TestExprCoreLexer.MINUS, TestExprCoreLexer.MULTIPLY, TestExprCoreLexer.DIVIDE,
+             TestExprCoreLexer.OPEN_PAR}
+
+
+def make_core(text: str) -> CodeCompletionCore:
+    """Parse ``text`` with the rule 'expression' and return a c3 engine for the parser."""
+    parser = TestExprCoreParser(CommonTokenStream(TestExprCoreLexer(InputStream(text))))
+    parser.addErrorListener(DiagnosticErrorListener)
+    parser.expression()
+    return CodeCompletionCore(parser)
 
 
 class TestCodeCompletionCore(TestCase):
 
-    def setUp(self) -> None:
-        # create input stream of characters for lexer
-        # most simple setup
-        self.input_stream = InputStream("var c = a + b()")
+    @parameterized.expand([
+        ("input_start", EXAMPLE, 0,
+         {TestExprCoreLexer.VAR, TestExprCoreLexer.LET, TestExprCoreLexer.ID},
+         {TestExprCoreLexer.VAR: ASSIGNMENT_FOLLOW, TestExprCoreLexer.LET: ASSIGNMENT_FOLLOW,
+          TestExprCoreLexer.ID: []}),
+        # At the input start
+        # Input: 'var c = a + b()', caret token index 0 ('var')
+        # Expected Result: VAR and LET (each followed by ID and '=') and ID (an expression)
 
-        # create lexer and parser objects and token stream pipe between them
-        self.lexer = TestExprCoreLexer(self.input_stream)
-        self.tokenStream = CommonTokenStream(self.lexer)
+        ("first_whitespace", EXAMPLE, 1, {TestExprCoreLexer.ID}, {}),
+        # On the first whitespace (a real implementation would check where in the whitespace the caret is)
+        # Input: 'var c = a + b()', caret token index 1 (the space after 'var')
+        # Expected Result: only ID (the variable name)
 
-        self.parser = TestExprCoreParser(self.tokenStream)
-        self.parser.addErrorListener(DiagnosticErrorListener)
+        ("variable_name", EXAMPLE, 2, {TestExprCoreLexer.ID}, {}),
+        # On the variable name
+        # Input: 'var c = a + b()', caret token index 2 ('c')
+        # Expected Result: only ID
 
-        # launch parser by invoking rule 'expression'
-        self.ast = self.parser.expression()
+        ("equal_sign", EXAMPLE, 4, {TestExprCoreLexer.EQUAL}, {}),
+        # On the equal sign (whitespace positions are ignored from now on)
+        # Input: 'var c = a + b()', caret token index 4 ('=')
+        # Expected Result: only '='
 
-        # launch c3 core with parser
-        self.core = CodeCompletionCore(self.parser)
+        ("variable_reference", EXAMPLE, 6, {TestExprCoreLexer.ID}, {}),
+        # On the variable reference: without preferred rules, references are reported as ID
+        # Input: 'var c = a + b()', caret token index 6 ('a')
+        # Expected Result: only ID
 
-    # 1) At the input start.
-    def test_inputStart(self):
-        candidates = self.core.collectCandidates(0)
-        self.assertEqual(3, len(candidates.tokens))
-        self.assertIn(TestExprCoreLexer.VAR, candidates.tokens)
-        self.assertIn(TestExprCoreLexer.LET, candidates.tokens)
-        self.assertIn(TestExprCoreLexer.ID, candidates.tokens)
-        self.assertEqual(
-            [TestExprCoreLexer.ID, TestExprCoreLexer.EQUAL],
-            candidates.tokens.get(TestExprCoreLexer.VAR)
-        )
-        self.assertEqual(
-            [TestExprCoreLexer.ID, TestExprCoreLexer.EQUAL],
-            candidates.tokens.get(TestExprCoreLexer.LET)
-        )
-        self.assertEqual([], candidates.tokens.get(TestExprCoreLexer.ID))
+        ("plus_operator", EXAMPLE, 8, OPERATORS, {}),
+        # On the '+' operator: operators are candidates, as the engine is not told to leave them out
+        # Input: 'var c = a + b()', caret token index 8 ('+')
+        # Expected Result: '+', '-', '*', '/' and '(' (a function call)
+    ])
+    def test_collect_candidates(self, test_name, text, token_index, expected_tokens, expected_following):
+        candidates = make_core(text).collectCandidates(token_index)
 
-    # 2) On the first whitespace. In real implementations you would do some additional checks where in the whitespace
-    # the caret is, as the outcome is different depending on that position.
-    def test_first_whitespace(self):
-        candidates = self.core.collectCandidates(1)
-        self.assertEqual(1, len(candidates.tokens))
-        self.assertIn(TestExprCoreLexer.ID, candidates.tokens)
-
-    # 3) On the variable name ('c').
-    def test_variable_name(self):
-        candidates = self.core.collectCandidates(2)
-        self.assertEqual(1, len(candidates.tokens))
-        self.assertIn(TestExprCoreLexer.ID, candidates.tokens)
-
-    # 4) On the equal sign (ignoring whitespace positions from now on).
-    def test_equal_sign(self):
-        candidates = self.core.collectCandidates(4)
-        self.assertEqual(1, len(candidates.tokens))
-        self.assertIn(TestExprCoreLexer.EQUAL, candidates.tokens)
-
-    # 5) On the variable reference 'a'. But since we have not configured the c3 engine to return us var refs (or
-    # function refs for that matter) we only get an ID here.
-    def test_variable_reference(self):
-        candidates = self.core.collectCandidates(6)
-        self.assertEqual(1, len(candidates.tokens))
-        self.assertIn(TestExprCoreLexer.ID, candidates.tokens)
-
-    # 6) On the '+' operator. Usually you would not show operators as candidates, but we have not set up the c3 engine
-    # yet to not return them.
-    def test_plus_operator(self):
-        candidates = self.core.collectCandidates(8)
-        self.assertEqual(5, len(candidates.tokens))
-        self.assertIn(TestExprCoreLexer.PLUS, candidates.tokens)
-        self.assertIn(TestExprCoreLexer.MINUS, candidates.tokens)
-        self.assertIn(TestExprCoreLexer.MULTIPLY, candidates.tokens)
-        self.assertIn(TestExprCoreLexer.DIVIDE, candidates.tokens)
-        self.assertIn(TestExprCoreLexer.OPEN_PAR, candidates.tokens)
+        self.assertEqual(expected_tokens, set(candidates.tokens), test_name)
+        for token, following in expected_following.items():
+            self.assertEqual(following, candidates.tokens.get(token), f"{test_name}: tokens following {token}")
