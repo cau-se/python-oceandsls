@@ -142,28 +142,34 @@ class TestFxtranUtils(unittest.TestCase):
         self.assertEqual([(self.TEST_DIR, name) for name in expected_names], result, test_name)
 
     @parameterized.expand([
-        ("get_subdirectories_test", TEST_DIR, [(name, True) for name in TEST_SUBDIRS], TEST_SUBDIRS),
+        ("get_subdirectories_test", TEST_DIR, [(name, True) for name in TEST_SUBDIRS], TEST_SUBDIRS, False),
         # Test case for retrieving subdirectories
         # Input: A directory with subdirectories
         # Expected Result: The function should return a list of subdirectory paths.
 
-        ("get_subdirectories_test_no_subdirs", TEST_DIR, [], []),
+        ("get_subdirectories_test_no_subdirs", TEST_DIR, [], [], False),
         # Test case for retrieving subdirectories when none exist
         # Input: A directory with no subdirectories
         # Expected Result: The function should return an empty list.
 
-        ("get_subdirectories_test_hidden", TEST_DIR, [(".git", True), ("subdir1", True)], ["subdir1"]),
+        ("get_subdirectories_test_hidden", TEST_DIR, [(".git", True), ("subdir1", True)], ["subdir1"], False),
         # Test case for skipping hidden directories
         # Input: A directory with the hidden directory .git and subdir1
         # Expected Result: The function should return subdir1 only.
 
-        ("get_subdirectories_test_files", TEST_DIR, [("test1.f90", False), ("subdir1", True)], ["subdir1"]),
+        ("get_subdirectories_test_files", TEST_DIR, [("test1.f90", False), ("subdir1", True)], ["subdir1"], False),
         # Test case for skipping files
         # Input: A directory with the file test1.f90 and subdir1
         # Expected Result: The function should return subdir1 only.
+
+        ("get_subdirectories_test_recursive", TEST_DIR, [(name, True) for name in TEST_SUBDIRS], TEST_SUBDIRS, True),
+        # Regression: the recursion extended the list it iterated over and never ended when scandir returned the same
+        # directories again (as this mock does for every directory)
+        # Input: A mocked directory tree in which every directory lists subdir1 and subdir2, recursive
+        # Expected Result: The function should return each subdirectory once.
     ])
     @patch("tddlspserver.fxca.util.fxtran_utils.os.scandir")
-    def test_get_subdirectories(self, test_name, test_path, entries, expected_subdirs, mock_os_scandir):
+    def test_get_subdirectories(self, test_name, test_path, entries, expected_subdirs, recursive, mock_os_scandir):
         # Set up the mock
         mock_entries = []
         for name, is_dir in entries:
@@ -174,7 +180,7 @@ class TestFxtranUtils(unittest.TestCase):
             mock_entries.append(entry)
         mock_os_scandir.return_value = mock_entries
 
-        result = get_subdirectories(test_path, False)
+        result = get_subdirectories(test_path, recursive)
 
         # Assertions
         expected_full_paths = [path.join(test_path, subdir) for subdir in expected_subdirs]
@@ -197,13 +203,41 @@ class TestFxtranUtils(unittest.TestCase):
         # Test case for skipping nested hidden directories
         # Input: A directory with a, a/.hidden and a/b
         # Expected Result: The function should return a and a/b.
+
+        ("get_subdirectories_test_symlink_loop", ["a", os.path.join("a", "b")], ["a", os.path.join("a", "b")],
+         [(os.path.join("a", "b", "loop"), "a")], True),
+        # Now that symlinks are followed in the recursion, a symlink back to a parent directory must not loop
+        # Input: A directory with a/b and the symlink a/b/loop to a, following symlinks
+        # Expected Result: The function should return a and a/b once.
+
+        ("get_subdirectories_test_nested_symlink", ["a", "other"],
+         ["a", os.path.join("a", "inner_link"), "other"], [(os.path.join("a", "inner_link"), "other_target")], True,
+         ["other_target"]),
+        # Regression: follow_symlinks was not passed to the recursion, nested symlinks were never followed
+        # Input: A directory with a, other and the symlink a/inner_link to a directory outside, following symlinks
+        # Expected Result: The function should return a, a/inner_link and other.
+
+        ("get_subdirectories_test_symlink_not_followed", ["a"], ["a"],
+         [(os.path.join("a", "inner_link"), "other_target")], False, ["other_target"]),
+        # Symlinks are skipped unless they are followed
+        # Input: A directory with a and the symlink a/inner_link, not following symlinks
+        # Expected Result: The function should return a.
     ])
-    def test_get_subdirectories_recursive(self, test_name, directories, expected_subdirs):
-        with tempfile.TemporaryDirectory() as root:
+    def test_get_subdirectories_recursive(self, test_name, directories, expected_subdirs, links=(),
+                                          follow_symlinks=False, outside=()):
+        with tempfile.TemporaryDirectory() as root, tempfile.TemporaryDirectory() as other:
             for directory in directories:
                 os.makedirs(os.path.join(root, directory))
+            for directory in outside:
+                os.makedirs(os.path.join(other, directory))
+            for link, target in links:
+                target_path = os.path.join(other if target in outside else root, target)
+                try:
+                    os.symlink(target_path, os.path.join(root, link), target_is_directory=True)
+                except (OSError, NotImplementedError):
+                    self.skipTest("symlinks are not supported here")
 
-            result = get_subdirectories(root, True)
+            result = get_subdirectories(root, True, follow_symlinks)
 
         self.assertEqual(sorted(os.path.join(root, subdir) for subdir in expected_subdirs), sorted(result),
                          test_name)

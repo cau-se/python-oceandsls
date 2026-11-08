@@ -355,36 +355,39 @@ def get_files(path: str = "", pattern: str = "*.[fF]90"):
     return files
 
 
-def get_subdirectories(path: str = "", recursive: bool = False, follow_symlinks: bool = False):
+def get_subdirectories(path: str = "", recursive: bool = False, follow_symlinks: bool = False) -> List[str]:
     """
-    Returns subdirectory names not starting with "." under given path.
+    Returns the paths of the subdirectories not starting with "." under given path.
 
     :param path: root path
-    :param recursive: return subdirectories recursively
+    :param recursive: return subdirectories recursively (depth-first)
     :param follow_symlinks: follow symlinks
     :return: subdirectories
     """
-    sub_dirs: List[str] = [entry.path for entry in os.scandir(path) if not entry.name.startswith(".") and entry.is_dir(follow_symlinks=follow_symlinks)]
-    if recursive:
-        for path in sub_dirs:
-            sub_dirs.extend(get_subdirectories(path))
-    return sub_dirs
+    return [entry.path for entry in get_subdirectories_gen(path, recursive, follow_symlinks)]
 
 
-def get_subdirectories_gen(path: str = "", recursive: bool = False, follow_symlinks: bool = False):
+def get_subdirectories_gen(path: str = "", recursive: bool = False, follow_symlinks: bool = False,
+                           _visited: Optional[Set[str]] = None):
     """
-    Yield subdirectory names not starting with "." under given path. Does not follow symlinks.
+    Yield subdirectories not starting with "." under given path. Each directory is yielded once, so symlinks that
+    point back to a parent directory do not lead to an endless recursion.
 
     :param path: root path
-    :param recursive: yield subdirectories recursively
+    :param recursive: yield subdirectories recursively (depth-first)
     :param follow_symlinks: follow symlinks
     :return: yielded subdirectories
     """
+    visited: Set[str] = {os.path.realpath(path)} if _visited is None else _visited
     for entry in os.scandir(path):
         if not entry.name.startswith(".") and entry.is_dir(follow_symlinks=follow_symlinks):
+            real_path = os.path.realpath(entry.path)
+            if real_path in visited:
+                continue
+            visited.add(real_path)
             yield entry
             if recursive:
-                yield from get_subdirectories_gen(entry.path, recursive)
+                yield from get_subdirectories_gen(entry.path, recursive, follow_symlinks, visited)
 
 
 def write_decorate_src_xml(src_dir: str = "", out_dir: str = "out", fxtran_path: str = "~/bin/fxtran"):
