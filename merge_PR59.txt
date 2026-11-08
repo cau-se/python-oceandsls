@@ -22,7 +22,9 @@ PR #59 (https://github.com/NCAS-CMS/cfunits/pull/59, issue #58) adds the class m
 defines a new base unit for the rest of the process. Follow-up fixes were prepared in the repository
 cfunits_custom_units_feature (branch pr59; see its README): ASCII name and symbol mappings so that units can be
 formatted, new_unit(name, symbol=None, plural=None), ValueError instead of failed asserts for invalid or existing
-names (e.g. "cups"), a Units return value, no match statement (Python < 3.10).
+names (e.g. "cups"), a Units return value, no match statement (Python < 3.10), and for the design gaps
+new_unit(..., definition=...) (units defined by existing units, e.g. 'dozen' = '12 pebble') and Units.remove_unit
+(undo a definition; existing Units instances keep working).
 
 Goal
 ----
@@ -52,11 +54,14 @@ Step 1: Dependency and feature detection
 
 Step 2: Custom-unit registry in odsllib.units
 ---------------------------------------------
-- register_custom_unit(name, symbol=None, plural=None) -> bool: idempotent wrapper around Units.new_unit. Keep a
-  module-level registry of the units defined by the OceanDSL tools (name -> (symbol, plural)). A second
+- register_custom_unit(name, symbol=None, plural=None, definition=None) -> bool: idempotent wrapper around
+  Units.new_unit. Keep a module-level registry of the units defined by the OceanDSL tools
+  (name -> (symbol, plural, definition)). A second
   registration of the same definition is a no-op; a conflicting one (other symbol/plural) or a name that UDUNITS-2
   already knows raises UnitError with a clear message (e.g. "cup is a UDUNITS-2 unit; choose another name").
-- Definitions are global to the process and cannot be removed. Never decide validity by "UDUNITS-2 knows the
+- Definitions are global to the process. If the released cfunits has Units.remove_unit, unregister the custom
+  units of a model when the language server reloads or closes it (reference-count units shared by several open
+  models); without it, definitions are permanent. Either way, never decide validity by "UDUNITS-2 knows the
   name" alone: a unit is valid in a document only if the document (or its model) declares it. Keep the declared
   custom units per model and check against them.
 - Name clashes: unit names of the languages may collide with UDUNITS-2 symbols or with each other across models
@@ -101,8 +106,9 @@ Step 4: TDD-DSL
 Step 5: BGC-DSL
 ---------------
 - bgc-dsl/bgclspserver/grammars/BgcDsl.g4: prefixUnit = (UNIT_STRING | CUSTOM_STRING) (substance=ID)?
-  ('^' exponent)?. Map 'my' to micro, '#d' to day (alias, not a new base unit) and other '#...' to declared custom
-  units.
+  ('^' exponent)?. Map 'my' to micro, '#d' to day and other '#...' to declared custom units. '#' is no valid
+  UDUNITS-2 name character, so register internal names, e.g. new_unit('bgc_d', definition='day') for '#d' when
+  definition is available (otherwise map '#d' to 'day' in the converter).
 - Substances (N, C, P, Chl) become custom base units under internal names (see Step 2), so that
   'mmol C (mmol N)^-1' keeps the C:N dimension and mixing up substances is an error. Without custom-unit support
   (option (a)) keep them as custom units of CompositeUnit.
