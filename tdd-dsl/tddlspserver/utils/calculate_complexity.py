@@ -424,9 +424,17 @@ class Scope:
         self.__weighted_metrics["T"] = (self.time_required_to_program, self.no_coefficient, testability.NONE)
         self.__weighted_metrics["B"] = (self.n_bugs, self.direct_coefficient, testability.NONE)
 
-        # Reset TAS
+        # Reset all values derived from the weighted metrics
         self.__testability_difficulty = None
+        self.__testability_index = None
+        self.__normalized_testability_difficulty = None
+        self.__aggregated_testability_difficulty = None
+        self.__test_index = None
+        self.__normalized_test_score = None
+        self.__aggregated_test_score = None
         self.__test_factor = None
+        self.__testBenefit = None
+        self.__testEffort = None
 
     @property
     def weighted_metrics(self) -> dict[str, tuple]:
@@ -436,15 +444,20 @@ class Scope:
 
         return self.__weighted_metrics
 
+    def weighted_testability_metrics(self) -> List[float]:
+        """Weighted values a * A of the metrics that make testing harder; metrics without value (the cyclomatic
+        complexity of scopes that are no routines or modules) are left out."""
+        # Read the metrics before using any cached value: computing them resets the derived values
+        metrics = self.weighted_metrics
+        return [value * weight for value, weight, kind in metrics.values()
+                if kind is testability.CON and value is not None]
+
     @property
     def testability_difficulty(self) -> float:
         """TAS = sum(WM)"""
+        weighted = self.weighted_testability_metrics()
         if self.__testability_difficulty is None:
-            self.__testability_difficulty = 0
-            for metric in self.weighted_metrics.values():
-                match metric[2]:
-                    case testability.CON:
-                        self.__testability_difficulty += metric[0] * metric[1]
+            self.__testability_difficulty = sum(weighted)
 
         return self.__testability_difficulty
 
@@ -460,14 +473,9 @@ class Scope:
     def normalized_testability_difficulty(self) -> float:
         """NTAS = (TAS - min(WM)) / (max(WM) - min(WM))"""
         if self.__testability_difficulty is None or self.__normalized_testability_difficulty is None:
-            minWSM: float = 0.0
-            maxWSM: float = 0.0
-            for metric in self.weighted_metrics.values():
-                match metric[2]:
-                    case testability.CON:
-                        weighted_metric: float = metric[0] * metric[1]
-                        minWSM = weighted_metric if weighted_metric < minWSM else minWSM
-                        maxWSM = weighted_metric if maxWSM < weighted_metric else maxWSM
+            weighted = self.weighted_testability_metrics()
+            minWSM: float = min([0.0] + weighted)
+            maxWSM: float = max([0.0] + weighted)
 
             self.__normalized_testability_difficulty = (self.testability_difficulty - minWSM) / (maxWSM - minWSM) if (maxWSM - minWSM) > 0 else 0
 
@@ -477,14 +485,9 @@ class Scope:
     def aggregated_testability_difficulty(self) -> float:
         """ATAS = 1 / n TAS"""
         if self.__testability_difficulty is None or self.__aggregated_testability_difficulty is None:
-            n: int = 0
+            n: int = len(self.weighted_testability_metrics())
 
-            for metric in self.weighted_metrics.values():
-                match metric[2]:
-                    case testability.CON:
-                        n += 1
-
-            self.__aggregated_testability_difficulty = 1 / n * self.testability_difficulty
+            self.__aggregated_testability_difficulty = 1 / n * self.testability_difficulty if n else 0
 
         return self.__aggregated_testability_difficulty
 
@@ -571,7 +574,8 @@ class Scope:
         score: float = 0
         for factor in factors:
             metric: tuple = self.weighted_metrics[factor]
-            score += metric[0] * metric[1]
+            if metric[0] is not None:  # e.g. no cyclomatic complexity for scopes that are no routines or modules
+                score += metric[0] * metric[1]
         return score
 
     def close_result(self):

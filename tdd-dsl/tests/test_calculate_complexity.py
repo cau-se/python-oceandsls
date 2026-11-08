@@ -439,26 +439,86 @@ class TestScope(unittest.TestCase):
         self.assertEqual(expected_value, metrics[key][0], test_name)
 
     @parameterized.expand([
-        ("testability_difficulty", "testability_difficulty", 0.5),
-        # The testability difficulty sums the weighted metrics that make testing harder
-        # Input: operator '++', operand 'variable'
+        ("testability_difficulty", "function-stmt", None, "testability_difficulty", 0.5),
+        # Regression: the first access failed, set_weighted_metrics() reset the testability difficulty to None while
+        # it was summed
+        # Input: a function with operator '++' and operand 'variable'
         # Expected Result: 0.5
 
-        ("testability_index", "testability_index", 2 / 3),
+        ("testability_index", "function-stmt", None, "testability_index", 2 / 3),
         # The testability index is 1 / (1 + testability difficulty)
         # Input: operator '++', operand 'variable'
         # Expected Result: 2/3
 
-        ("testability_index_after_difficulty", "testability_index", 2 / 3),
+        ("testability_index_after_difficulty", "function-stmt", "testability_difficulty", "testability_index",
+         2 / 3),
         # The index does not change when the difficulty was computed before
         # Input: operator '++', operand 'variable', testability difficulty read first
         # Expected Result: 2/3
+
+        ("difficulty_after_index", "function-stmt", "testability_index", "testability_difficulty", 0.5),
+        # The difficulty does not change when the index was computed before
+        # Input: operator '++', operand 'variable', testability index read first
+        # Expected Result: 0.5
+
+        ("program_difficulty", "program-stmt", None, "testability_difficulty", 0.38),
+        # Regression: scopes without cyclomatic complexity (programs) multiplied None by its weight
+        # Input: a program with operator '++' and operand 'variable'
+        # Expected Result: 0.38, the cyclomatic complexity is left out
+
+        ("program_index", "program-stmt", None, "testability_index", 1 / 1.38),
+        # The index of a program
+        # Input: a program with operator '++' and operand 'variable'
+        # Expected Result: 1 / 1.38
+
+        ("program_aggregated_difficulty", "program-stmt", None, "aggregated_testability_difficulty", 0.02375),
+        # The aggregated difficulty averages over the metrics with a value
+        # Input: a program with operator '++' and operand 'variable'
+        # Expected Result: 0.38 / 16
+
+        ("program_test_factor", "program-stmt", None, "test_factor", 0.0003332222592469236),
+        # The test effort leaves out the missing cyclomatic complexity
+        # Input: a program with operator '++' and operand 'variable'
+        # Expected Result: a float
     ])
-    @unittest.skip("draft test: the first access fails, set_weighted_metrics() resets the testability difficulty "
-                   "to None while it is summed")
-    def test_testability(self, test_name, metric, expected):
-        scope = scope_with(["++"], ["variable"])
+    def test_testability(self, test_name, scope_type, read_first, metric, expected):
+        scope = Scope(name="TestScope", type=scope_type)
+        scope.add_operator("++")
+        scope.add_operand("variable")
+        if read_first:
+            getattr(scope, read_first)
+
         self.assertAlmostEqual(expected, getattr(scope, metric), msg=test_name)
+
+    @parameterized.expand([
+        ("testability_difficulty", "testability_difficulty", 0.5, 0.62),
+        # Regression: only two derived values were reset when the weighted metrics were recomputed
+        # Input: a function read once, then a conditional added and set_weighted_metrics() called
+        # Expected Result: 0.5 before, 0.62 (one more cyclomatic complexity * 0.12) after
+
+        ("testability_index", "testability_index", 2 / 3, 1 / 1.62),
+        # The testability index follows the new difficulty
+        # Input: as above
+        # Expected Result: 2/3 before, 1 / 1.62 after
+
+        ("aggregated_testability_difficulty", "aggregated_testability_difficulty", 0.5 / 17, 0.62 / 17),
+        # The aggregated difficulty follows the new difficulty
+        # Input: as above
+        # Expected Result: 0.5 / 17 before, 0.62 / 17 after
+
+        ("test_factor", "test_factor", 0.00029751987432761036, 0.0002687276284249384),
+        # The test factor follows the new test effort
+        # Input: as above
+        # Expected Result: a smaller test factor after
+    ])
+    def test_derived_values_after_recalculation(self, test_name, metric, expected_before, expected_after):
+        scope = scope_with(["++"], ["variable"])
+        self.assertAlmostEqual(expected_before, getattr(scope, metric), msg=test_name)
+
+        scope.conditionals.append(Element("condition-E"))
+        scope.set_weighted_metrics()
+
+        self.assertAlmostEqual(expected_after, getattr(scope, metric), msg=test_name)
 
     @parameterized.expand([
         ("close_after_append", 1, 0),
@@ -563,7 +623,8 @@ class TestScope(unittest.TestCase):
 
     @parameterized.expand([
         ("debug_lines", "\n", "Scope: TestScope\nSource: source_code\nCyclomatic Complexity: 2\n"),
-        # The debug output lists every metric on its own line
+        # Regression: the debug output read the testability difficulty, which failed on the first access; it lists
+        # every metric on its own line
         # Input: debug output, one conditional, separator newline
         # Expected Result: starts with name, source and cyclomatic complexity 2
 
@@ -577,7 +638,6 @@ class TestScope(unittest.TestCase):
         # Input: debug output, one conditional, separator tab
         # Expected Result: starts with 'TestScope\tsource_code\t2\t'
     ])
-    @unittest.skip("draft test: the debug output reads the testability difficulty, which fails on the first access")
     def test_debug_string_representation(self, test_name, separator, expected_start):
         scope = Scope(name="TestScope", type="function-stmt", src="source_code", debug=True,
                       debug_separator=separator)
