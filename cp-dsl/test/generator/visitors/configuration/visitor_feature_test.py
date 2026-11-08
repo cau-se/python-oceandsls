@@ -16,156 +16,83 @@ __author__ = "reiner"
 
 import unittest
 
-from cpdsl.model.declaration_model import DeclarationModel, Feature
+from parameterized import parameterized
+
+from cpdsl.model.declaration_model import DeclarationModel
 
 from generator.visitors.test_utils import AbstractTestGeneratorConfigurationVisitor
 
+TOP_LEVEL = """
+        model eval
+            feature Base : "description"
+            feature Other : "description2"
+        """
+
+NESTED = """
+        model eval
+            feature Base : "description" {
+                sub multiple
+                    feature inner : "description inner"
+                    feature inner2 : "description inner2"
+            }
+        """
+
+
 class TestFeatureGeneratorConfigurationVisitor(AbstractTestGeneratorConfigurationVisitor):
 
-    def test_visitFeatureConfiguration(self):
-        model = self.parse_declaration_code("""
-                model eval
-                    feature Base : "description"
-                    feature Other : "description2"
-                """)
-        self.assertEqual(model.name, "eval", "Name not set")
+    @parameterized.expand([
+        ("top_level", TOP_LEVEL, "feature Base { }", {"Base": True, "Other": False}),
+        # A configured feature is activated, the others are not
+        # Input: the features Base and Other, 'feature Base { }'
+        # Expected Result: Base activated, Other not
 
-        model:DeclarationModel = self.parse_code("""
-                configuration test : eval
-                    feature Base { }
-                """, model)
-        self.assertEqual(model.name, "eval", "Name not set after configuration")
-        self.assertEqual(model.configuration_name, "test", "Configuration name not set")
-        self.assertEqual(len(model.features), 2, "Wrong set of features")
+        ("other_top_level", TOP_LEVEL, "feature Other { }", {"Base": False, "Other": True}),
+        # Only the configured feature is activated
+        # Input: the features Base and Other, 'feature Other { }'
+        # Expected Result: Other activated, Base not
 
-        self.assertIsNotNone(model.features["Base"], "Missing 'Base' feature")
-        self.assertEqual(model.features["Base"].name, "Base", "'Base' expected as feature name")
-        self.assertEqual(model.features["Base"].is_activated, True, "'base' must be set")
+        ("nested_simple", NESTED, "feature Base {\n activate inner, !inner2\n }",
+         {"Base": True, "Base.inner": True, "Base.inner2": False}),
+        # Sub-features are activated and deactivated by an activate list
+        # Input: 'feature Base { activate inner, !inner2 }'
+        # Expected Result: Base and inner activated, inner2 not
 
-        self.assertIsNotNone(model.features["Other"], "Missing 'Other' feature")
-        self.assertEqual(model.features["Other"].name, "Other", "'Other' expected as feature name")
-        self.assertEqual(model.features["Other"].is_activated, False, "'Other' must be set")
+        ("nested_complex1", NESTED, "feature Base {\n activate !inner2\n feature inner {}\n }",
+         {"Base": True, "Base.inner": True, "Base.inner2": False}),
+        # A configured sub-feature is activated
+        # Input: 'feature Base { activate !inner2 feature inner {} }'
+        # Expected Result: Base and inner activated, inner2 not
 
-    def test_visitFeatureConfiguration_nested_simple(self):
-        model = self.parse_declaration_code("""
-                model eval
-                    feature Base : "description" {
-                        sub multiple
-                            feature inner : "description inner"
-                            feature inner2 : "description inner2"
-                    }
-                """)
-        self.assertEqual(model.name, "eval", "Name not set")
+        ("nested_complex2", NESTED, "feature Base {\n feature inner {}\n }",
+         {"Base": True, "Base.inner": True, "Base.inner2": False}),
+        # A sub-feature that is not configured is not activated
+        # Input: 'feature Base { feature inner {} }'
+        # Expected Result: Base and inner activated, inner2 not
 
-        model:DeclarationModel = self.parse_code("""
-                configuration test : eval
-                    feature Base {
-                        activate inner, !inner2
-                    }
-                """, model)
+        ("nested_activate_only", NESTED, "feature Base {\n activate inner2\n }",
+         {"Base": True, "Base.inner": False, "Base.inner2": True}),
+        # Activating one sub-feature
+        # Input: 'feature Base { activate inner2 }'
+        # Expected Result: Base and inner2 activated, inner not
+    ])
+    def test_visitFeatureConfiguration(self, test_name, declaration, configuration, expected_activation):
+        model = self.parse_declaration_code(declaration)
+        self.assertEqual("eval", model.name, test_name)
 
-        self.assertEqual(model.name, "eval", "Name not set after configuration")
-        self.assertEqual(model.configuration_name, "test", "Configuration name not set")
-        self.assertEqual(len(model.features), 1, "Wrong set of features")
+        model: DeclarationModel = self.parse_code(f"configuration test : eval\n {configuration}", model)
 
-        base:Feature = model.features["Base"]
+        self.assertEqual("eval", model.name, test_name)
+        self.assertEqual("test", model.configuration_name, test_name)
+        self.assertEqual([path for path in expected_activation if "." not in path], list(model.features), test_name)
+        for path, expected in expected_activation.items():
+            names = path.split(".")
+            feature = model.features[names[0]]
+            for name in names[1:]:
+                feature = feature.resolve_feature(name)
+            self.assertIsNotNone(feature, f"{test_name}: {path}")
+            self.assertEqual(names[-1], feature.name, f"{test_name}: {path}")
+            self.assertEqual(expected, feature.is_activated, f"{test_name}: {path}")
 
-        self.assertIsNotNone(base, "Missing 'Base' feature")
-        self.assertEqual(base.name, "Base", "'Base' expected as feature name")
-        self.assertEqual(base.is_activated, True, "'Base' must be set to true")
-
-        inner = base.resolve_feature("inner")
-
-        self.assertIsNotNone(inner, "Missing 'inner' feature")
-        self.assertEqual(inner.name, "inner", "'inner' expected as feature name")
-        self.assertEqual(inner.is_activated, True, "'inner' must be set to true")
-
-        inner2 = base.resolve_feature("inner2")
-
-        self.assertIsNotNone(inner2, "Missing 'inner2' feature")
-        self.assertEqual(inner2.name, "inner2", "'inner2' expected as feature name")
-        self.assertEqual(inner2.is_activated, False, "'inner2' must be set to false")
-
-    def test_visitFeatureConfiguration_nested_complex1(self):
-        model = self.parse_declaration_code("""
-                model eval
-                    feature Base : "description" {
-                        sub multiple
-                            feature inner : "description inner"
-                            feature inner2 : "description inner2"
-                    }
-                """)
-        self.assertEqual(model.name, "eval", "Name not set")
-
-        model:DeclarationModel = self.parse_code("""
-                configuration test : eval
-                    feature Base {
-                        activate !inner2
-                        feature inner {}
-                    }
-                """, model)
-
-        self.assertEqual(model.name, "eval", "Name not set after configuration")
-        self.assertEqual(model.configuration_name, "test", "Configuration name not set")
-        self.assertEqual(len(model.features), 1, "Wrong set of features")
-
-        base:Feature = model.features["Base"]
-
-        self.assertIsNotNone(base, "Missing 'Base' feature")
-        self.assertEqual(base.name, "Base", "'Base' expected as feature name")
-        self.assertEqual(base.is_activated, True, "'Base' must be set to true")
-
-        inner = base.resolve_feature("inner")
-
-        self.assertIsNotNone(inner, "Missing 'inner' feature")
-        self.assertEqual(inner.name, "inner", "'inner' expected as feature name")
-        self.assertEqual(inner.is_activated, True, "'inner' must be set to true")
-
-        inner2 = base.resolve_feature("inner2")
-
-        self.assertIsNotNone(inner2, "Missing 'inner2' feature")
-        self.assertEqual(inner2.name, "inner2", "'inner2' expected as feature name")
-        self.assertEqual(inner2.is_activated, False, "'inner2' must be set to false")
-
-    def test_visitFeatureConfiguration_nested_complex2(self):
-        model = self.parse_declaration_code("""
-                model eval
-                    feature Base : "description" {
-                        sub multiple
-                            feature inner : "description inner"
-                            feature inner2 : "description inner2"
-                    }
-                """)
-        self.assertEqual(model.name, "eval", "Name not set")
-
-        model:DeclarationModel = self.parse_code("""
-                configuration test : eval
-                    feature Base {
-                        feature inner {}
-                    }
-                """, model)
-
-        self.assertEqual(model.name, "eval", "Name not set after configuration")
-        self.assertEqual(model.configuration_name, "test", "Configuration name not set")
-        self.assertEqual(len(model.features), 1, "Wrong set of features")
-
-        base:Feature = model.features["Base"]
-
-        self.assertIsNotNone(base, "Missing 'Base' feature")
-        self.assertEqual(base.name, "Base", "'Base' expected as feature name")
-        self.assertEqual(base.is_activated, True, "'Base' must be set to true")
-
-        inner = base.resolve_feature("inner")
-
-        self.assertIsNotNone(inner, "Missing 'inner' feature")
-        self.assertEqual(inner.name, "inner", "'inner' expected as feature name")
-        self.assertEqual(inner.is_activated, True, "'inner' must be set to true")
-
-        inner2 = base.resolve_feature("inner2")
-
-        self.assertIsNotNone(inner2, "Missing 'inner2' feature")
-        self.assertEqual(inner2.name, "inner2", "'inner2' expected as feature name")
-        self.assertEqual(inner2.is_activated, False, "'inner2' must be set to false")
 
 if __name__ == '__main__':
     unittest.main()

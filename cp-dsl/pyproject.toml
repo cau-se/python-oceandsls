@@ -38,7 +38,7 @@ classifiers = [
 [project.optional-dependencies]
 # Unit conversion (cpdsl.generator.calculator.unit_calculator) needs cfunits and the UDUNITS-2 C library
 units = ["cfunits"]
-test = ["pytest>=7"]
+test = ["pytest>=7", "parameterized"]
 
 [project.urls]
 "oceandsl · GitLab" = "https://git.se.informatik.uni-kiel.de/oceandsl"

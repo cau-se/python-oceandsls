@@ -32,6 +32,10 @@ from conflspserver.gen.python.Configuration.ConfigurationParser import Configura
 
 from cpdsl.common.logger import GeneratorLogger
 from cpdsl.common.configuration import CompileFlags
+from cpdsl.model.declaration_model import Parameter
+from cpdsl.model.type_system import Enumeral
+from cpdsl.model.arithmetic_model import ArithmeticExpression, MultiplicationExpression, EAdditionOperator, \
+    EMultiplicationOperator, IntValue, FloatValue, StringValue, BooleanValue, ArrayExpression
 
 class TestStream(InputStream):
 
@@ -116,3 +120,26 @@ class AbstractTestGeneratorConfigurationVisitor(unittest.TestCase):
         visitor.visit(parser.declarationModel())
 
         return model
+
+
+ARITHMETIC_OPERATORS = {EAdditionOperator.ADD: "+", EAdditionOperator.SUB: "-", EMultiplicationOperator.MULT: "*",
+                        EMultiplicationOperator.DIV: "/", EMultiplicationOperator.MOD: "%"}
+
+
+def describe_expression(expression):
+    """A comparable description of an expression of the arithmetic model as nested tuples, e.g.
+    ('+', ('int', 3), ('int', 4)) for 3 + 4, ('param', 'a') for a parameter reference and ('enum', 'red', 0) for an
+    enumeral."""
+    if isinstance(expression, (ArithmeticExpression, MultiplicationExpression)):
+        return (ARITHMETIC_OPERATORS.get(expression.op, expression.op), describe_expression(expression.left),
+                describe_expression(expression.right))
+    for value_class, kind in ((IntValue, "int"), (FloatValue, "float"), (StringValue, "str"), (BooleanValue, "bool")):
+        if isinstance(expression, value_class):
+            return (kind, expression.value)
+    if isinstance(expression, Parameter):
+        return ("param", expression.name)
+    if isinstance(expression, Enumeral):
+        return ("enum", expression.name, expression.value)
+    if isinstance(expression, ArrayExpression):
+        return ("array", [describe_expression(element) for element in expression.elements])
+    return expression

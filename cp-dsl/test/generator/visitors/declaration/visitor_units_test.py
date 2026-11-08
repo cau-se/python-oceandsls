@@ -16,11 +16,11 @@ __author__ = "reiner"
 
 import unittest
 
-from cpdsl.model.declaration_model import DeclarationModel, ParameterGroup, Parameter
-from cpdsl.model.unit_model import UnitSpecification, UnitKind, UnitPrefix, SIUnit, CustomUnit, DivisionUnit
+from parameterized import parameterized
 
-from antlr4 import ParserRuleContext, TerminalNode
-from antlr4.tree.Tree import TerminalNodeImpl
+from cpdsl.model.declaration_model import DeclarationModel, ParameterGroup, Parameter
+from cpdsl.model.unit_model import UnitSpecification, UnitKind, UnitPrefix, SIUnit, CustomUnit, DivisionUnit, \
+    ExponentUnit
 
 from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
 
@@ -29,169 +29,167 @@ from cpdsl.common.configuration import CompileFlags
 
 from generator.visitors.test_utils import AbstractTestGeneratorDeclarationVisitor
 
+METER = SIUnit(kind=UnitKind.Meter, prefix=None)
+GINI = CustomUnit(name="gini")
+
+
 class TestUnitGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisitor):
 
     logger = GeneratorLogger(CompileFlags.STRICT)
 
-    def test_visitSiunit_no_prefix(self):
-        # sIUnit                      :   (prefix=ePrefix)? type=eSIUnitType #siunit;
-        ctx = DeclarationParser.SiunitContext(parser=None, ctx = DeclarationParser.SIUnitContext(parent=None, parser=None))
+    @parameterized.expand([
+        ("no_prefix", None, "meter", None, UnitKind.Meter),
+        # sIUnit : (prefix=ePrefix)? type=eSIUnitType #siunit; without prefix
+        # Input: the unit type meter without prefix
+        # Expected Result: meter without prefix
+
+        ("prefix", "kilo", "meter", UnitPrefix.Kilo, UnitKind.Meter),
+        # A unit with prefix
+        # Input: the prefix kilo and the unit type meter
+        # Expected Result: kilometer
+
+        ("other_unit", "mega", "gram", UnitPrefix.Mega, UnitKind.Gram),
+        # Another prefix and unit type
+        # Input: the prefix mega and the unit type gram
+        # Expected Result: megagram
+
+        ("unit_without_prefix", None, "second", None, UnitKind.Second),
+        # Another unit type without prefix
+        # Input: the unit type second
+        # Expected Result: second without prefix
+    ])
+    def test_visitSiunit(self, test_name, prefix, kind, expected_prefix, expected_kind):
+        ctx = DeclarationParser.SiunitContext(parser=None,
+                                              ctx=DeclarationParser.SIUnitContext(parent=None, parser=None))
         ctx.prefix = None
+        if prefix is not None:
+            ctx.prefix = DeclarationParser.EPrefixContext(parser=None, parent=ctx)
+            setattr(ctx.prefix, prefix, self.set_token(prefix))
         ctx.type_ = DeclarationParser.ESIUnitTypeContext(parser=None, parent=ctx)
-        ctx.type_.meter = self.set_token("meter")
+        setattr(ctx.type_, kind, self.set_token(kind))
 
         result = self.make_visitor().visitSiunit(ctx)
-        unit = SIUnit(kind=UnitKind.Meter, prefix=None)
 
-        self.assertIsInstance(result, SIUnit, "Wrong type")
-        self.assertEqual(result.prefix, None, "Wrong prefix")
-        self.assertEqual(result.kind, UnitKind.Meter, "Wrong unit kind")
+        self.assertIsInstance(result, SIUnit, test_name)
+        self.assertEqual(expected_prefix, result.prefix, test_name)
+        self.assertEqual(expected_kind, result.kind, test_name)
 
-    def test_visitSiunit_prefix(self):
-        # sIUnit                      :   (prefix=ePrefix)? type=eSIUnitType #siunit;
-        ctx = DeclarationParser.SiunitContext(parser=None, ctx = DeclarationParser.SIUnitContext(parent=None, parser=None))
-        ctx.prefix = DeclarationParser.EPrefixContext(parser=None, parent=ctx)
-        ctx.prefix.kilo = self.set_token("kilo")
-        ctx.type_ = DeclarationParser.ESIUnitTypeContext(parser=None, parent=ctx)
-        ctx.type_.meter = self.set_token("meter")
+    @parameterized.expand([
+        ("name", "\"gini\"", "gini"),
+        # The quotes of a custom unit are removed
+        # Input: the custom unit "gini"
+        # Expected Result: the custom unit gini
 
-        result = self.make_visitor().visitSiunit(ctx)
-        unit = SIUnit(kind=UnitKind.Meter, prefix=None)
+        ("name_with_space", "\"mol photons\"", "mol photons"),
+        # Custom units may contain spaces
+        # Input: the custom unit "mol photons"
+        # Expected Result: the custom unit mol photons
 
-        self.assertIsInstance(result, SIUnit, "Wrong type")
-        self.assertEqual(result.prefix, UnitPrefix.Kilo, "Wrong prefix")
-        self.assertEqual(result.kind, UnitKind.Meter, "Wrong unit kind")
-
-    def test_visitCustomunit(self):
-        ctx = DeclarationParser.CustomunitContext(parser=None, ctx = DeclarationParser.CustomUnitContext(parser=None))
-        ctx.name = self.set_token("\"gini\"")
+        ("percent", "\"%\"", "%"),
+        # Custom units may be symbols
+        # Input: the custom unit "%"
+        # Expected Result: the custom unit %
+    ])
+    def test_visitCustomunit(self, test_name, name, expected_name):
+        ctx = DeclarationParser.CustomunitContext(parser=None, ctx=DeclarationParser.CustomUnitContext(parser=None))
+        ctx.name = self.set_token(name)
 
         result = self.make_visitor().visitCustomunit(ctx)
 
-        self.assertIsInstance(result, CustomUnit, "Wrong type")
-        self.assertEqual(result.name, "gini", "Wrong type")
+        self.assertIsInstance(result, CustomUnit, test_name)
+        self.assertEqual(expected_name, result.name, test_name)
 
-    def print_tree(self, ctx:ParserRuleContext, indent:str):
-        print(f"T{indent} NODE {ctx} {type(ctx)}")
-        if isinstance(ctx,TerminalNode):
-            return
-        for c in ctx.children:
-            self.print_tree(c,indent + "  ")
+    @parameterized.expand([
+        ("one_unit", "meter", METER),
+        # A single unit is not wrapped into a unit specification
+        # Input: 'def param int : meter'
+        # Expected Result: meter
 
-    def test_visitUnitSpecification_code_one(self):
-        model = self.parse_code("model eval group a : \"bla\" { def param int : meter } ")
-        group:ParameterGroup = model.groups.get("a")
-        parameter:Parameter = group.parameters.get("param")
+        ("prefixed_unit", "kilo meter", SIUnit(kind=UnitKind.Meter, prefix=UnitPrefix.Kilo)),
+        # A unit with prefix
+        # Input: 'def param int : kilo meter'
+        # Expected Result: kilometer
 
-        unit_meter = SIUnit(kind=UnitKind.Meter, prefix=None)
+        ("two_units", "meter * \"gini\"", UnitSpecification(units=[METER, GINI])),
+        # A product of units
+        # Input: 'def param int : meter * "gini"'
+        # Expected Result: a unit specification of meter and gini
 
-        p_unit:SIUnit = parameter.unit
-        self.assertIsInstance(p_unit, SIUnit, "Wrong type")
-        self.assertEqual(p_unit, unit_meter, "Wrong unit")
+        ("division", "\"num\" / \"denominator\"", DivisionUnit(numerator=CustomUnit(name="num"),
+                                                               denominator=CustomUnit(name="denominator"))),
+        # A division of custom units
+        # Input: 'def param int : "num" / "denominator"'
+        # Expected Result: num divided by denominator
 
-    def test_visitUnitSpecification_code_two(self):
-        model = self.parse_code("model eval group a : \"bla\" { def param int : meter * \"gini\" } ")
-        group:ParameterGroup = model.groups.get("a")
-        parameter:Parameter = group.parameters.get("param")
+        ("si_division", "kilo gram / second", DivisionUnit(
+            numerator=SIUnit(kind=UnitKind.Gram, prefix=UnitPrefix.Kilo),
+            denominator=SIUnit(kind=UnitKind.Second, prefix=None))),
+        # A division of SI units
+        # Input: 'def param int : kilo gram / second'
+        # Expected Result: kilogram divided by second
 
-        unit_meter = SIUnit(kind=UnitKind.Meter, prefix=None)
-        unit_gini = CustomUnit(name="gini")
+        ("exponent", "meter ** 2", ExponentUnit(unit=METER, exponent=2)),
+        # A unit with exponent
+        # Input: 'def param int : meter ** 2'
+        # Expected Result: meter to the power of 2
+    ])
+    def test_visitUnitSpecification_code(self, test_name, unit_code, expected_unit):
+        model: DeclarationModel = self.parse_code(f"model eval group a : \"bla\" {{ def param int : {unit_code} }} ")
+        group: ParameterGroup = model.groups.get("a")
+        parameter: Parameter = group.parameters.get("param")
 
-        p_unit:UnitSpecification = parameter.unit
-        self.assertIsInstance(p_unit, UnitSpecification, "Wrong type")
-        p_unit_meter = p_unit.units[0]
-        p_unit_gini = p_unit.units[1]
-        self.assertEqual(p_unit_meter, unit_meter, "Wrong unit")
-        self.assertEqual(p_unit_gini, unit_gini, "Wrong unit")
+        self.assertEqual(expected_unit, parameter.unit, test_name)
 
-    def test_visitUnitSpecification_one(self):
+    def unit_specification_context(self, units):
+        """A unitSpecification context of composed units, each an SI unit type or a quoted custom unit."""
         ctx = DeclarationParser.UnitSpecificationContext(parser=None, parent=None)
-        ctx_composed = DeclarationParser.ComposedUnitContext(parser=None, parent=ctx)
-        ctx.addChild(ctx_composed)
-        ctx.units.append(ctx_composed)
-        ctx_si = DeclarationParser.BasicUnitContext(parser=None, parent=ctx_composed)
-        ctx_composed.addChild(ctx_si)
-        ctx_meter = DeclarationParser.SiunitContext(parser=None, ctx=ctx_si)
-        ctx_si.addChild(ctx_meter)
-        ctx_t = DeclarationParser.ESIUnitTypeContext(parser=None, parent=ctx_meter)
-        ctx_meter.addChild(ctx_t)
-        ctx_meter.type_ = ctx_t
-        meter = self.set_terminal("meter")
-        ctx_t.addChild(meter)
-        ctx_t.meter = meter
+        for unit in units:
+            ctx_composed = DeclarationParser.ComposedUnitContext(parser=None, parent=ctx)
+            ctx.addChild(ctx_composed)
+            ctx.units.append(ctx_composed)
+            ctx_basic = DeclarationParser.BasicUnitContext(parser=None, parent=ctx_composed)
+            ctx_composed.addChild(ctx_basic)
+            terminal = self.set_terminal(unit)
+            if unit.startswith("\""):
+                ctx_custom = DeclarationParser.CustomunitContext(parser=None, ctx=ctx_basic)
+                ctx_basic.addChild(ctx_custom)
+                ctx_custom.addChild(terminal)
+                ctx_custom.name = terminal.getSymbol()
+            else:
+                ctx_si = DeclarationParser.SiunitContext(parser=None, ctx=ctx_basic)
+                ctx_basic.addChild(ctx_si)
+                ctx_type = DeclarationParser.ESIUnitTypeContext(parser=None, parent=ctx_si)
+                ctx_si.addChild(ctx_type)
+                ctx_si.type_ = ctx_type
+                ctx_type.addChild(terminal)
+                setattr(ctx_type, unit, terminal)
+        return ctx
 
-        result:SIUnit = self.make_visitor().visitUnitSpecification(ctx)
+    @parameterized.expand([
+        ("one_si_unit", ["meter"], METER),
+        # A specification of one unit is that unit
+        # Input: a unit specification context with meter
+        # Expected Result: meter
 
-        self.assertIsInstance(result, SIUnit, "Wrong type")
-        self.assertEqual(result.kind, UnitKind.Meter, "Wrong unit kind")
+        ("si_and_custom_unit", ["meter", "\"gini\""], UnitSpecification(units=[METER, GINI])),
+        # Several units form a unit specification
+        # Input: a unit specification context with meter and "gini"
+        # Expected Result: a unit specification of meter and gini
 
-    def test_visitUnitSpecification_two(self):
-        ctx = DeclarationParser.UnitSpecificationContext(parser=None, parent=None)
-        ctx_composed_meter = DeclarationParser.ComposedUnitContext(parser=None, parent=ctx)
-        ctx.addChild(ctx_composed_meter)
-        ctx.units.append(ctx_composed_meter)
-        ctx_si = DeclarationParser.BasicUnitContext(parser=None, parent=ctx_composed_meter)
-        ctx_composed_meter.addChild(ctx_si)
-        ctx_meter = DeclarationParser.SiunitContext(parser=None, ctx=ctx_si)
-        ctx_si.addChild(ctx_meter)
-        ctx_t = DeclarationParser.ESIUnitTypeContext(parser=None, parent=ctx_meter)
-        ctx_meter.addChild(ctx_t)
-        ctx_meter.type_ = ctx_t
-        meter = self.set_terminal("meter")
-        ctx_t.addChild(meter)
-        ctx_t.meter = meter
+        ("one_custom_unit", ["\"gini\""], GINI),
+        # A specification of one custom unit is that unit
+        # Input: a unit specification context with "gini"
+        # Expected Result: gini
 
-        ctx_composed_gini = DeclarationParser.ComposedUnitContext(parser=None, parent=ctx)
-        ctx.addChild(ctx_composed_gini)
-        ctx.units.append(ctx_composed_gini)
-        ctx_basic = DeclarationParser.BasicUnitContext(parser=None, parent=ctx_composed_gini)
-        ctx_composed_gini.addChild(ctx_basic)
-        ctx_gini = DeclarationParser.CustomunitContext(parser=None, ctx=ctx_basic)
-        ctx_basic.addChild(ctx_gini)
-        gini:TerminalNodeImpl = self.set_terminal("\"gini\"")
-        ctx_gini.addChild(gini)
-        ctx_gini.name = gini.getSymbol()
-
-        result:UnitSpecification = self.make_visitor().visitUnitSpecification(ctx)
-
-        self.assertIsInstance(result, UnitSpecification, "Wrong type")
-        self.assertEqual(len(result.units),2, "Wrong number of units")
-        unit1:SIUnit = result.units[0]
-        self.assertIsInstance(unit1, SIUnit, "Wrong type")
-        self.assertEqual(unit1.kind, UnitKind.Meter, "Wrong unit kind")
-        unit2:CustomUnit = result.units[1]
-        self.assertIsInstance(unit2, CustomUnit, "Wrong type")
-        self.assertEqual(unit2.name, "gini", "Wrong kind")
-
-
-    def test_visitComposedUnit(self):
-        code = """
-            model eval
-
-            group a : "a description" {
-                def m float : "num" / "denominator"
-            }
-        """
-
-        model:DeclarationModel = self.parse_code(code)
-
-        group:ParameterGroup = model.groups["a"]
-        parameter:Parameter = group.parameters["m"]
-        division_unit:DivisionUnit = parameter.unit
-
-        self.assertIsInstance(division_unit, DivisionUnit, "Wrong object type")
-
-        d = division_unit.denominator
-        n = division_unit.numerator
-
-        self.assertIsNotNone(d, "Missing denominator")
-        self.assertIsNotNone(n, "Missing numerator")
-
-        self.assertIsInstance(d, CustomUnit, "Must be CustomUnit")
-        self.assertIsInstance(n, CustomUnit, "Must be CustomUnit")
-
-        self.assertEqual(d.name, "denominator", "Wrong denominator")
-        self.assertEqual(n.name, "num", "Wrong numerator")
+        ("three_units", ["meter", "second", "\"gini\""],
+         UnitSpecification(units=[METER, SIUnit(kind=UnitKind.Second, prefix=None), GINI])),
+        # Three units
+        # Input: a unit specification context with meter, second and "gini"
+        # Expected Result: a unit specification of meter, second and gini
+    ])
+    def test_visitUnitSpecification(self, test_name, units, expected_unit):
+        result = self.make_visitor().visitUnitSpecification(self.unit_specification_context(units))
+        self.assertEqual(expected_unit, result, test_name)
 
 
 if __name__ == '__main__':

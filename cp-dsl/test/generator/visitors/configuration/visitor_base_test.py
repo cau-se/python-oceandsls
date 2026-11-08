@@ -16,49 +16,66 @@ __author__ = "reiner"
 
 import unittest
 
+from parameterized import parameterized
+
 from cpdsl.model.declaration_model import DeclarationModel
 
 from generator.visitors.test_utils import AbstractTestGeneratorConfigurationVisitor
 
+
 class TestBaseGeneratorConfigurationVisitor(AbstractTestGeneratorConfigurationVisitor):
 
-    def test_visitConfigurationModel_plain(self):
-        model = self.parse_declaration_code("model eval")
-        self.assertEqual(model.name, "eval", "Name not set")
+    @parameterized.expand([
+        ("plain", "model eval", "configuration test : eval", "test", [], []),
+        # A configuration sets its name and keeps the model name
+        # Input: the declaration 'model eval' and 'configuration test : eval'
+        # Expected Result: the model eval with the configuration test, no groups and features
 
-        model = self.parse_code("configuration test : eval", model)
-        self.assertEqual(model.name, "eval", "Name not set after configuration")
-        self.assertEqual(model.configuration_name, "test", "Configuration name not set")
-
-    def test_visitConfigurationModel_group(self):
-        model = self.parse_declaration_code("""
+        ("group", """
                 model eval
                     group example : "description" {
                         def param1 int : meter = 0
                     }
-                """)
-        self.assertEqual(model.name, "eval", "Name not set")
+                """, "configuration test : eval", "test", ["example"], []),
+        # The groups of the declaration are kept
+        # Input: a declaration with the group example and 'configuration test : eval'
+        # Expected Result: the model eval with the configuration test and the group example
 
-        model:DeclarationModel = self.parse_code("configuration test : eval", model)
-        self.assertEqual(model.name, "eval", "Name not set after configuration")
-        self.assertEqual(model.configuration_name, "test", "Configuration name not set")
-        self.assertEqual(len(model.groups), 1, "Wrong set of groups")
-        self.assertIsNotNone(model.groups["example"], "Missing group")
-        self.assertEqual(model.groups["example"].name, "example", "Wrong group name")
-
-    def test_visitConfigurationModel_feature(self):
-        model = self.parse_declaration_code("""
+        ("feature", """
                 model eval
                     feature Base : "description"
-                """)
-        self.assertEqual(model.name, "eval", "Name not set")
+                """, "configuration test : eval", "test", [], ["Base"]),
+        # The features of the declaration are kept
+        # Input: a declaration with the feature Base and 'configuration test : eval'
+        # Expected Result: the model eval with the configuration test and the feature Base
 
-        model:DeclarationModel = self.parse_code("configuration test : eval", model)
-        self.assertEqual(model.name, "eval", "Name not set after configuration")
-        self.assertEqual(model.configuration_name, "test", "Configuration name not set")
-        self.assertEqual(len(model.features), 1, "Wrong set of features")
-        self.assertIsNotNone(model.features["Base"], "Missing feature")
-        self.assertEqual(model.features["Base"].name, "Base", "Wrong feature name")
+        ("group_and_feature", """
+                model eval
+                    group example : "description" {
+                        def param1 int : meter = 0
+                    }
+                    feature Base : "description"
+                """, "configuration other : eval", "other", ["example"], ["Base"]),
+        # Groups and features together, another configuration name
+        # Input: a declaration with the group example and the feature Base, 'configuration other : eval'
+        # Expected Result: the model eval with the configuration other, the group example and the feature Base
+    ])
+    def test_visitConfigurationModel(self, test_name, declaration, configuration, expected_configuration,
+                                     expected_groups, expected_features):
+        model = self.parse_declaration_code(declaration)
+        self.assertEqual("eval", model.name, test_name)
+
+        model: DeclarationModel = self.parse_code(configuration, model)
+
+        self.assertEqual("eval", model.name, test_name)
+        self.assertEqual(expected_configuration, model.configuration_name, test_name)
+        self.assertEqual(expected_groups, list(model.groups), test_name)
+        for name in expected_groups:
+            self.assertEqual(name, model.groups[name].name, test_name)
+        self.assertEqual(expected_features, list(model.features), test_name)
+        for name in expected_features:
+            self.assertEqual(name, model.features[name].name, test_name)
+
 
 if __name__ == '__main__':
     unittest.main()

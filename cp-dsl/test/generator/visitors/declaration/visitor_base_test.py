@@ -16,13 +16,39 @@ __author__ = "reiner"
 
 import unittest
 
+from parameterized import parameterized
+
 from generator.visitors.test_utils import AbstractTestGeneratorDeclarationVisitor
+
 
 class TestBaseGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisitor):
 
-    def test_visitDeclarationModel(self):
-        model = self.parse_code("model eval")
-        self.assertEqual(model.name, "eval", "Name not set")
+    @parameterized.expand([
+        ("model_name", "model eval", "eval", []),
+        # The model statement sets the name of the model
+        # Input: 'model eval'
+        # Expected Result: the model eval without types
+
+        ("name_with_digit", "model m2", "m2", []),
+        # Model names may contain digits
+        # Input: 'model m2'
+        # Expected Result: the model m2
+
+        ("surrounding_whitespace", " model   spaced  ", "spaced", []),
+        # Whitespace is ignored
+        # Input: ' model   spaced  '
+        # Expected Result: the model spaced
+
+        ("model_with_types", "model eval\n types\n enum Color { red, green }", "eval", ["Color"]),
+        # The name is set for models with declarations as well
+        # Input: the model eval with the enumeration type Color
+        # Expected Result: the model eval with the type Color
+    ])
+    def test_visitDeclarationModel(self, test_name, code, expected_name, expected_types):
+        model = self.parse_code(code)
+        self.assertEqual(expected_name, model.name, test_name)
+        self.assertEqual(expected_types, list(model.types), test_name)
+
 
 if __name__ == '__main__':
     unittest.main()

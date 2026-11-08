@@ -16,125 +16,99 @@ __author__ = "reiner"
 
 import unittest
 
-from cpdsl.model.declaration_model import DeclarationModel, ParameterGroup, Parameter, SelectorExpression
-from cpdsl.model.arithmetic_model import IntValue, ArrayExpression
+from parameterized import parameterized
 
-from generator.visitors.test_utils import AbstractTestGeneratorConfigurationVisitor
+from cpdsl.model.declaration_model import DeclarationModel, ParameterGroup, Parameter, SelectorExpression
+
+from generator.visitors.test_utils import AbstractTestGeneratorConfigurationVisitor, describe_expression
+
+DECLARATION = """
+        model eval
+            group my_group : "my group" {
+                def scalar int : meter , "scalar description" = 5
+                def array int[5] : meter , "array description" = [ 2,4,6,8 ]
+                def dyn_array int[] : meter , "dyn_array description"
+                def dyn2_array int[,] : meter , "dyn2_array description"
+            }
+        """
+ARRAY_DEFAULT = ("array", [("int", 2), ("int", 4), ("int", 6), ("int", 8)])
+
+
+def describe_entry(entry):
+    """A selector expression as ('select', selectors, expression), other entries as their expression."""
+    if isinstance(entry, SelectorExpression):
+        return ("select", entry.selectors, describe_expression(entry.expression))
+    return describe_expression(entry)
+
 
 class TestParameterGeneratorConfigurationVisitor(AbstractTestGeneratorConfigurationVisitor):
 
     def create_declaration_model(self):
-        model = self.parse_declaration_code("""
-                model eval
-                    group my_group : "my group" {
-                        def scalar int : meter , "scalar description" = 5
-                        def array int[5] : meter , "array description" = [ 2,4,6,8 ]
-                        def dyn_array int[] : meter , "dyn_array description"
-                        def dyn2_array int[,] : meter , "dyn2_array description"
-                    }
-                """)
-        self.assertEqual(model.name, "eval", "Name not set")
-
+        model = self.parse_declaration_code(DECLARATION)
+        self.assertEqual("eval", model.name, "Name not set")
         return model
 
-    def test_visit_parameter_group(self):
-        model:DeclarationModel = self.parse_code("""
+    @parameterized.expand([
+        ("scalar_twice", "scalar : 7\nscalar : 8", "scalar", ("int", 5), [("int", 7), ("int", 8)]),
+        # Each configuration of a parameter is an entry, the declared default value is kept
+        # Input: 'scalar : 7' and 'scalar : 8'
+        # Expected Result: the default value 5 and the entries 7 and 8
+
+        ("scalar_expression", "scalar : 2 + 3", "scalar", ("int", 5), [("+", ("int", 2), ("int", 3))]),
+        # A configured expression
+        # Input: 'scalar : 2 + 3'
+        # Expected Result: the entry 2 + 3
+
+        ("array", "array: [ 3,5,7,9,11 ]", "array", ARRAY_DEFAULT,
+         [("array", [("int", 3), ("int", 5), ("int", 7), ("int", 9), ("int", 11)])]),
+        # A complete array
+        # Input: 'array: [ 3,5,7,9,11 ]'
+        # Expected Result: the default value [2,4,6,8] and the array entry [3,5,7,9,11]
+
+        ("array_selectors", "array[0]: 3\narray[1,3]: [ 5,7,9 ]\narray[4]: 11", "array", ARRAY_DEFAULT,
+         [("select", [[0]], ("int", 3)), ("select", [[1], [3]], ("array", [("int", 5), ("int", 7), ("int", 9)])),
+          ("select", [[4]], ("int", 11))]),
+        # Parts of an array selected by index
+        # Input: 'array[0]: 3', 'array[1,3]: [ 5,7,9 ]' and 'array[4]: 11'
+        # Expected Result: three selector entries with their selectors and values
+
+        ("selector_expression", "array[2]: 4 * 2", "array", ARRAY_DEFAULT, [("select", [[2]], ("*", ("int", 4),
+                                                                                              ("int", 2)))]),
+        # A selected element with an expression
+        # Input: 'array[2]: 4 * 2'
+        # Expected Result: a selector entry for index 2 with 4 * 2
+
+        ("dynamic_array", "dyn_array: [ 1 ]", "dyn_array", None, [("array", [("int", 1)])]),
+        # An array of open size
+        # Input: 'dyn_array: [ 1 ]'
+        # Expected Result: no default value, the array entry [1]
+
+        ("two_dimensional_selector", "dyn2_array[0,1]: 5", "dyn2_array", None, [("select", [[0], [1]], ("int", 5))]),
+        # A selector of a two-dimensional array
+        # Input: 'dyn2_array[0,1]: 5'
+        # Expected Result: a selector entry for 0, 1 with the value 5
+    ])
+    def test_visit_parameter(self, test_name, configuration, name, expected_default, expected_entries):
+        model: DeclarationModel = self.parse_code(f"""
                 configuration test : eval
 
-                group my_group {
-                    scalar : 7
-                    scalar : 8
-                }
+                group my_group {{
+                    {configuration}
+                }}
                 """, self.create_declaration_model())
 
-        self.assertEqual(model.name, "eval", "Name not set after configuration")
-        self.assertEqual(model.configuration_name, "test", "Configuration name not set")
+        self.assertEqual("eval", model.name, test_name)
+        self.assertEqual("test", model.configuration_name, test_name)
+        group: ParameterGroup = model.groups['my_group']
+        self.assertIsInstance(group, ParameterGroup, test_name)
+        parameter: Parameter = group.parameters[name]
+        self.assertIsInstance(parameter, Parameter, test_name)
+        self.assertEqual(expected_default, describe_expression(parameter.default_value), test_name)
+        self.assertEqual(expected_entries, [describe_entry(entry) for entry in parameter.entries], test_name)
+        for other in group.parameters.values():
+            if other is not parameter:
+                self.assertEqual([], other.entries, f"{test_name}: {other.name}")
 
-        group:ParameterGroup = model.groups['my_group']
-        self.assertIsInstance(group, ParameterGroup, "Missing parameter group 'my_group'")
-        parameter:Parameter = group.parameters['scalar']
-        self.assertIsInstance(parameter, Parameter, "Missing parameter scalar")
-        default_value = parameter.default_value
-        self.assertIsInstance(default_value, IntValue, "Wrong value type for declaration")
-        self.assertEqual(default_value.value, 5, "Wrong declaration value")
-        expression = parameter.entries[0]
-        self.assertIsInstance(expression, IntValue, "Wrong value type for configuration (1)")
-        self.assertEqual(expression.value, 7, "Wrong configuration value (1)")
-        expression = parameter.entries[1]
-        self.assertIsInstance(expression, IntValue, "Wrong value type for configuration (2)")
-        self.assertEqual(expression.value, 8, "Wrong configuration value (2)")
-
-    def test_visit_parameter_array(self):
-        model:DeclarationModel = self.parse_code("""
-                configuration test : eval
-
-                group my_group {
-                    array: [ 3,5,7,9,11 ]
-                }
-                """, self.create_declaration_model())
-
-        self.assertEqual(model.name, "eval", "Name not set after configuration")
-        self.assertEqual(model.configuration_name, "test", "Configuration name not set")
-
-        my_group:ParameterGroup = model.groups['my_group']
-
-        self.assertIsInstance(my_group, ParameterGroup, "Parameter group 'my_group' is missing")
-
-        array:Parameter = my_group.parameters['array']
-
-        self.assertIsInstance(array, Parameter, "Parameter 'array' is missing")
-        self.assertIsInstance(array.default_value, ArrayExpression, "Wrong default value")
-        self.assertEqual(len(array.entries), 1, "Wrong number of entries")
-
-        array_value:ArrayExpression = array.entries[0]
-        self.assertIsInstance(array_value, ArrayExpression, "Wrong expression type")
-        self.assertEqual(len(array_value.elements), 5, "Wrong number of entries")
-
-        self.assertEqual(array_value.elements[0].value, 3, "Wrong 1st value")
-        self.assertEqual(array_value.elements[1].value, 5, "Wrong 2nd value")
-        self.assertEqual(array_value.elements[2].value, 7, "Wrong 3rd value")
-        self.assertEqual(array_value.elements[3].value, 9, "Wrong 4th value")
-        self.assertEqual(array_value.elements[4].value, 11, "Wrong 5th value")
-
-    def test_visit_parameter_array_multiple(self):
-        model:DeclarationModel = self.parse_code("""
-                configuration test : eval
-
-                group my_group {
-                    array[0]: 3
-                    array[1,3]: [ 5,7,9 ]
-                    array[4]: 11
-                }
-                """, self.create_declaration_model())
-
-        self.assertEqual(model.name, "eval", "Name not set after configuration")
-        self.assertEqual(model.configuration_name, "test", "Configuration name not set")
-
-        my_group:ParameterGroup = model.groups['my_group']
-
-        self.assertIsInstance(my_group, ParameterGroup, "Parameter group 'my_group' is missing")
-
-        array:Parameter = my_group.parameters['array']
-
-        self.assertIsInstance(array, Parameter, "Parameter 'array' is missing")
-        self.assertIsInstance(array.default_value, ArrayExpression, "Wrong default value")
-        self.assertEqual(len(array.entries), 3, "Wrong number of entries")
-
-        array_value:SelectorExpression = array.entries[0]
-        self.assertIsInstance(array_value, SelectorExpression, "Wrong expression type (1)")
-        value = array_value.expression
-        self.assertIsInstance(value, IntValue, "Wrong expression type")
-        self.assertEqual(value.value, 3, "Wrong 1st value")
-
-        array_value:ArrayExpression = array.entries[1]
-        self.assertIsInstance(array_value, SelectorExpression, "Wrong expression type (2)")
-        value:ArrayExpression = array_value.expression
-        self.assertIsInstance(value, ArrayExpression, "Wrong expression type")
-        self.assertEqual(len(value.elements), 3, "Wrong number of entries")
-
-        self.assertEqual(value.elements[0].value, 5, "Wrong 2nd value")
-        self.assertEqual(value.elements[1].value, 7, "Wrong 3rd value")
-        self.assertEqual(value.elements[2].value, 9, "Wrong 4th value")
 
 if __name__ == '__main__':
     unittest.main()

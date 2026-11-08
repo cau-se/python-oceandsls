@@ -16,8 +16,10 @@ __author__ = "reiner"
 
 import unittest
 
+from parameterized import parameterized
+
 from cpdsl.model.declaration_model import Feature, EKind
-from antlr4 import ParserRuleContext
+from cpdsl.model.type_system import BaseType
 
 from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
 
@@ -26,122 +28,184 @@ from cpdsl.common.configuration import CompileFlags
 
 from generator.visitors.test_utils import AbstractTestGeneratorDeclarationVisitor
 
+PARAMETER_MODEL = """
+    model eval
+        required feature Base : "Base description" {
+            group TestParams : "Parameter group description" {
+                def p1 int : meter , "p1 description" = 0
+                def p2 float : meter = 2.5
+                def p3 int : meter = 7
+            }
+        }
+"""
+
+RELATIONS_MODEL = """
+    model eval
+        required feature Base : "Base description" {
+            sub alternative
+                feature Feat1 : "Feature one"
+                feature Feat2 : "Feature two"
+        }
+        feature Second : "Second description" {
+            requires Base
+        }
+        feature Alternate : "Alternate description" {
+            requires Base, Second
+            excludes Base.Feat2
+        }
+"""
+
+FEATURE_SET_MODEL = """
+    model eval
+        required feature Base : "Base description" {
+            sub %s
+                feature Feat1 : "Feature one"
+                feature Feat2 : "Feature two"
+        }
+        feature Optional : "Optional description"
+"""
+
+
+def find_feature(model, path):
+    """A top-level feature by name or a sub-feature of the first feature set as 'Feature.SubFeature'."""
+    names = path.split(".")
+    feature = model.features.get(names[0])
+    for name in names[1:]:
+        feature = feature.feature_sets[0].features.get(name)
+    return feature
+
+
 class TestFeatureGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisitor):
 
     logger = GeneratorLogger(CompileFlags.STRICT)
 
-    def test_visitFeatureAssignStat_parameter(self):
-        code = """
-            model eval
-                required feature Base : "Base description" {
-                    group TestParams : "Parameter group description" {
-                        def p1 int : meter , "p1 description" = 0
-                    }
-                }
-        """
+    @parameterized.expand([
+        ("int_parameter_with_description", "p1", BaseType("int"), 0, "\"p1 description\""),
+        # Parameters of a group belong to the group of their feature
+        # Input: 'def p1 int : meter , "p1 description" = 0' in the group TestParams of the feature Base
+        # Expected Result: p1 of type int with the default value 0 and its description
 
-        model = self.parse_code(code)
+        ("float_parameter", "p2", BaseType("float"), 2.5, ""),
+        # A parameter without description
+        # Input: 'def p2 float : meter = 2.5'
+        # Expected Result: p2 of type float with the default value 2.5
 
-    def test_visitFeatureAssignStat_requires_excludes(self):
-        code = """
-            model eval
-                required feature Base : "Base description" {
-                    sub alternative
-                        feature Feat1 : "Feature one"
-                        feature Feat2 : "Feature two"
-                }
-                feature Second : "Second description" {
-                    requires Base
-                }
-                feature Alternate : "Alternate description" {
-                    requires Base, Second
-                    excludes Base.Feat2
-                }
-        """
+        ("last_parameter", "p3", BaseType("int"), 7, ""),
+        # The last parameter of the group
+        # Input: 'def p3 int : meter = 7'
+        # Expected Result: p3 of type int with the default value 7
+    ])
+    def test_visitFeatureAssignStat_parameter(self, test_name, name, expected_type, expected_value,
+                                              expected_description):
+        model = self.parse_code(PARAMETER_MODEL)
 
-        model = self.parse_code(code)
+        base_feature: Feature = model.features.get("Base")
+        self.assertEqual(["Base"], list(model.features), test_name)
+        self.assertEqual(["TestParams"], list(base_feature.groups), test_name)
+        group = base_feature.groups["TestParams"]
+        self.assertEqual("Parameter group description", group.description, test_name)
+        self.assertEqual(["p1", "p2", "p3"], list(group.parameters), test_name)
+        parameter = group.parameters[name]
+        self.assertEqual(expected_type, parameter.type, test_name)
+        self.assertEqual(expected_value, parameter.default_value.value, test_name)
+        self.assertEqual(expected_description, parameter.description, test_name)
 
-        base_feature:Feature = model.features.get("Base")
+    @parameterized.expand([
+        ("no_relations", "Base", [], []),
+        # A feature without requires and excludes
+        # Input: the feature Base
+        # Expected Result: no required and no excluded features
 
-        self.assertIsInstance(base_feature, Feature, f"Wrong type {type(base_feature)}")
-        self.assertEqual(base_feature.name, "Base", "Wrong feature")
+        ("requires_one", "Second", ["Base"], []),
+        # A feature requiring another feature
+        # Input: 'requires Base'
+        # Expected Result: the feature Base is required
 
-        second_feature:Feature = model.features.get("Second")
+        ("requires_two_excludes_sub_feature", "Alternate", ["Base", "Second"], ["Base.Feat2"]),
+        # Several required features and an excluded sub-feature
+        # Input: 'requires Base, Second' and 'excludes Base.Feat2'
+        # Expected Result: Base and Second are required, Feat2 of Base is excluded
+    ])
+    def test_visitFeatureAssignStat_requires_excludes(self, test_name, feature_name, expected_requires,
+                                                      expected_excludes):
+        model = self.parse_code(RELATIONS_MODEL)
 
-        self.assertIsInstance(second_feature, Feature, f"Wrong type {type(second_feature)}")
-        self.assertEqual(second_feature.name, "Second", "Wrong feature")
+        feature: Feature = model.features.get(feature_name)
 
-        self.assertEqual(len(second_feature.requires), 1, "Wrong number of required features")
-        self.assertEqual(second_feature.requires[0].name, "Base", "Wrong feature")
+        self.assertIsInstance(feature, Feature, test_name)
+        self.assertEqual(feature_name, feature.name, test_name)
+        self.assertEqual(len(expected_requires), len(feature.requires), test_name)
+        for required, path in zip(feature.requires, expected_requires):
+            self.assertIs(find_feature(model, path), required, f"{test_name}: {path}")
+        self.assertEqual(len(expected_excludes), len(feature.excludes), test_name)
+        for excluded, path in zip(feature.excludes, expected_excludes):
+            self.assertIs(find_feature(model, path), excluded, f"{test_name}: {path}")
 
-        alternate_feature:Feature = model.features.get("Alternate")
+    @parameterized.expand([
+        ("required_feature", "alternative", "Base", "Base description", True, [EKind.ALTERNATIVE]),
+        # A required feature with a feature set
+        # Input: 'required feature Base : "Base description" { sub alternative ... }'
+        # Expected Result: the required feature Base with one alternative feature set of Feat1 and Feat2
 
-        self.assertIsInstance(alternate_feature, Feature, f"Wrong type {type(alternate_feature)}")
-        self.assertEqual(alternate_feature.name, "Alternate", "Wrong feature")
+        ("multiple_feature_set", "multiple", "Base", "Base description", True, [EKind.MULTIPLE]),
+        # A feature set of which several features may be selected
+        # Input: 'required feature Base : "Base description" { sub multiple ... }'
+        # Expected Result: the required feature Base with one multiple feature set of Feat1 and Feat2
 
-        self.assertEqual(len(alternate_feature.requires), 2, "Wrong number of required features")
-        r1 = alternate_feature.requires[0]
-        r2 = alternate_feature.requires[1]
-        self.assertEqual(r1, base_feature, "Wrong feature {base_feature.name}")
-        self.assertEqual(r2, second_feature, "Wrong feature {second_feature.name}")
+        ("first_sub_feature", "alternative", "Base.Feat1", "Feature one", False, []),
+        # The first feature of the feature set
+        # Input: 'feature Feat1 : "Feature one"'
+        # Expected Result: the optional feature Feat1 without feature sets
 
-        e1 = alternate_feature.excludes[0]
-        feat2 = base_feature.feature_sets[0].features['Feat2']
-        self.assertEqual(e1, feat2, "Wrong feature {feat2.name}")
+        ("second_sub_feature", "alternative", "Base.Feat2", "Feature two", False, []),
+        # The second feature of the feature set
+        # Input: 'feature Feat2 : "Feature two"'
+        # Expected Result: the optional feature Feat2 without feature sets
 
+        ("optional_feature", "multiple", "Optional", "Optional description", False, []),
+        # A feature without 'required' and body
+        # Input: 'feature Optional : "Optional description"'
+        # Expected Result: the optional feature Optional without feature sets
+    ])
+    def test_visitFeatureGroupAssignStat_base(self, test_name, kind, path, expected_description, expected_required,
+                                              expected_kinds):
+        model = self.parse_code(FEATURE_SET_MODEL % kind)
 
-    def create_feature(self, name:str, required: bool, description:str, parent:ParserRuleContext=None):
-        feature = DeclarationParser.FeatureAssignStatContext(parser=None, ctx=parent)
-        feature.required = self.set_token("required")
-        feature.name = self.set_token(f"\"{name}\"")
-        feature.description = self.set_token(f"\"{description}\"")
+        feature: Feature = find_feature(model, path)
 
-        return feature
+        self.assertIsInstance(feature, Feature, test_name)
+        self.assertEqual(path.split(".")[-1], feature.name, test_name)
+        self.assertEqual(expected_description, feature.description, test_name)
+        self.assertEqual(expected_required, feature.required, test_name)
+        self.assertEqual(expected_kinds, [feature_set.kind for feature_set in feature.feature_sets], test_name)
+        for feature_set in feature.feature_sets:
+            self.assertEqual(["Feat1", "Feat2"], list(feature_set.features), test_name)
 
-    def test_visitFeatureGroupAssignStat_base(self):
-        code = """
-            model eval
-                required feature Base : "Base description" {
-                    sub alternative
-                        feature Feat1 : "Feature one"
-                        feature Feat2 : "Feature two"
-                }
-        """
+    @parameterized.expand([
+        ("alternative", "alternative", EKind.ALTERNATIVE),
+        # The alternative token
+        # Input: an EKind context with the token alternative
+        # Expected Result: EKind.ALTERNATIVE
 
-        model = self.parse_code(code)
+        ("multiple", "multiple", EKind.MULTIPLE),
+        # The multiple token
+        # Input: an EKind context with the token multiple
+        # Expected Result: EKind.MULTIPLE
 
-        base_feature:Feature = model.features.get("Base")
-
-        self.assertIsInstance(base_feature, Feature, f"Wrong type {type(base_feature)}")
-        self.assertEqual(base_feature.name, "Base", "Wrong feature")
-        self.assertEqual(base_feature.description, "Base description", "Wrong description")
-        self.assertEqual(base_feature.required, True, "Feature must be required")
-        self.assertEqual(len(base_feature.feature_sets), 1, "Wrong number of feature groups")
-        feature_set = base_feature.feature_sets[0]
-        f1 = feature_set.features.get("Feat1")
-        f2 = feature_set.features.get("Feat2")
-
-        self.assertIsInstance(f1, Feature, f"Wrong type {type(f1)}")
-        self.assertEqual(f1.name, "Feat1", "Wrong feature name")
-        self.assertEqual(f1.description, "Feature one", "Wrong description")
-
-        self.assertIsInstance(f2, Feature, f"Wrong type {type(f2)}")
-        self.assertEqual(f2.name, "Feat2", "Wrong feature name")
-        self.assertEqual(f2.description, "Feature two", "Wrong description")
-
-    def test_visitEKind_alternative(self):
+        ("no_kind", None, None),
+        # A context without kind is an internal error
+        # Input: an EKind context without token
+        # Expected Result: None
+    ])
+    def test_visitEKind(self, test_name, token, expected_kind):
         kind_ctx = DeclarationParser.EKindContext(parent=None, parser=None)
-        kind_ctx.alternative = self.set_token('alternative')
+        if token is not None:
+            setattr(kind_ctx, token, self.set_token(token))
 
         result = self.make_visitor().visitEKind(kind_ctx)
-        self.assertEqual(result, EKind.ALTERNATIVE, "Wrong kind of feature group")
 
-    def test_visitEKind_multiple(self):
-        kind_ctx = DeclarationParser.EKindContext(parent=None, parser=None)
-        kind_ctx.multiple = self.set_token('multiple')
+        self.assertEqual(expected_kind, result, test_name)
 
-        result = self.make_visitor().visitEKind(kind_ctx)
-        self.assertEqual(result, EKind.MULTIPLE, "Wrong kind of feature group")
 
 if __name__ == '__main__':
     unittest.main()

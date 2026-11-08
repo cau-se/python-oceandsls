@@ -16,327 +16,339 @@ __author__ = "reiner"
 
 import unittest
 
+from parameterized import parameterized
+
 from cpdsl.model.declaration_model import DeclarationModel, ParameterGroup, Parameter
-from cpdsl.model.type_system import Enumeral, BaseType
-from cpdsl.model.arithmetic_model import IntValue, StringValue, FloatValue, ArithmeticExpression, MultiplicationExpression, \
-    EMultiplicationOperator, EAdditionOperator, ArrayExpression
+from cpdsl.model.type_system import BaseType
+from cpdsl.model.arithmetic_model import IntValue, StringValue, FloatValue
 
 from dcllspserver.gen.python.Declaration.DeclarationParser import DeclarationParser
 
 from cpdsl.common.logger import GeneratorLogger
 from cpdsl.common.configuration import CompileFlags
 
-from generator.visitors.test_utils import AbstractTestGeneratorDeclarationVisitor
+from generator.visitors.test_utils import AbstractTestGeneratorDeclarationVisitor, describe_expression
+
+VALUE_CONTEXTS = {"long": DeclarationParser.LongValueContext, "double": DeclarationParser.DoubleValueContext,
+                  "string": DeclarationParser.StringValueContext}
+
+ENUMERATION_TYPES = """
+            types
+                enum Color { red, green, blue }"""
+
 
 class TestArithmeticGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisitor):
 
     logger = GeneratorLogger(CompileFlags.STRICT)
 
-    def test_visitArithmeticExpression(self):
-        model = self.parse_code("model eval group g : \"group description\" { def param1 int : meter = 3 + 4 }")
+    def default_value(self, expression):
+        model = self.parse_code(
+            f"model eval group g : \"group description\" {{ def param1 int : meter = {expression} }}")
 
-        group:ParameterGroup = model.groups.get("g")
+        group: ParameterGroup = model.groups.get("g")
+        self.assertIsInstance(group, ParameterGroup)
+        self.assertEqual(("g", "group description"), (group.name, group.description))
+        self.assertEqual(["param1"], list(group.parameters))
+        parameter = group.parameters["param1"]
+        self.assertEqual(BaseType("int"), parameter.type)
+        self.assertEqual("", parameter.description)
+        return parameter.default_value
 
-        self.assertIsInstance(group, ParameterGroup, f"Wrong type {type(group)}")
-        self.assertEqual(group.name, "g", "Wrong name")
-        self.assertEqual(group.description, "group description", "Wrong description")
+    def literal_context(self, kind, token, parent=None):
+        """A literal context with a long, double or string value context for the token."""
+        literal = DeclarationParser.LiteralContext(parent=parent, parser=None)
+        value = VALUE_CONTEXTS[kind](parent=literal, parser=None)
+        literal.addChild(value)
+        value.value = self.set_token(token)
+        return literal
 
-        t = BaseType("int")
-        self.assertEqual(len(group.parameters.values()), 1, "Wrong number of parameters")
-        for p in group.parameters.values():
-            self.assertEqual(p.name, "param1", "Wrong param name")
-            self.assertEqual(p.type, t, "Wrong type")
-            # TODO
-#            self.assertEqual(p.unit, u, "Should be meter")
-            self.assertIsInstance(p.default_value, ArithmeticExpression, "Wrong expression type")
-            self.assertIsInstance(p.default_value.left, IntValue, "Wrong value type")
-            self.assertEqual(p.default_value.left.value, 3, "Wrong value")
-            self.assertIsInstance(p.default_value.right, IntValue, "Wrong value type")
-            self.assertEqual(p.default_value.right.value, 4, "Wrong value")
-            self.assertEqual(p.default_value.op, EAdditionOperator.ADD, "Wrong operation")
-            self.assertEqual(p.description, "", "Wrong description")
-
-
-    def test_visitMultiplicationExpression(self):
-        model = self.parse_code("model eval group g : \"group description\" { def param1 int : meter = 3 * 4 }")
-
-        group:ParameterGroup = model.groups.get("g")
-
-        self.assertIsInstance(group, ParameterGroup, f"Wrong type {type(group)}")
-        self.assertEqual(group.name, "g", "Wrong name")
-        self.assertEqual(group.description, "group description", "Wrong description")
-
-        t = BaseType("int")
-        self.assertEqual(len(group.parameters.values()), 1, "Wrong number of parameters")
-        for p in group.parameters.values():
-            self.assertEqual(p.name, "param1", "Wrong param name")
-            self.assertEqual(p.type, t, "Wrong type")
-            # TODO
-#            self.assertEqual(p.unit, u, "Should be meter")
-            self.assertIsInstance(p.default_value, MultiplicationExpression, "Wrong expression type")
-            self.assertIsInstance(p.default_value.left, IntValue, "Wrong value type")
-            self.assertEqual(p.default_value.left.value, 3, "Wrong value")
-            self.assertIsInstance(p.default_value.right, IntValue, "Wrong value type")
-            self.assertEqual(p.default_value.right.value, 4, "Wrong value")
-            self.assertEqual(p.default_value.op, EMultiplicationOperator.MULT, "Wrong operator")
-            self.assertEqual(p.description, "", "Wrong description")
-
-    def test_visitValueExpression_parenthesis(self):
+    def value_expression_context(self, kind, token, parenthesis=False):
+        """A value expression context of a literal, optionally wrapped into a parenthesis expression."""
         ctx = DeclarationParser.ValueExpressionContext(parser=None, parent=None)
-        parenthesisExpression = DeclarationParser.ParenthesisExpressionContext(parent=ctx, parser=None)
-        ctx.addChild(parenthesisExpression)
-        arithmeticExpression = DeclarationParser.ArithmeticExpressionContext(parent=parenthesisExpression, parser=None)
-        parenthesisExpression.addChild(arithmeticExpression)
-        multiplicationExpression = DeclarationParser.MultiplicationExpressionContext(parent=arithmeticExpression, parser=None)
-        arithmeticExpression.addChild(multiplicationExpression)
-        valueExpression = DeclarationParser.ValueExpressionContext(parser=multiplicationExpression, parent=None)
-        multiplicationExpression.addChild(valueExpression)
-        literalExpression = DeclarationParser.LiteralExpressionContext(parent=valueExpression, parser=None)
-        valueExpression.addChild(literalExpression)
-        literal = DeclarationParser.LiteralContext(parent=literalExpression, parser=None)
-        literalExpression.addChild(literal)
-        value = DeclarationParser.LongValueContext(parent=literal, parser=None)
-        literal.addChild(value)
-        value.value = self.set_token("10")
+        parent = ctx
+        if parenthesis:
+            parenthesis_expression = DeclarationParser.ParenthesisExpressionContext(parent=ctx, parser=None)
+            ctx.addChild(parenthesis_expression)
+            arithmetic_expression = DeclarationParser.ArithmeticExpressionContext(parent=parenthesis_expression,
+                                                                                  parser=None)
+            parenthesis_expression.addChild(arithmetic_expression)
+            multiplication_expression = DeclarationParser.MultiplicationExpressionContext(parent=arithmetic_expression,
+                                                                                          parser=None)
+            arithmetic_expression.addChild(multiplication_expression)
+            parent = DeclarationParser.ValueExpressionContext(parser=multiplication_expression, parent=None)
+            multiplication_expression.addChild(parent)
+        literal_expression = DeclarationParser.LiteralExpressionContext(parent=parent, parser=None)
+        parent.addChild(literal_expression)
+        literal_expression.addChild(self.literal_context(kind, token, literal_expression))
+        return ctx
 
-        result = self.make_visitor().visitValueExpression(ctx)
-        self.assertIsInstance(result, IntValue, "Should be an IntValue")
-        self.assertIsInstance(result.value, int, "Wrong value type")
-        self.assertEqual(result.value, 10, "Incorrect value")
+    @parameterized.expand([
+        ("addition", "3 + 4", ("+", ("int", 3), ("int", 4))),
+        # An addition
+        # Input: 'def param1 int : meter = 3 + 4'
+        # Expected Result: an arithmetic expression 3 + 4
 
-    def prepare_value_expression(self):
-        ctx = DeclarationParser.ValueExpressionContext(parser=None, parent=None)
-        literalExpression = DeclarationParser.LiteralExpressionContext(parent=ctx, parser=None)
-        ctx.addChild(literalExpression)
-        literal = DeclarationParser.LiteralContext(parent=literalExpression, parser=None)
-        literalExpression.addChild(literal)
+        ("subtraction", "3 - 4", ("-", ("int", 3), ("int", 4))),
+        # A subtraction
+        # Input: 'def param1 int : meter = 3 - 4'
+        # Expected Result: an arithmetic expression 3 - 4
 
-        return (ctx, literal)
+        ("multiplication", "3 * 4", ("*", ("int", 3), ("int", 4))),
+        # A multiplication
+        # Input: 'def param1 int : meter = 3 * 4'
+        # Expected Result: a multiplication expression 3 * 4
 
-    def test_visitValueExpression_int(self):
-        r = self.prepare_value_expression()
-        ctx = r[0]
-        literal = r[1]
-        value = DeclarationParser.LongValueContext(parent=literal, parser=None)
-        literal.addChild(value)
-        value.value = self.set_token("10")
+        ("division", "6 / 2", ("/", ("int", 6), ("int", 2))),
+        # A division
+        # Input: 'def param1 int : meter = 6 / 2'
+        # Expected Result: a multiplication expression 6 / 2
 
-        result = self.make_visitor().visitValueExpression(ctx)
-        self.assertIsInstance(result, IntValue, "Should be an IntValue")
-        self.assertIsInstance(result.value, int, "Wrong value type")
-        self.assertEqual(result.value, 10, "Incorrect value")
+        ("modulo", "7 % 3", ("%", ("int", 7), ("int", 3))),
+        # A modulo
+        # Input: 'def param1 int : meter = 7 % 3'
+        # Expected Result: a multiplication expression 7 % 3
 
-    def test_visitValueExpression_float(self):
-        r = self.prepare_value_expression()
-        ctx = r[0]
-        literal = r[1]
-        value = DeclarationParser.DoubleValueContext(parent=literal, parser=None)
-        literal.addChild(value)
-        value.value = self.set_token("10.0")
+        ("precedence", "2 + 3 * 4", ("+", ("int", 2), ("*", ("int", 3), ("int", 4)))),
+        # Multiplication binds stronger than addition
+        # Input: 'def param1 int : meter = 2 + 3 * 4'
+        # Expected Result: 2 + (3 * 4)
 
-        result = self.make_visitor().visitValueExpression(ctx)
-        self.assertIsInstance(result, FloatValue, "Should be an FloatValue")
-        self.assertIsInstance(result.value, float, "Wrong value type")
-        self.assertEqual(result.value, 10, "Incorrect value")
+        ("precedence_left", "2 * 3 + 4", ("+", ("*", ("int", 2), ("int", 3)), ("int", 4))),
+        # Multiplication binds stronger on the left as well
+        # Input: 'def param1 int : meter = 2 * 3 + 4'
+        # Expected Result: (2 * 3) + 4
 
-    def test_visitValueExpression_str(self):
-        r = self.prepare_value_expression()
-        ctx = r[0]
-        literal = r[1]
-        value = DeclarationParser.StringValueContext(parent=literal, parser=None)
-        literal.addChild(value)
-        value.value = self.set_token("\"text message\"")
+        ("parenthesis", "(2 + 3) * 4", ("*", ("+", ("int", 2), ("int", 3)), ("int", 4))),
+        # Parentheses group an addition
+        # Input: 'def param1 int : meter = (2 + 3) * 4'
+        # Expected Result: (2 + 3) * 4
 
-        result = self.make_visitor().visitValueExpression(ctx)
-        self.assertIsInstance(result, StringValue, "Should be an StringValue")
-        self.assertIsInstance(result.value, str, "Wrong value type")
-        self.assertEqual(result.value, "text message", "Incorrect value")
+        ("negative_value", "-2", ("int", -2)),
+        # A negative literal
+        # Input: 'def param1 int : meter = -2'
+        # Expected Result: the int value -2
 
-    def test_visitParenthesisExpression(self):
-        parenthesisExpression = DeclarationParser.ParenthesisExpressionContext(parent=None, parser=None)
-        arithmeticExpression = DeclarationParser.ArithmeticExpressionContext(parent=parenthesisExpression, parser=None)
-        parenthesisExpression.addChild(arithmeticExpression)
-        multiplicationExpression = DeclarationParser.MultiplicationExpressionContext(parent=arithmeticExpression, parser=None)
-        arithmeticExpression.addChild(multiplicationExpression)
-        valueExpression = DeclarationParser.ValueExpressionContext(parser=multiplicationExpression, parent=None)
-        multiplicationExpression.addChild(valueExpression)
-        literalExpression = DeclarationParser.LiteralExpressionContext(parent=valueExpression, parser=None)
-        valueExpression.addChild(literalExpression)
-        literal = DeclarationParser.LiteralContext(parent=literalExpression, parser=None)
-        literalExpression.addChild(literal)
-        value = DeclarationParser.LongValueContext(parent=literal, parser=None)
-        literal.addChild(value)
-        value.value = self.set_token("10")
+        ("float_value", "1.5", ("float", 1.5)),
+        # A float literal
+        # Input: 'def param1 int : meter = 1.5'
+        # Expected Result: the float value 1.5
 
-        result = self.make_visitor().visitParenthesisExpression(parenthesisExpression)
-        self.assertIsInstance(result, IntValue, "Should be an IntValue")
-        self.assertIsInstance(result.value, int, "Wrong value type")
-        self.assertEqual(result.value, 10, "Incorrect value")
+        ("string_value", "\"text\"", ("str", "text")),
+        # A string literal without quotes
+        # Input: 'def param1 int : meter = "text"'
+        # Expected Result: the string value text
 
-    def test_visitLiteralExpression(self):
-        literalExpression = DeclarationParser.LiteralExpressionContext(parent=None, parser=None)
-        literal = DeclarationParser.LiteralContext(parent=literalExpression, parser=None)
-        literalExpression.addChild(literal)
-        value = DeclarationParser.LongValueContext(parent=literal, parser=None)
-        literal.addChild(value)
-        value.value = self.set_token("10")
+        ("boolean_value", "true", ("bool", True)),
+        # A boolean literal
+        # Input: 'def param1 int : meter = true'
+        # Expected Result: the boolean value True
+    ])
+    def test_visitArithmeticExpression(self, test_name, expression, expected):
+        self.assertEqual(expected, describe_expression(self.default_value(expression)), test_name)
 
-        result = self.make_visitor().visitLiteral(literal)
-        self.assertIsInstance(result, IntValue, "Should be an IntValue")
-        self.assertIsInstance(result.value, int, "Wrong value type")
-        self.assertEqual(result.value, 10, "Incorrect value")
+    @parameterized.expand([
+        ("int", "long", "10", False, IntValue, int, 10),
+        # A long literal in a value expression
+        # Input: a value expression with the long value 10
+        # Expected Result: IntValue 10
 
-    def test_visitLiteral(self):
-        literal = DeclarationParser.LiteralContext(parent=None, parser=None)
-        value = DeclarationParser.LongValueContext(parent=literal, parser=None)
-        literal.addChild(value)
-        value.value = self.set_token("10")
+        ("float", "double", "10.0", False, FloatValue, float, 10.0),
+        # A double literal in a value expression
+        # Input: a value expression with the double value 10.0
+        # Expected Result: FloatValue 10.0
 
-        result = self.make_visitor().visitLiteral(literal)
-        self.assertIsInstance(result, IntValue, "Should be an IntValue")
-        self.assertIsInstance(result.value, int, "Wrong value type")
-        self.assertEqual(result.value, 10, "Incorrect value")
+        ("str", "string", "\"text message\"", False, StringValue, str, "text message"),
+        # A string literal in a value expression; the quotes are removed
+        # Input: a value expression with the string value "text message"
+        # Expected Result: StringValue text message
 
-    def test_visitLongValue(self):
-        value = DeclarationParser.LongValueContext(parent=None, parser=None)
-        value.value = self.set_token("10")
+        ("parenthesis", "long", "10", True, IntValue, int, 10),
+        # A parenthesized literal in a value expression
+        # Input: a value expression with a parenthesis expression of the long value 10
+        # Expected Result: IntValue 10
 
-        result = self.make_visitor().visitLongValue(value)
-        self.assertIsInstance(result, IntValue, "Should be an IntValue")
-        self.assertIsInstance(result.value, int, "Wrong value type")
-        self.assertEqual(result.value, 10, "Incorrect value")
+        ("parenthesis_float", "double", "2.5", True, FloatValue, float, 2.5),
+        # A parenthesized double literal
+        # Input: a value expression with a parenthesis expression of the double value 2.5
+        # Expected Result: FloatValue 2.5
+    ])
+    def test_visitValueExpression(self, test_name, kind, token, parenthesis, expected_class, expected_type,
+                                  expected_value):
+        result = self.make_visitor().visitValueExpression(self.value_expression_context(kind, token, parenthesis))
 
-    def test_visitDoubleValue(self):
-        value = DeclarationParser.DoubleValueContext(parent=None, parser=None)
-        value.value = self.set_token("10.0")
+        self.assertIsInstance(result, expected_class, test_name)
+        self.assertIsInstance(result.value, expected_type, test_name)
+        self.assertEqual(expected_value, result.value, test_name)
 
-        result = self.make_visitor().visitDoubleValue(value)
-        self.assertIsInstance(result, FloatValue, "Should be an FloatValue")
-        self.assertIsInstance(result.value, float, "Wrong value type")
-        self.assertEqual(result.value, 10, "Incorrect value")
+    @parameterized.expand([
+        ("parenthesis_expression", "parenthesis"),
+        # A parenthesis expression is visited down to its literal
+        # Input: a parenthesis expression of the long value 10
+        # Expected Result: IntValue 10
 
-    def test_visitStringValue(self):
-        value = DeclarationParser.StringValueContext(parent=None, parser=None)
-        value.value = self.set_token("\"text message\"")
+        ("literal_in_literal_expression", "literal_expression"),
+        # A literal that is part of a literal expression
+        # Input: the literal of a literal expression with the long value 10
+        # Expected Result: IntValue 10
 
-        result = self.make_visitor().visitStringValue(value)
-        self.assertIsInstance(result, StringValue, "Should be an StringValue")
-        self.assertIsInstance(result.value, str, "Wrong value type")
-        self.assertEqual(result.value, "text message", "Incorrect value")
+        ("literal", "literal"),
+        # A literal without parent
+        # Input: a literal with the long value 10
+        # Expected Result: IntValue 10
+    ])
+    def test_visit_nested_literal(self, test_name, entry):
+        visitor = self.make_visitor()
+        if entry == "parenthesis":
+            ctx = self.value_expression_context("long", "10", parenthesis=True).getChild(0)
+            result = visitor.visitParenthesisExpression(ctx)
+        elif entry == "literal_expression":
+            literal_expression = DeclarationParser.LiteralExpressionContext(parent=None, parser=None)
+            literal = self.literal_context("long", "10", literal_expression)
+            literal_expression.addChild(literal)
+            result = visitor.visitLiteral(literal)
+        else:
+            result = visitor.visitLiteral(self.literal_context("long", "10"))
 
-    # Named elements can be references to an enumeral or another property or in future a feature
-    # The test must therefor test whether an group property, an enumeration and an inline enumeration can be resolved.
+        self.assertIsInstance(result, IntValue, test_name)
+        self.assertIsInstance(result.value, int, test_name)
+        self.assertEqual(10, result.value, test_name)
 
-    # This test tests property, local
-    def test_visitNamedElementReference_one_parameter(self):
-        model = self.parse_code("""
-            model eval
+    @parameterized.expand([
+        ("long", "visitLongValue", DeclarationParser.LongValueContext, "10", IntValue, int, 10),
+        # A long value
+        # Input: the long value context 10
+        # Expected Result: IntValue 10
+
+        ("long_zero", "visitLongValue", DeclarationParser.LongValueContext, "0", IntValue, int, 0),
+        # Zero
+        # Input: the long value context 0
+        # Expected Result: IntValue 0
+
+        ("double", "visitDoubleValue", DeclarationParser.DoubleValueContext, "10.0", FloatValue, float, 10.0),
+        # A double value
+        # Input: the double value context 10.0
+        # Expected Result: FloatValue 10.0
+
+        ("double_negative", "visitDoubleValue", DeclarationParser.DoubleValueContext, "-2.5", FloatValue, float,
+         -2.5),
+        # A negative double value
+        # Input: the double value context -2.5
+        # Expected Result: FloatValue -2.5
+
+        ("string", "visitStringValue", DeclarationParser.StringValueContext, "\"text message\"", StringValue, str,
+         "text message"),
+        # A string value without quotes
+        # Input: the string value context "text message"
+        # Expected Result: StringValue text message
+
+        ("empty_string", "visitStringValue", DeclarationParser.StringValueContext, "\"\"", StringValue, str, ""),
+        # An empty string
+        # Input: the string value context ""
+        # Expected Result: StringValue with an empty string
+    ])
+    def test_visit_value(self, test_name, method, context_class, token, expected_class, expected_type,
+                         expected_value):
+        value = context_class(parent=None, parser=None)
+        value.value = self.set_token(token)
+
+        result = getattr(self.make_visitor(), method)(value)
+
+        self.assertIsInstance(result, expected_class, test_name)
+        self.assertIsInstance(result.value, expected_type, test_name)
+        self.assertEqual(expected_value, result.value, test_name)
+
+    # Named elements can be references to an enumeral or another property or in future a feature.
+    # The test must therefore test whether a group property, an enumeration and an inline enumeration can be resolved.
+    @parameterized.expand([
+        ("parameter_in_same_group", "", """
             group test : "description" {
                 def param_a int : meter = 0
                 def param_b int : meter = param_a
-            }
-            """)
+            }""", "test", ("param", "param_a")),
+        # A reference to a parameter of the same group
+        # Input: 'def param_b int : meter = param_a' in the group of param_a
+        # Expected Result: the parameter param_a
 
-        group:ParameterGroup = model.groups.get("test")
-        parameter_a:Parameter = group.parameters.get("param_a")
-        parameter_b:Parameter = group.parameters.get("param_b")
-
-        self.assertNotEqual(parameter_a, None, "Missing parameter a")
-        self.assertNotEqual(parameter_b, None, "Missing parameter b")
-
-        expression:ArithmeticExpression = parameter_b.default_value
-
-        self.assertNotEqual(expression, None, "Missing expression")
-
-        self.assertIsInstance(expression, Parameter, "Wrong type, Parameter expected")
-        self.assertEqual(parameter_a, expression, "Reference to the wrong element")
-
-    # This test tests property, local
-    def test_visitNamedElementReference_two_parameter(self):
-        model = self.parse_code("""
-            model eval
+        ("parameter_in_other_group", "", """
             group test : "description" {
                 def param_a int : meter = 0
             }
             group test2 : "other" {
                 def param_b int : meter = test.param_a
-            }
-            """)
+            }""", "test2", ("param", "param_a")),
+        # A qualified reference to a parameter of another group
+        # Input: 'def param_b int : meter = test.param_a' in the group test2
+        # Expected Result: the parameter param_a of the group test
 
-        group_a:ParameterGroup = model.groups.get("test")
-        parameter_a:Parameter = group_a.parameters.get("param_a")
-        group_b:ParameterGroup = model.groups.get("test2")
-        parameter_b:Parameter = group_b.parameters.get("param_b")
-
-        self.assertNotEqual(parameter_a, None, "Missing parameter a")
-        self.assertNotEqual(parameter_b, None, "Missing parameter b")
-
-        expression:ArithmeticExpression = parameter_b.default_value
-
-        self.assertNotEqual(expression, None, "Missing expression")
-
-        self.assertIsInstance(expression, Parameter, "Wrong type, Parameter expected")
-        self.assertEqual(parameter_a, expression, "Reference to the wrong element")
-
-    # This test tests enum based on context
-    def test_visitNamedElementReference_one_enum(self):
-        model:DeclarationModel = self.parse_code("""
-            model eval
-            types
-                enum Color { red, green, blue }
+        ("enumeral", ENUMERATION_TYPES, """
             group test : "description" {
-                def param Color : meter = blue
-            }
-            """)
+                def param_b Color : meter = blue
+            }""", "test", ("enum", "blue", 2)),
+        # An enumeral of the parameter type
+        # Input: 'def param_b Color : meter = blue'
+        # Expected Result: the enumeral blue with the value 2
 
-        group:ParameterGroup = model.groups.get("test")
-        parameter:Parameter = group.parameters.get("param")
-        expression:ArithmeticExpression = parameter.default_value
-
-        self.assertNotEqual(parameter, None, "Missing parameter")
-        self.assertNotEqual(expression, None, "Missing expression")
-        self.assertIsInstance(expression, Enumeral, "Missing enumeral")
-        self.assertEqual(expression.name, "blue", "Wrong enumeral name")
-        self.assertEqual(expression.value, 2, "Wrong enumeral value")
-
-    def test_visitNamedElementReference_two_enum(self):
-        model = self.parse_code("""
-            model eval
-            types
-                enum Color { red, green, blue }
+        ("qualified_enumeral", ENUMERATION_TYPES, """
             group test : "description" {
-                def param Color : meter = Color.blue
-            }
-            """)
+                def param_b Color : meter = Color.blue
+            }""", "test", ("enum", "blue", 2)),
+        # An enumeral qualified by its type
+        # Input: 'def param_b Color : meter = Color.blue'
+        # Expected Result: the enumeral blue with the value 2
 
-        group:ParameterGroup = model.groups.get("test")
-        parameter:Parameter = group.parameters.get("param")
-        expression:ArithmeticExpression = parameter.default_value
+        ("first_enumeral", ENUMERATION_TYPES, """
+            group test : "description" {
+                def param_b Color : meter = red
+            }""", "test", ("enum", "red", 0)),
+        # The first enumeral
+        # Input: 'def param_b Color : meter = red'
+        # Expected Result: the enumeral red with the value 0
+    ])
+    def test_visitNamedElementReference(self, test_name, types, groups, group_name, expected):
+        model: DeclarationModel = self.parse_code(f"model eval{types}{groups}")
 
-        self.assertNotEqual(parameter, None, "Missing parameter")
-        self.assertNotEqual(expression, None, "Missing expression")
-        self.assertIsInstance(expression, Enumeral, "Missing enumeral")
-        self.assertEqual(expression.name, "blue", "Wrong enumeral name")
-        self.assertEqual(expression.value, 2, "Wrong enumeral value")
+        parameter: Parameter = model.groups[group_name].parameters.get("param_b")
+        self.assertIsNotNone(parameter, test_name)
+        self.assertEqual(expected, describe_expression(parameter.default_value), test_name)
+        if expected[0] == "param":
+            self.assertIs(model.groups["test"].parameters["param_a"], parameter.default_value, test_name)
 
-    def test_visitArrayExpression(self):
-        model:DeclarationModel = self.parse_code("""
+    @parameterized.expand([
+        ("ints", "[ 2,4,6,8,10 ]", [("int", 2), ("int", 4), ("int", 6), ("int", 8), ("int", 10)]),
+        # An array of int values
+        # Input: 'def array int[5] : meter , "array description" = [ 2,4,6,8,10 ]'
+        # Expected Result: an array expression of the five int values
+
+        ("floats", "[ 1.5, 2.5 ]", [("float", 1.5), ("float", 2.5)]),
+        # An array of float values
+        # Input: '= [ 1.5, 2.5 ]'
+        # Expected Result: an array expression of the two float values
+
+        ("expressions", "[ 1 + 1, 2 ]", [("+", ("int", 1), ("int", 1)), ("int", 2)]),
+        # Array elements may be expressions
+        # Input: '= [ 1 + 1, 2 ]'
+        # Expected Result: an array expression of 1 + 1 and 2
+
+        ("single_element", "[ 7 ]", [("int", 7)]),
+        # An array with one element
+        # Input: '= [ 7 ]'
+        # Expected Result: an array expression of 7
+    ])
+    def test_visitArrayExpression(self, test_name, array, expected_elements):
+        model: DeclarationModel = self.parse_code(f"""
                 model eval
-                    group my_group : "my group" {
-                        def array int[5] : meter , "array description" = [ 2,4,6,8,10 ]
-                    }
+                    group my_group : "my group" {{
+                        def array int[5] : meter , "array description" = {array}
+                    }}
                 """)
-        self.assertEqual(model.name, "eval", "Name not set")
+        self.assertEqual("eval", model.name, test_name)
 
-        group:ParameterGroup = model.groups['my_group']
-        self.assertIsInstance(group, ParameterGroup, "Parameter group 'my_group' not found")
-        array:Parameter = group.parameters['array']
-        self.assertIsInstance(array, Parameter, "Parameter 'array' not found.")
-        expr:ArrayExpression = array.default_value
-        self.assertIsInstance(expr, ArrayExpression, "Not an array expression")
-        self.assertEqual(len(expr.elements), 5, "Wrong number of elements")
-        for element in expr.elements:
-            self.assertIsInstance(element, IntValue, "Wrong value type")
+        group: ParameterGroup = model.groups['my_group']
+        self.assertIsInstance(group, ParameterGroup, test_name)
+        parameter: Parameter = group.parameters['array']
+        self.assertIsInstance(parameter, Parameter, test_name)
+        self.assertEqual(("array", expected_elements), describe_expression(parameter.default_value), test_name)
+
 
 if __name__ == '__main__':
     unittest.main()
