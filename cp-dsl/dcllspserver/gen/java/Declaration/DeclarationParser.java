@@ -64,7 +64,7 @@ public class DeclarationParser extends Parser {
 			"'.'", "'sub'", "'alternative'", "'multiple'", "'('", "')'", "'['", "']'", 
 			"'range'", "'enum'", "'*'", "'/'", "'**'", "'noP'", "'yotta'", "'zetta'", 
 			"'exa'", "'peta'", "'tera'", "'giga'", "'mega'", "'kilo'", "'hecto'", 
-			"'deca'", "'deci'", "'centi'", "'mili'", "'micro'", "'nano'", "'pico'", 
+			"'deca'", "'deci'", "'centi'", "'milli'", "'micro'", "'nano'", "'pico'", 
 			"'femto'", "'atto'", "'zepto'", "'yocto'", "'meter'", "'gram'", "'ton'", 
 			"'second'", "'ampere'", "'kelvin'", "'mole'", "'candela'", "'pascal'", 
 			"'Joule'", "'+'", "'-'", "'%'"
@@ -2068,7 +2068,7 @@ public class DeclarationParser extends Parser {
 		public Token deca;
 		public Token deci;
 		public Token centi;
-		public Token mili;
+		public Token milli;
 		public Token micro;
 		public Token nano;
 		public Token pico;
@@ -2197,7 +2197,7 @@ public class DeclarationParser extends Parser {
 				enterOuterAlt(_localctx, 14);
 				{
 				setState(316);
-				((EPrefixContext)_localctx).mili = match(T__39);
+				((EPrefixContext)_localctx).milli = match(T__39);
 				}
 				break;
 			case T__40:

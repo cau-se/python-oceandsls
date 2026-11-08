@@ -83,10 +83,16 @@ class TestParameterGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationV
         # Expected Result: p2 of type float, the custom unit p2 unit, default value 1.5
 
         ("with_description", "def p3 int : meter , \"p3 description\" = 3", "p3", BaseType("int"),
-         SIUnit(None, UnitKind.Meter), 3, "\"p3 description\""),
-        # A description follows the unit; its quotes are currently kept
+         SIUnit(None, UnitKind.Meter), 3, "p3 description"),
+        # Regression: the quotes of parameter descriptions were kept, unlike those of groups and features
         # Input: 'def p3 int : meter , "p3 description" = 3'
-        # Expected Result: p3 with the description "p3 description" including the quotes
+        # Expected Result: p3 with the description p3 description without quotes
+
+        ("empty_description", "def p4 int : meter , \"\" = 4", "p4", BaseType("int"), SIUnit(None, UnitKind.Meter), 4,
+         ""),
+        # An empty description
+        # Input: 'def p4 int : meter , "" = 4'
+        # Expected Result: p4 with an empty description
     ])
     def test_visitParamAssignStat_basic_type(self, test_name, declaration, expected_name, expected_type,
                                              expected_unit, expected_value, expected_description):

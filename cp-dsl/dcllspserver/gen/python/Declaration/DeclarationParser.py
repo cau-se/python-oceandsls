@@ -177,7 +177,7 @@ class DeclarationParser ( Parser ):
                      "']'", "'range'", "'enum'", "'*'", "'/'", "'**'", "'noP'", 
                      "'yotta'", "'zetta'", "'exa'", "'peta'", "'tera'", 
                      "'giga'", "'mega'", "'kilo'", "'hecto'", "'deca'", 
-                     "'deci'", "'centi'", "'mili'", "'micro'", "'nano'", 
+                     "'deci'", "'centi'", "'milli'", "'micro'", "'nano'", 
                      "'pico'", "'femto'", "'atto'", "'zepto'", "'yocto'", 
                      "'meter'", "'gram'", "'ton'", "'second'", "'ampere'", 
                      "'kelvin'", "'mole'", "'candela'", "'pascal'", "'Joule'", 
@@ -2267,7 +2267,7 @@ class DeclarationParser ( Parser ):
             self.deca = None # Token
             self.deci = None # Token
             self.centi = None # Token
-            self.mili = None # Token
+            self.milli = None # Token
             self.micro = None # Token
             self.nano = None # Token
             self.pico = None # Token
@@ -2373,7 +2373,7 @@ class DeclarationParser ( Parser ):
             elif token in [40]:
                 self.enterOuterAlt(localctx, 14)
                 self.state = 316
-                localctx.mili = self.match(DeclarationParser.T__39)
+                localctx.milli = self.match(DeclarationParser.T__39)
                 pass
             elif token in [41]:
                 self.enterOuterAlt(localctx, 15)

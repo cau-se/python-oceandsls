@@ -193,6 +193,11 @@ class TestDeclarationServer(unittest.TestCase):
         # Input: 'group g {'
         # Expected Result: only syntax errors
 
+        ("old_milli_spelling", "model m\ngroup g : \"\" {\n\tdef p int : mili mole\n}\n"),
+        # Regression: the prefix is spelled milli; the former spelling mili is no keyword any more
+        # Input: 'def p int : mili mole'
+        # Expected Result: only syntax errors
+
         ("missing_model_name", "model\n"),
         # A model without name
         # Input: 'model'

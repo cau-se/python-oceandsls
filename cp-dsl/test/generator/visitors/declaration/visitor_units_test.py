@@ -14,6 +14,7 @@
 
 __author__ = "reiner"
 
+import os
 import unittest
 
 from parameterized import parameterized
@@ -29,6 +30,7 @@ from cpdsl.common.configuration import CompileFlags
 
 from generator.visitors.test_utils import AbstractTestGeneratorDeclarationVisitor
 
+UVIC = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", "..", "input", "UVic", "uvic.decl")
 METER = SIUnit(kind=UnitKind.Meter, prefix=None)
 GINI = CustomUnit(name="gini")
 
@@ -57,6 +59,11 @@ class TestUnitGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisito
         # Another unit type without prefix
         # Input: the unit type second
         # Expected Result: second without prefix
+
+        ("milli", "milli", "mole", UnitPrefix.Milli, UnitKind.Mole),
+        # Regression: the prefix was spelled mili in the grammar
+        # Input: the prefix milli and the unit type mole
+        # Expected Result: millimole
     ])
     def test_visitSiunit(self, test_name, prefix, kind, expected_prefix, expected_kind):
         ctx = DeclarationParser.SiunitContext(parser=None,
@@ -132,6 +139,31 @@ class TestUnitGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisito
         # A unit with exponent
         # Input: 'def param int : meter ** 2'
         # Expected Result: meter to the power of 2
+
+        ("parenthesized_unit", "(meter ** 3)", ExponentUnit(unit=METER, exponent=3)),
+        # Regression: a parenthesized unit gave None because basicUnit had no visit method
+        # Input: 'def param int : (meter ** 3)'
+        # Expected Result: meter to the power of 3
+
+        ("parenthesized_denominator", "milli mole / (meter ** 3)",
+         DivisionUnit(numerator=SIUnit(kind=UnitKind.Mole, prefix=UnitPrefix.Milli),
+                      denominator=ExponentUnit(unit=METER, exponent=3))),
+        # Regression: the denominator of 'mmol m-3' in uvic.decl was None
+        # Input: 'def param int : milli mole / (meter ** 3)'
+        # Expected Result: millimole divided by meter to the power of 3
+
+        ("parenthesized_numerator_and_denominator", "(meter ** 3)/(milli mole)",
+         DivisionUnit(numerator=ExponentUnit(unit=METER, exponent=3),
+                      denominator=SIUnit(kind=UnitKind.Mole, prefix=UnitPrefix.Milli))),
+        # Parentheses on both sides of a division
+        # Input: 'def param int : (meter ** 3)/(milli mole)'
+        # Expected Result: meter to the power of 3 divided by millimole
+
+        ("parenthesized_product", "(meter * second)",
+         UnitSpecification(units=[METER, SIUnit(kind=UnitKind.Second, prefix=None)])),
+        # A parenthesized product
+        # Input: 'def param int : (meter * second)'
+        # Expected Result: a unit specification of meter and second
     ])
     def test_visitUnitSpecification_code(self, test_name, unit_code, expected_unit):
         model: DeclarationModel = self.parse_code(f"model eval group a : \"bla\" {{ def param int : {unit_code} }} ")
@@ -190,6 +222,47 @@ class TestUnitGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVisito
     def test_visitUnitSpecification(self, test_name, units, expected_unit):
         result = self.make_visitor().visitUnitSpecification(self.unit_specification_context(units))
         self.assertEqual(expected_unit, result, test_name)
+
+    def uvic_parameters(self):
+        """All parameters of input/UVic/uvic.decl by name, including those of nested features."""
+        with open(UVIC, encoding="utf-8") as f:
+            model = self.parse_code(f.read())
+        parameters = {}
+
+        def collect(groups, features):
+            for group in groups.values():
+                parameters.update(group.parameters)
+            for feature in features.values():
+                collect(feature.groups, {})
+                for feature_set in feature.feature_sets:
+                    collect({}, feature_set.features)
+
+        collect(model.groups, model.features)
+        return parameters
+
+    @parameterized.expand([
+        ("half_saturation_n", "k1n", DivisionUnit(numerator=SIUnit(kind=UnitKind.Mole, prefix=UnitPrefix.Milli),
+                                                 denominator=ExponentUnit(unit=METER, exponent=3))),
+        # Regression: 'mili mole / (meter ** 3)' in uvic.decl lost its denominator
+        # Input: 'def k1n float : milli mole / (meter ** 3)' in input/UVic/uvic.decl
+        # Expected Result: millimole divided by cubic meter
+
+        ("half_saturation_fe", "kfe_D", DivisionUnit(numerator=SIUnit(kind=UnitKind.Mole, prefix=UnitPrefix.Milli),
+                                                    denominator=ExponentUnit(unit=METER, exponent=3))),
+        # The same unit for another parameter
+        # Input: 'def kfe_D float : milli mole / (meter ** 3)'
+        # Expected Result: millimole divided by cubic meter
+
+        ("prey_capture", "phi", DivisionUnit(numerator=ExponentUnit(unit=METER, exponent=3),
+                                             denominator=SIUnit(kind=UnitKind.Mole, prefix=UnitPrefix.Milli))),
+        # A parenthesized numerator and denominator
+        # Input: 'def phi float[4] : (meter ** 3)/(milli mole)'
+        # Expected Result: cubic meter divided by millimole
+    ])
+    def test_uvic_units(self, test_name, name, expected_unit):
+        parameters = self.uvic_parameters()
+        self.assertEqual(expected_unit, parameters[name].unit, test_name)
+        self.assertEqual([], [p for p, parameter in parameters.items() if parameter.unit is None], test_name)
 
 
 if __name__ == '__main__':

@@ -80,10 +80,10 @@ class TestFeatureGeneratorDeclarationVisitor(AbstractTestGeneratorDeclarationVis
     logger = GeneratorLogger(CompileFlags.STRICT)
 
     @parameterized.expand([
-        ("int_parameter_with_description", "p1", BaseType("int"), 0, "\"p1 description\""),
-        # Parameters of a group belong to the group of their feature
+        ("int_parameter_with_description", "p1", BaseType("int"), 0, "p1 description"),
+        # Parameters of a group belong to the group of their feature; the description is unquoted
         # Input: 'def p1 int : meter , "p1 description" = 0' in the group TestParams of the feature Base
-        # Expected Result: p1 of type int with the default value 0 and its description
+        # Expected Result: p1 of type int with the default value 0 and the description p1 description
 
         ("float_parameter", "p2", BaseType("float"), 2.5, ""),
         # A parameter without description

@@ -203,7 +203,7 @@ feature generic : "This is a generic feature for temporary use" {
 	}
 	
 	group npzd : "" {
-		def k1n float : mili mole / (meter ** 3) = 0.7      // half-saturation constant for N uptake (mmol m-3)
+		def k1n float : milli mole / (meter ** 3) = 0.7      // half-saturation constant for N uptake (mmol m-3)
 	 	def capr float : "" = 0.03    // carbonate to carbon production ratio
 		def abio float : "" = 0.6     // maximum growth rate (d-1)
 		def alpha float : "" = 0.16   // initial slope of P-I curve (1/(W/m2)/day)
@@ -218,7 +218,7 @@ feature generic : "This is a generic feature for temporary use" {
 		def jdiar float : "" = 0.4    // growth-rate factor for diazotrophs
 		def nud0 float : "" = 0.087   // detritus remineralization rate (d-1)
 		def kfe float : "" = 0.066e-3
-		def kfe_D float : mili mole / (meter ** 3) = 0.132e-3 // Fe half saturation for phyt, diaz (mmol m-3)
+		def kfe_D float : milli mole / (meter ** 3) = 0.132e-3 // Fe half saturation for phyt, diaz (mmol m-3)
 		def zprefP float : "" = 0.25
 		def zprefZ float : "" = 0.25
 		def zprefDet float : "" = 0.25 
@@ -244,7 +244,7 @@ feature generic : "This is a generic feature for temporary use" {
 	}
 	
 	group cfo : "" {
-		def phi float[4] : (meter ** 3)/(mili mole)  = [ 118.0, 232.0, 94.0, 118.0 ] // prey-capture coefficients for phyt, diaz, detr, zoop (m3 mmol-1)
+		def phi float[4] : (meter ** 3)/(milli mole)  = [ 118.0, 232.0, 94.0, 118.0 ] // prey-capture coefficients for phyt, diaz, detr, zoop (m3 mmol-1)
 	 	def Imax float : "" = 1.75 // max. ingestion (d-1)
 	 	// should be a enumeration, but there seem to be internal issues
 		def regex string : "" = "respire" // 'egest' or 'respire' surplus C in food

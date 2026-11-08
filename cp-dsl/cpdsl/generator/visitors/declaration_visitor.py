@@ -35,6 +35,11 @@ from dcllspserver.gen.python.Declaration.DeclarationVisitor import DeclarationVi
 import logging
 _log = logging.getLogger(__name__)  # diagnostics go to logging, never to stdout
 
+
+def unquote(text: str) -> str:
+    """The text of a STRING token without its surrounding double quotes."""
+    return text[1:-1] if len(text) >= 2 and text[0] == text[-1] == '"' else text
+
 # NOTE: Method names starting with visit are required to look like this, as parts of the grammar
 # are named in that way
 
@@ -165,7 +170,7 @@ class GeneratorDeclarationVisitor(ExpressionVisitorMixin, DeclarationVisitor, Ge
     def visitParamGroupAssignStat(self, ctx: DeclarationParser.ParamGroupAssignStatContext):
         parent_scope = self._scope
         name = ctx.name.text if ctx.name else "<ERROR>"
-        description = ctx.description.text[1:-1] if ctx.description else ""
+        description = unquote(ctx.description.text) if ctx.description else ""
 
         try:
             group = self._scope.groups[name]
@@ -190,7 +195,7 @@ class GeneratorDeclarationVisitor(ExpressionVisitorMixin, DeclarationVisitor, Ge
         var_type = self.visit(ctx.type_)
         self._type_scope = var_type
 
-        description = ctx.description.text if ctx.description else ""
+        description = unquote(ctx.description.text) if ctx.description else ""
         unit = self.visit(ctx.unit)
 
         parameter: Parameter = self._scope.resolve_parameters(var_name)
@@ -255,7 +260,7 @@ class GeneratorDeclarationVisitor(ExpressionVisitorMixin, DeclarationVisitor, Ge
 
         feature = self._scope.resolve_symbol(name)
         if feature is None:
-            description = ctx.description.text[1:-1]
+            description = unquote(ctx.description.text)
             feature = Feature(name, description, self._scope)
             feature.required = ctx.required is not None
 
@@ -403,7 +408,7 @@ class GeneratorDeclarationVisitor(ExpressionVisitorMixin, DeclarationVisitor, Ge
             return UnitPrefix.Deci
         if ctx.centi is not None:
             return UnitPrefix.Centi
-        if ctx.mili is not None:
+        if ctx.milli is not None:
             return UnitPrefix.Milli
         if ctx.micro is not None:
             return UnitPrefix.Micro
@@ -426,7 +431,13 @@ class GeneratorDeclarationVisitor(ExpressionVisitorMixin, DeclarationVisitor, Ge
         return UnitPrefix.NoP
 
     def visitCustomunit(self, ctx: DeclarationParser.CustomunitContext):
-        return CustomUnit(name=ctx.name.text[1:-1])
+        return CustomUnit(name=unquote(ctx.name.text))
+
+    def visitBasicUnit(self, ctx: DeclarationParser.BasicUnitContext):
+        # basicUnit : sIUnit | customUnit | '(' unitSpecification ')'
+        if ctx.unitSpecification() is not None:
+            return self.visit(ctx.unitSpecification())
+        return self.visitChildren(ctx)
 
     def visitComposedUnit(self, ctx: DeclarationParser.ComposedUnitContext):
         if ctx.numerator is None:
