@@ -25,6 +25,7 @@ from typing import Dict, List, Optional, Tuple
 from jinja2 import Environment, FileSystemLoader
 
 from ..filewriter.jinjatemplates import TEMPLATE_ROOT
+from ..filewriter.markers import RETURN_TYPE_MARKER, RETURN_EXPRESSION_MARKER, body_marker
 
 # User relative imports
 from odsllib.symbol_table import FunctionSymbol, FundamentalType, SymbolTable, RoutineSymbol, Type, VariableSymbol
@@ -73,6 +74,9 @@ class F90FileGeneratorVisitor(TestSuiteVisitor):
         self.file_suffix = file_suffix
         # Load Jinja2 templates
         self.environment = Environment(loader=FileSystemLoader(template_path), trim_blocks=True, lstrip_blocks=True, keep_trailing_newline=False)
+        # Marker comments of generated stubs, shared with the file writer and the fxtran analysis
+        self.environment.globals.update(return_type_marker=RETURN_TYPE_MARKER,
+                                        return_expression_marker=RETURN_EXPRESSION_MARKER, body_marker=body_marker)
 
         # Variable flags
         self.found_ref = False

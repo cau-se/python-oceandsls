@@ -20,10 +20,13 @@ from difflib import Differ
 from hashlib import md5
 # Utils
 from logging import DEBUG, getLogger
+import re
 from re import search, sub, escape, IGNORECASE, MULTILINE, DOTALL
 from os import makedirs
 from os.path import getmtime, dirname, isdir, splitext, exists
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
+
+from .markers import contains_marker
 
 # Debug
 logger = getLogger(__name__)
@@ -125,61 +128,82 @@ def cmake_merge(insert_contents: Dict[str, str], file_content):
     return file_content
 
 
-def remove_fortran_subroutine_or_function(fortran_code, names) -> str:
-    # Define regex components
-    whitespace = r'[ \t\r\f]*'
-    decl_rest = r'[^\n]*\n'
-    optional_attribute = r'(elemental|pure)?'  # Matches optional attributes
-    function_or_subroutine = r'(function|subroutine)'  # Matches function or subroutine keywords
+# Fortran attributes and declaration types that may precede FUNCTION or SUBROUTINE
+_ROUTINE_PREFIX = (r"(?:(?:elemental|pure|impure|recursive|non_recursive|module)\s+"
+                   r"|(?:integer|real|logical|complex|character|double\s+precision|double\s+complex"
+                   r"|type\s*\([^)]*\)|class\s*\([^)]*\))(?:\s*\([^)]*\)|\s*\*\s*\d+)?\s+)*")
+_ACCESS_STATEMENT = re.compile(r"^(?P<head>\s*(?:public|private)\b\s*(?:::)?\s*)(?P<entities>[^!\s][^!]*?)\s*"
+                               r"(?P<comment>!.*)?$", IGNORECASE)
+_GENERATED_TAG = re.compile(r"^\s*!\s*auto-generated\b", IGNORECASE)
 
-    # Create a regex pattern for the function/subroutine removal
-    arguments = r'\(.*\)'  # Matches the argument list
-    comment = r'(! <<Replace with (return expression|SUBROUTINE body) here>>)'  # Matches the specific comment
-    code_lines = r'(.*?\n)*?'  # Matches any lines of code
 
-    # Remove each specified function or subroutine
+def _routine_start(name: str):
+    return re.compile(rf"^\s*{_ROUTINE_PREFIX}(?:function|subroutine)\s+{re.escape(name)}\s*(?:\(|$)",
+                      IGNORECASE)
+
+
+def _routine_end(name: str):
+    return re.compile(rf"^\s*end\s*(?:(?:function|subroutine)(?:\s+{re.escape(name)})?)?\s*$", IGNORECASE)
+
+
+def remove_fortran_subroutine_or_function(fortran_code: str, names: List[str]) -> str:
+    """
+    Remove generated, not yet implemented functions and subroutines from Fortran code.
+
+    A routine is removed if its body still contains the marker comment of the templates (see markers.py), together
+    with the auto-generated tag comment in front of it. Implemented routines and other code are kept unchanged. The
+    names are also removed from public and private statements; statements whose entity list becomes empty are
+    removed as a whole.
+
+    :param fortran_code: Fortran source code
+    :param names: names of the routines to remove (case-insensitive like Fortran)
+    :return: the code without the generated routines
+    """
+    lines = fortran_code.split("\n")
+    removed: List[str] = []
     for name in names:
-        name_pattern = escape(name)  # Escape the name to safely include it in the regex
-        end_statement = rf'{whitespace}end{whitespace}(function|subroutine){whitespace}{name_pattern}\s*$'  # Matches the end statement
+        start_pattern, end_pattern = _routine_start(name), _routine_end(name)
+        index = 0
+        while index < len(lines):
+            if not start_pattern.match(lines[index]):
+                index += 1
+                continue
+            end = next((i for i in range(index + 1, len(lines)) if end_pattern.match(lines[i])), None)
+            if end is None or not contains_marker("\n".join(lines[index:end + 1])):
+                index = (end if end is not None else index) + 1
+                continue
+            start = index - 1 if index > 0 and _GENERATED_TAG.match(lines[index - 1]) else index
+            del lines[start:end + 1]
+            if 0 < start < len(lines) and not lines[start - 1].strip() and not lines[start].strip():
+                del lines[start]  # do not leave two blank lines behind
+            removed.append(name)
+            index = start
 
-        # Combine components into the full regex pattern
-        pattern = (
-            f'^{whitespace}{optional_attribute}{whitespace}{function_or_subroutine}{whitespace}{name_pattern}{whitespace}'
-            f'{arguments}{whitespace}{decl_rest}'
-            f'{code_lines}'
-            f'{whitespace}{comment}{whitespace}{decl_rest}'
-            f'{code_lines}'
-            f'{end_statement}'
-        )
-
-        # Remove the specified function or subroutine from the Fortran code
-        modified_code = sub(pattern, '', fortran_code, flags=MULTILINE | DOTALL | IGNORECASE)
-
-        # Update the fortran_code for the next iteration
-        fortran_code = modified_code
-
-    # Clean public/private declarations
-    public_pattern = r"(?:(\n *(public|private)(?: *\:\:)? *(.*?))\n)+"
-    modified_code = sub(public_pattern, lambda m: clean_public_private(m.group(0), names), fortran_code, flags=MULTILINE | IGNORECASE)
-
-    # TODO decide if to clean up any extra whitespace or empty lines?
-    # modified_code = sub(r'\n\s*\n', '\n', modified_code)  # Remove empty lines
-    return modified_code.strip()  # Return the modified code without leading/trailing whitespace
+    if removed:
+        lines = [line for line in (clean_public_private(line, removed) for line in lines) if line is not None]
+    return "\n".join(lines)
 
 
-def clean_public_private(declaration, names) -> str:
-    # Loop over each name to remove it from the declaration
-    for name in names:
-        name_pattern = escape(name)  # Escape the name to safely include it in the regex
-        # This pattern matches the name and any preceding comma and optional whitespace
-        removal_pattern = rf',?\s*{name_pattern}\s*(?=,|$)'
-        declaration = sub(removal_pattern, '', declaration)
+def clean_public_private(declaration: str, names: List[str]) -> Optional[str]:
+    """
+    Remove names from the entity list of a public or private statement.
 
-    # Remove any empty public/private declarations
-    if search(r'public\s*::\s*$', declaration) or search(r'private\s*::\s*$', declaration):
-        return ''  # Remove the entire line if it's empty after removal
-
-    return declaration
+    :param declaration: a line of Fortran code
+    :param names: names to remove (case-insensitive)
+    :return: the line without the names, None if its entity list became empty, other lines unchanged
+    """
+    match = _ACCESS_STATEMENT.match(declaration)
+    if match is None:
+        return declaration
+    entities = [entity.strip() for entity in match.group("entities").split(",")]
+    lowered = {name.lower() for name in names}
+    remaining = [entity for entity in entities if entity.lower() not in lowered]
+    if len(remaining) == len(entities):
+        return declaration
+    if not remaining:
+        return None
+    comment = f" {match.group('comment')}" if match.group("comment") else ""
+    return match.group("head") + ", ".join(remaining) + comment
 
 
 def fortran_merge(insert_content: Dict[str, List[str]], file_content):
@@ -199,14 +223,16 @@ def fortran_merge(insert_content: Dict[str, List[str]], file_content):
             # Filter out empty operations
             continue
 
-        remove_fortran_subroutine_or_function(file_content, ops_names)
+        # Remove generated stubs of the operations before inserting them again
+        names = [name.strip() for name in ops_names.split(",")]
+        file_content = remove_fortran_subroutine_or_function(file_content, names)
 
         public_pattern = r"(?:(\n *public(?: *\:\:.*)?)\n)+"
         private_pattern = r"\n(( *)private(?: *\:\:.*)?\n)+"
         implicit_pattern = r"\n( *)implicit none *\n"
 
-        module_start_pattern = r"(\n( *)module +" + module_name + " *\n?)"
-        module_end_pattern = r"(\n( *)end +module +" + module_name + " *\n?)"
+        module_start_pattern = r"((?:^|\n)( *)module +" + escape(module_name) + r"\b *\n?)"
+        module_end_pattern = r"(\n( *)end +module +" + escape(module_name) + r"\b *\n?)"
 
         # Find the position to insert the new code
         match_public = search(public_pattern, file_content, flags=IGNORECASE)

@@ -17,5 +17,5 @@
     {%- endif %}
 
 
-    ! <<Add {{ routineType }} body here>>
+    {{ body_marker(routineType) }}
   END {{ routineType }} {{ name }}

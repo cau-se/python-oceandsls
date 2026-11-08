@@ -25,6 +25,7 @@ from lsprotocol.types import (
 from parameterized import parameterized
 
 from odsllib.lsp.semantic_tokens import TOKEN_TYPES
+from tddlspserver.filewriter.markers import RETURN_EXPRESSION_MARKER
 from tddlspserver.server import TDDLSPServer, did_save
 
 DATA = os.path.join(os.path.dirname(__file__), "data")
@@ -47,6 +48,8 @@ TWO_CASES = ASSERT_TRUE + "test t2:\n    srcpath: 'src'\n    assert False:\n    
                           "        out:\n            0\n"
 WITH_MODULE = suite("    modules:\n        mod_a\n    assert True:\n        in:\n            1\n        out:\n"
                     "            1\n")
+WITH_FUNCTION = suite("    modules:\n        mod_a\n    assert Equal:\n        in:\n            f(1)\n        out:\n"
+                      "            1\n")
 DUPLICATE_CASE = suite("    var:\n        x: real = 1D0\n    assert Equal:\n        in:\n            x\n        out:\n"
                        "            1D0\n") + "test t1:\n    srcpath: 'src'\n"
 CMAKE_FILES = ["src/CMakeLists.txt", "src/build_with_cmake_and_run.x", "src/tests/CMakeLists.txt"]
@@ -170,6 +173,13 @@ class TestGeneration(TestServer):
         # A Fortran template is generated for a module under test that does not exist
         # Input: test case t1 using the module mod_a given as input file
         # Expected Result: mod_a.f90 with MODULE mod_a, t1.pf uses mod_a
+
+        ("function_stub_cli", "cli", WITH_FUNCTION, ["src/mod_a.f90", "src/tests/t1.pf"],
+         {"src/mod_a.f90": ["PUBLIC :: f", "FUNCTION f (arg0) RESULT (out)",
+                            f"out = {RETURN_EXPRESSION_MARKER}", "END FUNCTION f"]}),
+        # Regression: the template renders the marker shared with the file writer, so the stub is recognized later
+        # Input: test case t1 asserting f(1) in the module mod_a given as input file
+        # Expected Result: mod_a.f90 with the public stub of f and the return expression marker
     ])
     def test_generation(self, test_name, mode, text, expected_files, expected_contents):
         self.make_dirs("src")

@@ -9,7 +9,7 @@
     {% if returnType%}
     {{ returnType }}
     {%- else %}
-    ! <<Add return type here>>
+    {{ return_type_marker }}
     {%- endif %} :: out
     {% if unit %}
 
@@ -22,5 +22,5 @@
     {%- endif %}
 
 
-    out = ! <<Add return expression here>>
+    out = {{ return_expression_marker }}
   END {{ routineType }} {{ name }}
